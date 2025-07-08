@@ -12,8 +12,8 @@ const config = {
         mode: Phaser.Scale.FIT,
         parent: 'phaser-game',
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: 720,
-        height: 1280
+        width: 1280,
+        height: 720
     },
     scene: [PreloadScene, GameScene, UIScene, SaveLoadScene, ConfigScene, BacklogScene]
 };
