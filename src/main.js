@@ -18,4 +18,20 @@ const config = {
     scene: [PreloadScene, GameScene, UIScene, SaveLoadScene, ConfigScene, BacklogScene]
 };
 
+// ゲーム起動時のどこか (例: main.js や PreloadScene)
+async function lockScreenOrientation() {
+    try {
+        // まずフルスクリーンをリクエスト (多くのブラウザで、向きの固定にはユーザー操作とフルスクリーンが必要)
+        await document.documentElement.requestFullscreen();
+        // 画面の向きを「横向き」に固定するようリクエスト
+        await screen.orientation.lock('landscape');
+        console.log("画面の向きを横向きに固定しました。");
+    } catch (e) {
+        console.error("画面の向きの固定に失敗しました:", e);
+    }
+}
+
+// ユーザーが最初に画面をタップした時などに、この関数を呼び出す
+// (ブラウザのセキュリティポリシー上、ユーザーのアクションなしにAPIは呼べない)
+
 const game = new Phaser.Game(config);
