@@ -35,27 +35,22 @@ export function handleCharaShow(manager, params) {
     }
 
        // --- 2. 座標を決定 ---
+    --- 座標を決定 ---
     let x, y;
     const pos = params.pos;
-    const orientation = manager.scene.scale.isPortrait ? 'portrait' : 'landscape';
+    // ★★★ orientationの判定を削除し、直接Layoutを参照 ★★★
+    const layout = Layout;
 
-    // ★★★ 1. まずはpos属性に基づいて、デフォルトの座標を決める ★★★
-    if (pos && Layout[orientation].character[pos]) {
-        x = Layout[orientation].character[pos].x;
-        y = Layout[orientation].character[pos].y;
+    if (pos && layout.character[pos]) {
+        x = layout.character[pos].x;
+        y = layout.character[pos].y;
     } else {
-        // posがなければ、中央をデフォルトとする
-        x = Layout[orientation].character.center.x;
-        y = Layout[orientation].character.center.y;
+        x = layout.character.center.x;
+        y = layout.character.center.y;
     }
 
-    // ★★★ 2. x, y属性があれば、それで座標を上書きする ★★★
-    if (params.x !== undefined) {
-        x = Number(params.x);
-    }
-    if (params.y !== undefined) {
-        y = Number(params.y);
-    }
+    if (params.x !== undefined) { x = Number(params.x); }
+    if (params.y !== undefined) { y = Number(params.y); }
 
     // --- 4. 表示処理 ---
     const time = Number(params.time) || 0;
