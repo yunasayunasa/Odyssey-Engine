@@ -89,6 +89,18 @@ export default class UIScene extends Phaser.Scene {
             this.scene.pause('UIScene');
             this.scene.launch('BacklogScene');
         });
+        // ★★★ 戻ってきたシーンを処理するイベントリスナーを追加 ★★★
+        this.events.on('scene-return', (data) => {
+            console.log(`[${data.from}]から戻ってきました。`);
+
+            // ★ 1. GameSceneとUIScene自身のポーズを解除
+            this.scene.resume('GameScene');
+            this.scene.resume(); // 自分自身をresume
+
+            // ★ 2. GameSceneのScenarioManagerに、シナリオ再開を命令
+            const gameScene = this.scene.get('GameScene');
+            gameScene.scenarioManager.next();
+        });
          // ★★★ 初期レイアウト適用と、リサイズイベントの監視 ★★★
        /* this.checkOrientation(); // 起動時に一度チェック
         this.scale.on('resize', this.checkOrientation, this);*/
