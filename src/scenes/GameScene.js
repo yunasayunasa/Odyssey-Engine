@@ -123,7 +123,10 @@ export default class GameScene extends Phaser.Scene {
             }
         });
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
-        this.scenarioManager.next();
+          // ★★★ next()を直接呼ばず、安全なタイミングで呼び出す ★★★
+        this.time.delayedCall(10, () => {
+            this.scenarioManager.next();
+        }, [], this);
     }
 
     // GameSceneクラスの中に追加
