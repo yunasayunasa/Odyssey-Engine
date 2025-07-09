@@ -1,4 +1,4 @@
-[chara_show name="yuna"]
+
 [bg storage="bg_school"]
 yuna:「これから、scene2.ksを呼び出してみるね。」
 [p]
