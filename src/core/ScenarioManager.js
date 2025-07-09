@@ -103,24 +103,26 @@ export default class ScenarioManager {
             });
             return;
         } else if (trimedLine.startsWith('[')) {
-            // タグ行
+           // タグ行
             const { tagName, params } = this.parseTag(trimedLine);
             const handler = this.tagHandlers.get(tagName);
             if (handler) {
-                // ★★★ クリック待ち系タグと、それ以外のタグで処理を分ける ★★★
-                if (tagName === 'p' || tagName === 'link') {
-                    // これらのタグは、isWaitingClick/Choiceをtrueにして処理を中断させる
-                    handler(this, params);
-                    return; // ★★★ これが重要！parseをここで抜ける
+                // ★★★ isWaitingTagはもう使わない ★★★
+                // this.isWaitingTag = true;
+
+                // ★★★ ハンドラの実行結果を受け取る ★★★
+                const promise = handler(this, params);
+
+                // ★★★ もしPromiseが返ってきたら、それが終わるまで待つ ★★★
+                if (promise instanceof Promise) {
+                    await promise;
                 }
-                
-                // それ以外のタグは、完了通知を待つ
-                this.isWaitingTag = true;
-                await handler(this, params); // ハンドラがfinishTagExecutionを呼ぶのを待つ
             } else {
                 console.warn(`未定義のタグです: [${tagName}]`);
-                this.next();
             }
+            // ★★★ 最後に必ずnext()を呼ぶ ★★★
+            this.next();
+        } 
         }  else if (trimedLine.length > 0) {
             // 地の文
             this.stateManager.addHistory(null, trimedLine);
