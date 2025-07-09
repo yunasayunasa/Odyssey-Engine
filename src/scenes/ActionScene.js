@@ -1,3 +1,5 @@
+export default ActionScene;
+
 export async function handleCall(manager, params) {
     const storage = params.storage;
     const target = params.target;
@@ -40,4 +42,3 @@ export async function handleCall(manager, params) {
         // finishTagExecutionは、イベントリスナーが呼ぶので、ここでは呼ばない！
     }
 }
-export default ActionScene;
