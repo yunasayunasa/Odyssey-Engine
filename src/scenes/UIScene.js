@@ -90,12 +90,12 @@ export default class UIScene extends Phaser.Scene {
             this.scene.launch('BacklogScene');
         });
          // ★★★ 初期レイアウト適用と、リサイズイベントの監視 ★★★
-        this.checkOrientation(); // 起動時に一度チェック
-        this.scale.on('resize', this.checkOrientation, this);
+       /* this.checkOrientation(); // 起動時に一度チェック
+        this.scale.on('resize', this.checkOrientation, this);*/
     }
     
     // ★★★ 画面の向きをチェックするメソッドを新設 ★★★
-    checkOrientation() {
+  /*  checkOrientation() {
         const overlay = document.getElementById('orientation-overlay');
         const gameCanvas = this.sys.game.canvas;
 
@@ -108,8 +108,8 @@ export default class UIScene extends Phaser.Scene {
             // 横向きの場合
             overlay.style.display = 'none'; // オーバーレイを隠す
             gameCanvas.style.display = 'block'; // ゲームキャンバスを表示
-        }
-    }
+        }*/
+    
 
     // ... (applyLayout, togglePanel, openScene は変更なし) ...
 
