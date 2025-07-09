@@ -127,6 +127,14 @@ export default class GameScene extends Phaser.Scene {
         this.time.delayedCall(10, () => {
             this.scenarioManager.next();
         }, [], this);
+          // ★★★ このリスナーが最後のピースです ★★★
+        // このシーンが「再開」された時に、このイベントが自動的に発火する
+        this.events.on('resume', () => {
+            console.log("GameSceneがresumeイベントを検知。シナリオを再開します。");
+            // 中断していたタグの処理を完了させ、次の行へ進む
+            this.scenarioManager.finishTagExecution();
+        });
+
     }
 
     // GameSceneクラスの中に追加
