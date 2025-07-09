@@ -1,27 +1,37 @@
-export function handleCall(manager, params) { // asyncは不要
+/**
+ * [call] タグの処理
+ * 別のシナリオやシーンを呼び出す
+ */
+export function handleCall(manager, params) { // asyncはもう不要
     const storage = params.storage;
-    if (!storage) { manager.finishTagExecution(); return; }
+    if (!storage) { console.warn('[call] storageは必須です。'); manager.finishTagExecution(); return; }
+
+    // 戻り先をコールスタックに積む (これは共通)
+    manager.callStack.push({
+        file: manager.currentFile,
+        line: manager.currentLine 
+    });
+    console.log("コールスタックにプッシュ:", manager.callStack);
 
     if (storage.endsWith('.ks')) {
-        // .ksファイル呼び出し (ここはPromiseを返す非同期処理)
+        // --- .ksファイル（サブルーチン）呼び出し ---
+        // これはPromiseを返す非同期処理
         return new Promise(async (resolve) => {
-            manager.callStack.push({ file: manager.currentFile, line: manager.currentLine });
             await manager.loadScenario(storage, params.target);
             manager.next();
             resolve();
         });
     } else {
-        // 別シーン呼び出し
+        // --- 別のPhaserシーン呼び出し ---
         const sceneKey = storage;
-        console.log(`別シーン[${sceneKey}]を起動します...`);
         
-        // GameSceneとUISceneを一時停止
-        manager.scene.scene.pause('GameScene');
-        manager.scene.scene.pause('UIScene');
-        
-        // 対象シーンを起動
-        manager.scene.scene.launch(sceneKey);
-        
-        // finishTagExecutionは呼ばない。GameSceneの再開イベントが責任を持つ。
+        // ★★★ SystemSceneにシーン遷移を「依頼」する ★★★
+        manager.scene.scene.get('SystemScene').events.emit('request-scene-change', {
+            from: 'GameScene', // どのシーンから呼び出されたか
+            to: sceneKey       // どのシーンを起動するか
+        });
+
+        // このタグの役目はここまで。
+        // finishTagExecutionは、SystemScene経由で、戻ってきた時に呼ばれる。
     }
 }

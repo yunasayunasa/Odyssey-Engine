@@ -5,6 +5,7 @@ import SaveLoadScene from './scenes/SaveLoadScene.js';
 import ConfigScene from './scenes/ConfigScene.js'; // これを追加
 import BacklogScene from './scenes/BacklogScene.js'; // これを追加
 import ActionScene from './scenes/ActionScene.js';
+import SystemScene from './scenes/SystemScene.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -15,7 +16,7 @@ const config = {
         width: 1280,
         height: 720
     },
-    scene: [PreloadScene, GameScene, UIScene, SaveLoadScene, ConfigScene, BacklogScene,  ActionScene]
+    scene: [PreloadScene, GameScene, UIScene, SaveLoadScene, ConfigScene, BacklogScene,  ActionScene, SystemScene]
 };
 
 // ゲーム起動時のどこか (例: main.js や PreloadScene)
