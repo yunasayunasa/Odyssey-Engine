@@ -35,7 +35,7 @@ export function handleCharaShow(manager, params) {
     }
 
        // --- 2. 座標を決定 ---
-    --- 座標を決定 ---
+    //--- 座標を決定 ---
     let x, y;
     const pos = params.pos;
     // ★★★ orientationの判定を削除し、直接Layoutを参照 ★★★
