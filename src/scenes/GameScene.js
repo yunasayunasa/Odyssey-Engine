@@ -114,6 +114,14 @@ export default class GameScene extends Phaser.Scene {
         
         // --- ゲーム開始 ---
         this.scenarioManager.load('scene1');
+         // 最初の1回目のクリック/タップだけ実行される特別なイベントリスナー
+        this.input.once('pointerdown', () => {
+            // AudioContextが一時停止状態なら、再開させる
+            if (this.sound.context.state === 'suspended') {
+                this.sound.context.resume();
+                console.log("AudioContextを再開しました。");
+            }
+        });
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
         this.scenarioManager.next();
     }
