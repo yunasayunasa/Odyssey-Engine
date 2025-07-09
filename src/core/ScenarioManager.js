@@ -122,7 +122,7 @@ export default class ScenarioManager {
             }
             // ★★★ 最後に必ずnext()を呼ぶ ★★★
             this.next();
-        } 
+        
         }  else if (trimedLine.length > 0) {
             // 地の文
             this.stateManager.addHistory(null, trimedLine);
