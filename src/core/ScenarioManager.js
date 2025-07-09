@@ -199,24 +199,38 @@ export default class ScenarioManager {
     }
     
     manualWrap(text) {
+        // ★★★ 1. 最初に[br]を改行コード(\n)にすべて置換する ★★★
+        const textWithBr = text.replace(/\[br\]/g, '\n');
+
         let wrappedText = '';
         let currentLine = '';
         const textBoxWidth = this.messageWindow.textBoxWidth;
         const style = { fontFamily: this.messageWindow.textObject.style.fontFamily, fontSize: this.messageWindow.textObject.style.fontSize };
-        for (let i = 0; i < text.length; i++) {
-            const char = text[i];
-            const testLine = currentLine + char;
-            const metrics = this.scene.add.text(0, 0, testLine, style).setVisible(false);
-            if (metrics.width > textBoxWidth) {
-                wrappedText += currentLine + '\n';
-                currentLine = char;
-            } else {
-                currentLine = testLine;
+
+        // ★★★ 2. 置換後のテキストを、改行コードで一度分割する ★★★
+        const lines = textWithBr.split('\n');
+
+        // 3. 分割された各行に対して、自動折り返し処理を行う
+        for (const singleLine of lines) {
+            let lineBuffer = '';
+            for (let i = 0; i < singleLine.length; i++) {
+                const char = singleLine[i];
+                const testLine = lineBuffer + char;
+                const metrics = this.scene.add.text(0, 0, testLine, style).setVisible(false);
+                
+                if (metrics.width > textBoxWidth && lineBuffer.length > 0) {
+                    wrappedText += lineBuffer + '\n';
+                    lineBuffer = char;
+                } else {
+                    lineBuffer = testLine;
+                }
+                metrics.destroy();
             }
-            metrics.destroy();
+            wrappedText += lineBuffer + '\n'; // 各行の終わりにも改行を追加
         }
-        wrappedText += currentLine;
-        return wrappedText;
+        
+        // 最後に余分な改行が残ることがあるので、削除する
+        return wrappedText.trimEnd();
     }
 
     highlightSpeaker(speakerName) {
