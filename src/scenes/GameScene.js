@@ -128,12 +128,16 @@ export default class GameScene extends Phaser.Scene {
             this.scenarioManager.next();
         }, [], this);
           // ★★★ このリスナーが最後のピースです ★★★
-        // このシーンが「再開」された時に、このイベントが自動的に発火する
-        this.events.on('resume', () => {
-            console.log("GameSceneがresumeイベントを検知。シナリオを再開します。");
+         // ★★★ SystemSceneからの「シナリオ再開」命令を待つリスナー ★★★
+        this.events.on('execute-next-command', () => {
+            console.log("GameScene: SystemSceneから実行再開命令を受信しました。");
             // 中断していたタグの処理を完了させ、次の行へ進む
             this.scenarioManager.finishTagExecution();
         });
+
+        // create完了後、少し待ってから最初のnextを呼ぶ
+        this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
+        console.log("GameScene: create 完了");
 
     }
 

@@ -1,7 +1,7 @@
 *start
-kaito:「やあ、ここはscene2.ksだよ。」
+kaito:「ここはサブルーチンとして呼び出された、scene2.ksです。」
 [p]
-kaito:「仕事が終わったから、元の場所に戻るね。」
+kaito:「これから、呼び出し元のscene1.ksに戻ります。」
 [p]
 
 [return]
