@@ -1,0 +1,68 @@
+このマニュアルはAI、ジェミニに食わせてこのエンジンを隅々まで理解してもらい、ゲーム開発の一助となるように教育するマニュアルです。
+以下のテキストを食わせて下さい。
+
+[GEMINI INTERNAL MANUAL] My Novel Engine - Ver 1.0 Final
+1. Core Architecture: Scene-based, Decoupled Modules
+Primary View: Landscape (1280x720), Phaser.Scale.FIT mode.
+Entry Point: main.js (Defines scenes, initializes ConfigManager via global registry).
+Scene Execution Order:
+PreloadScene: Loads asset_define.json, then auto-loads all defined assets. Generates charaDefs and registers to global registry. On complete, starts GameScene and UIScene.
+GameScene & UIScene: Run concurrently. UIScene is an overlay.
+Modal Scenes (SaveLoadScene, etc.): launch-ed by UIScene. Pauses GameScene & UIScene.
+2. Core Systems (src/core/)
+ScenarioManager.js:
+Role: Manages scenario execution flow (.ks files).
+State Flags:
+isWaitingClick: true when waiting for user input (dialogue, [p]). Pauses next() loop. Triggered by onClick.
+isWaitingTag: true when a tag handler has been invoked and has not yet called finishTagExecution(). Pauses next() and onClick.
+Execution Loop:
+next(): Checks flags. If clear, gets a line, increments currentLine, calls parse(line).
+parse(line):
+Priority 1 (Skip Logic): Checks ifStack. If skipping is true, it only processes if/elsif/else/endif handlers and immediately calls next().
+Priority 2 (Execution Logic):
+Dialogue/Text Line: Sets isWaitingClick = true, calls messageWindow.setText(). Does not call next() or finishTagExecution().
+Tag Line ([...]): Sets isWaitingTag = true, then calls the corresponding handler. Does not call next().
+finishTagExecution(): CRITICAL METHOD. Called by handlers to signal completion. Sets isWaitingTag = false, then calls next() to resume scenario flow.
+StateManager.js:
+Role: Centralized state management for savable data.
+state.variables: Corresponds to f. variables.
+systemVariables: Corresponds to sf. variables. Persisted separately.
+eval(exp): Safely executes/evaluates JS expressions. Key for [eval] and [if].
+ConfigManager.js:
+Role: Manages user-configurable settings.
+Design: Event-driven. Emits change:[key] event when a value is set. Persisted in localStorage.
+Layout.js:
+Role: Static data object defining fixed coordinates for a 1280x720 landscape view. Used by scenes and handlers for consistent positioning.
+3. Handler Protocol (src/handlers/)
+This is the most critical rule set.
+
+Rule 1: Handlers MUST signal completion.
+For synchronous tags (if, eval, er): The last line of the handler MUST be manager.finishTagExecution().
+For asynchronous tags (chara_show, move, wait): The final callback (onComplete, delayedCall) MUST call manager.finishTagExecution().
+Rule 2: Handlers that wait for user input do NOT signal completion.
+Applies to [p] and [link].
+These handlers set manager.isWaitingClick = true or manager.isWaitingChoice = true. The onClick method in ScenarioManager is responsible for resuming the flow.
+Rule 3: Flow-control handlers manage their own next() calls.
+Applies to jump, call, and return.
+These handlers manipulate manager.currentLine and/or manager.currentFile and then call manager.next() themselves to restart the execution loop from a new location. finishTagExecution() is not typically used.
+4. Inter-Scene Communication Protocol (SystemScene Pattern)
+Requirement: To transition from a GameScene to another gameplay scene (e.g., ActionScene) and back.
+Mediator: A dedicated, always-active scene (SystemScene.js).
+Flow:
+Caller (GameScene via [call] handler):
+Pushes return address to callStack.
+Emits 'request-scene-change' event to SystemScene with { from: 'GameScene', to: 'ActionScene' }.
+Handler execution ends. ScenarioManager is now in isWaitingTag state.
+Mediator (SystemScene):
+Listens for 'request-scene-change'.
+On event: this.scene.pause('GameScene'), this.scene.pause('UIScene'), this.scene.launch('ActionScene').
+Callee (ActionScene):
+On completion: Emits 'report-scene-end' event to SystemScene with { from: 'ActionScene', returnTo: 'GameScene' }.
+Calls this.scene.stop().
+Mediator (SystemScene):
+Listens for 'report-scene-end'.
+On event: this.scene.stop('ActionScene'), this.scene.resume('UIScene'), this.scene.resume('GameScene').
+Emits 'execute-next-command' event to the global event bus (this.sys.events) or directly to the GameScene instance.
+Caller (GameScene):
+Listens for 'execute-next-command' in its create method.
+On event: Calls this.scenarioManager.finishTagExecution() to break the isWaitingTag lock and resume the scenario.
