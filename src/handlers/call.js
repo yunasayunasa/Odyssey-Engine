@@ -1,32 +1,31 @@
-export function handleCall(manager, params) { // asyncは不要
+export async function handleCall(manager, params) {
     const storage = params.storage;
-    if (!storage) { console.warn('[call] storageは必須です。'); manager.finishTagExecution(); return; }
-
-    // 戻り先をコールスタックに積む
-    manager.callStack.push({
-        file: manager.currentFile,
-        line: manager.currentLine 
-    });
+    if (!storage) { manager.finishTagExecution(); return; }
 
     if (storage.endsWith('.ks')) {
-        // .ksファイル呼び出しは非同期なのでPromiseを返す
-        return new Promise(async (resolve) => {
-            await manager.loadScenario(storage, params.target);
-            manager.next();
-            resolve(); // Promiseを解決して、awaitを終了させる
-        });
+        // .ksファイルのサブルーチン呼び出し
+        manager.callStack.push({ file: manager.currentFile, line: manager.currentLine });
+        await manager.loadScenario(storage, params.target);
+        manager.next();
     } else {
-        // 別シーン呼び出し
+        // 別のPhaserシーン呼び出し
         const sceneKey = storage;
         console.log(`別シーン[${sceneKey}]を起動します...`);
         
-        // GameSceneと自分自身(UIScene)を一時停止
+        // ★★★ 戻ってきたことを検知するリスナーを、ここで一度だけ設定 ★★★
+        manager.scene.events.once('scene-resume', () => {
+            console.log("GameSceneが再開を検知しました。シナリオを次に進めます。");
+            // UISceneのポーズも解除
+            manager.scene.scene.resume('UIScene');
+            // ★★★ タグの処理が完了したことを通知 ★★★
+            manager.finishTagExecution();
+        });
+
+        // GameSceneとUISceneを一時停止
         manager.scene.scene.pause('GameScene');
         manager.scene.scene.pause('UIScene');
         
-        // 対象シーンを起動
+        // 対象シーンを上に重ねて起動
         manager.scene.scene.launch(sceneKey);
-        
-        // このタグはここで処理を中断する。続きはUISceneがやる。
     }
 }

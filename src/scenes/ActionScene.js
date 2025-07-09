@@ -12,12 +12,12 @@ export default class ActionScene extends Phaser.Scene {
             .setOrigin(0.5)
             .setInteractive();
             
-      returnButton.on('pointerdown', () => {
-    // ★★★ 常に動いているUISceneに「戻ります」と報告するだけ ★★★
-    this.scene.get('UIScene').events.emit('scene-return', { from: 'ActionScene' });
-    
-    // 自分自身を停止する
-    this.scene.stop();
-});
+    returnButton.on('pointerdown', () => {
+            // ★★★ GameSceneの'scene-resume'イベントを発火させる ★★★
+            this.scene.get('GameScene').events.emit('scene-resume');
+            
+            // このActionSceneを停止する
+            this.scene.stop();
+        });
     }
 }
