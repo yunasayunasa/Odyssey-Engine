@@ -145,43 +145,70 @@ export default class ScenarioManager {
         this.next();
     }
     
-      async loadScenario(scenarioKey, targetLabel = null) {
-        // --- 1. シナリオテキストのロード ---
-        if (!this.scene.cache.text.has(scenarioKey)) {
+     // (constructor, next, parseなどの他の部分は、あなたの正常に動作しているコードのままでOKです)
+// ★★★ loadScenarioメソッドだけを、以下のコードで完全に置き換えてください ★★★
+
+    async loadScenario(scenarioKey, targetLabel = null) {
+        console.log(`[loadScenario] 開始: ${scenarioKey}`);
+        let rawText;
+
+        // --- 1. シナリオテキストの取得 ---
+        if (this.scene.cache.text.has(scenarioKey)) {
+            rawText = this.scene.cache.text.get(scenarioKey);
+        } else {
+            console.log(`動的ロード: ${scenarioKey} のテキストを読み込みます。`);
             await new Promise(resolve => {
                 this.scene.load.text(scenarioKey, `assets/${scenarioKey}`);
                 this.scene.load.once('complete', resolve);
                 this.scene.load.start();
             });
+            rawText = this.scene.cache.text.get(scenarioKey);
         }
-        const rawText = this.scene.cache.text.get(scenarioKey);
+        if (!rawText) { throw new Error(`シナリオテキスト[${scenarioKey}]のロードに失敗しました。`); }
 
         // --- 2. @asset宣言の解析 ---
         const assetsToLoad = [];
-        // ... (このループ部分はあなたのコードのままで完璧です)
+        const lines = rawText.split(/\r\n|\n|\r/);
+        for (const line of lines) {
+            const trimedLine = line.trim();
+            if (trimedLine.startsWith('@asset')) {
+                const parts = trimedLine.split(/\s+/).slice(1); // '@asset'は無視
+                const params = {};
+                parts.forEach(part => {
+                    const [key, value] = part.split('=');
+                    params[key] = value;
+                });
+                
+                const { type, key, path } = params;
+                if (!type || !key || !path) continue;
+
+                if ((type === 'image' && !this.scene.textures.exists(key)) || (type === 'audio' && !this.scene.cache.audio.has(key))) {
+                    assetsToLoad.push({ type, key, path });
+                }
+            }
+            if (trimedLine.startsWith('*')) break;
+        }
 
         // --- 3. 動的ロードの実行 ---
         if (assetsToLoad.length > 0) {
             console.log("追加アセットの動的ロードが必要です:", assetsToLoad);
             
-            // ★★★ Promiseを使って、LoadingSceneの完了を待つ ★★★
             await new Promise(resolve => {
                 this.scene.scene.launch('LoadingScene', {
                     assets: assetsToLoad,
-                    // ★ LoadingSceneが完了したら、このresolve()が呼ばれるようにする
-                    onComplete: resolve 
+                    onComplete: resolve
                 });
             });
+            console.log("追加アセットのロードが完了しました。");
         }
 
-         // --- 4. すべてのアセットが揃った状態で、シナリオを入れ替える ---
+        // --- 4. シナリオコンテキストの入れ替え ---
         this.load(scenarioKey);
         if (targetLabel) {
             this.jumpTo(targetLabel);
         }
-        
-        // ★★★ ここでnext()を呼ばない！ ★★★
     }
+    
     jumpTo(target) {
         const labelName = target.substring(1);
         const targetLineIndex = this.scenario.findIndex(line => line.trim().startsWith('*') && line.trim().substring(1) === labelName);
