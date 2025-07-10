@@ -1,7 +1,7 @@
 export default class SystemScene extends Phaser.Scene {
     constructor() {
         // active:trueで、他のシーンと同時に、常にバックグラウンドで動作する
-        super({ key: 'SystemScene' });
+        super('SystemScene' );
     }
 
     create() {
