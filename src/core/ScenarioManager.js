@@ -86,7 +86,7 @@ export default class ScenarioManager {
         }
         
         // 通常実行
-        if (trimedLine.startsWith(';') || trimedLine.startsWith('*')) {
+        if (trimedLine.startsWith(';') || trimedLine.startsWith('*')|| trimedLine.startsWith('@')) {
             this.next();
         } else if (trimedLine.match(/^([a-zA-Z0-9_]+):/)) {
             // 話者指定行
@@ -174,11 +174,13 @@ export default class ScenarioManager {
             });
         }
 
-        // --- 4. すべてのアセットが揃った状態で、シナリオを入れ替える ---
+         // --- 4. すべてのアセットが揃った状態で、シナリオを入れ替える ---
         this.load(scenarioKey);
         if (targetLabel) {
             this.jumpTo(targetLabel);
         }
+        
+        // ★★★ ここでnext()を呼ばない！ ★★★
     }
     jumpTo(target) {
         const labelName = target.substring(1);
