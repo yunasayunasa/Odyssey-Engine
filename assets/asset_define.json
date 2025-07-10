@@ -4,13 +4,13 @@
      "yuna_normal": "assets/yuna_smile.png",
       "kaito_normal": "assets/kaito_normal.png" ,
      "bg_school": "assets/bg_school.jpg" ,
-     "cg_secret": "assets/event_cg_01.jpg",
+    
      "button_title": "assets/title_button.png",
      "next_arrow": "assets/next_arrow.png"
   },
   "sounds": {
 "popopo": "assets/gyakuten_popopo.mp3",
-"smash": "assets/smash.mp3",
+
 "ronpa_bgm": "assets/ronpa_bgm.mp3"
   }
  
