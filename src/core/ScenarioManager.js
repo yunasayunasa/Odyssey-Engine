@@ -145,7 +145,8 @@ export default class ScenarioManager {
         this.next();
     }
     
-    async loadScenario(scenarioKey, targetLabel = null) {
+      async loadScenario(scenarioKey, targetLabel = null) {
+        // --- 1. シナリオテキストのロード ---
         if (!this.scene.cache.text.has(scenarioKey)) {
             await new Promise(resolve => {
                 this.scene.load.text(scenarioKey, `assets/${scenarioKey}`);
@@ -153,12 +154,32 @@ export default class ScenarioManager {
                 this.scene.load.start();
             });
         }
+        const rawText = this.scene.cache.text.get(scenarioKey);
+
+        // --- 2. @asset宣言の解析 ---
+        const assetsToLoad = [];
+        // ... (このループ部分はあなたのコードのままで完璧です)
+
+        // --- 3. 動的ロードの実行 ---
+        if (assetsToLoad.length > 0) {
+            console.log("追加アセットの動的ロードが必要です:", assetsToLoad);
+            
+            // ★★★ Promiseを使って、LoadingSceneの完了を待つ ★★★
+            await new Promise(resolve => {
+                this.scene.scene.launch('LoadingScene', {
+                    assets: assetsToLoad,
+                    // ★ LoadingSceneが完了したら、このresolve()が呼ばれるようにする
+                    onComplete: resolve 
+                });
+            });
+        }
+
+        // --- 4. すべてのアセットが揃った状態で、シナリオを入れ替える ---
         this.load(scenarioKey);
         if (targetLabel) {
             this.jumpTo(targetLabel);
         }
     }
-
     jumpTo(target) {
         const labelName = target.substring(1);
         const targetLineIndex = this.scenario.findIndex(line => line.trim().startsWith('*') && line.trim().substring(1) === labelName);
