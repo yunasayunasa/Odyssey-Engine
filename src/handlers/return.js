@@ -20,6 +20,6 @@ export async function handleReturn(manager, params) {
     manager.currentLine = returnInfo.line;
 
     // ★ 4. 戻ってきた場所から実行を再開
-    //manager.next();
-    manager.finishTagExecution();
+    manager.next();
+   // manager.finishTagExecution();
 }
