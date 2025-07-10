@@ -35,6 +35,7 @@ import { handleFreeImage } from '../handlers/freeimage.js';
 import { handleButton } from '../handlers/button.js';
 import { handleCall } from '../handlers/call.js';
 import { handleReturn } from '../handlers/return.js';
+import { handleStopAnim } from '../handlers/stop_anim.js';
 
 
 export default class GameScene extends Phaser.Scene {
@@ -111,6 +112,7 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager.registerTag('button', handleButton);
         this.scenarioManager.registerTag('call', handleCall);
         this.scenarioManager.registerTag('return', handleReturn);
+        this.scenarioManager.registerTag('stop_anim', handleStopAnim);
         
         // --- ゲーム開始 ---
         this.scenarioManager.load('scene1');
