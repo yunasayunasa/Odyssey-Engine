@@ -18,7 +18,7 @@ const config = {
         height: 720
     },
     // ★★★ 起動するシーンは、PreloadSceneだけでOK ★★★
-    scene: [PreloadScene, GameScene, UIScene, SystemScene, SaveLoadScene, ConfigScene, BacklogScene, ActionScene]
+    scene: [PreloadScene, GameScene, UIScene, SystemScene, SaveLoadScene, ConfigScene, BacklogScene, ActionScene, LoadingScene]
 };
 
 const game = new Phaser.Game(config);
