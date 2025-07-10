@@ -73,56 +73,81 @@ export default class ScenarioManager {
         const processedLine = this.embedVariables(line);
         const trimedLine = processedLine.trim();
 
-        // --- スキップ判定 ---
+        // スキップ判定
         const ifState = this.ifStack.length > 0 ? this.ifStack[this.ifStack.length - 1] : null;
         if (ifState && ifState.skipping) {
-            const { tagName, params } = this.parseTag(trimedLine);
+            const { tagName } = this.parseTag(trimedLine);
             if (['if', 'elsif', 'else', 'endif'].includes(tagName)) {
                 const handler = this.tagHandlers.get(tagName);
-                if (handler) handler(this, params); // 分岐タグは状態更新だけ
+                if (handler) handler(this, this.parseTag(trimedLine).params);
             }
-            await this.next(); // スキップ判定後は必ず次の行へ
+            this.next();
             return;
         }
         
-        // --- 通常実行 ---
-        if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
-            await this.next();
-
-        } else if (trimedLine.match(/^([a-zA-Z0-9_]+):/) || (trimedLine.length > 0 && !trimedLine.startsWith('['))) {
-            // 話者指定行、または地の文
-            this.isWaitingClick = true; // クリック待ちに入る
-            // (setTextなどの処理...)
-            
+        // 通常実行
+        if (trimedLine.startsWith(';') || trimedLine.startsWith('*')|| trimedLine.startsWith('@')) {
+            this.next();
+        } else if (trimedLine.match(/^([a-zA-Z0-9_]+):/)) {
+            // 話者指定行
+            const speakerMatch = trimedLine.match(/^([a-zA-Z0-9_]+):/);
+            const speakerName = speakerMatch[1];
+            const dialogue = trimedLine.substring(speakerName.length + 1).trim();
+            this.stateManager.addHistory(speakerName, dialogue);
+            this.highlightSpeaker(speakerName);
+            const wrappedLine = this.manualWrap(dialogue);
+            this.isWaitingClick = true;
+            this.messageWindow.setText(wrappedLine, true, () => {
+                this.messageWindow.showNextArrow();
+                
+            });
+            return;
         } else if (trimedLine.startsWith('[')) {
-            // タグ行
+           // タグ行
             const { tagName, params } = this.parseTag(trimedLine);
             const handler = this.tagHandlers.get(tagName);
-            
             if (handler) {
-                // ハンドラを実行し、Promiseが返ってくるか確認
+                // ★★★ isWaitingTagはもう使わない ★★★
+                // this.isWaitingTag = true;
+
+                // ★★★ ハンドラの実行結果を受け取る ★★★
                 const promise = handler(this, params);
-                
+
+                // ★★★ もしPromiseが返ってきたら、それが終わるまで待つ ★★★
                 if (promise instanceof Promise) {
-                    // 非同期タグの場合、完了を待つ
                     await promise;
                 }
-                
-                // ★★★ ここが最重要ポイント ★★★
-                // ハンドラ実行後、それが待機系タグでなければ、次の行へ進む
-                if (!this.isWaitingClick && !this.isWaitingChoice) {
-                    await this.next();
-                }
-                
             } else {
                 console.warn(`未定義のタグです: [${tagName}]`);
-                await this.next();
             }
+            // ★★★ 最後に必ずnext()を呼ぶ ★★★
+            this.next();
+        
+        }  else if (trimedLine.length > 0) {
+            // 地の文
+            this.stateManager.addHistory(null, trimedLine);
+            this.highlightSpeaker(null);
+            this.isWaitingClick = true; 
+            const wrappedLine = this.manualWrap(trimedLine);
+            this.messageWindow.setText(wrappedLine, true, () => {
+                this.messageWindow.showNextArrow();
+                
+            });
+            return;
         } else {
             // 空行
-            await this.next();
+            this.next();
         }
     }
+    
+    finishTagExecution() {
+        this.isWaitingTag = false;
+        this.next();
+    }
+    
+     // (constructor, next, parseなどの他の部分は、あなたの正常に動作しているコードのままでOKです)
+// ★★★ loadScenarioメソッドだけを、以下のコードで完全に置き換えてください ★★★
+
     
      // (constructor, next, parseなどの他の部分は、あなたの正常に動作しているコードのままでOKです)
 // ★★★ loadScenarioメソッドだけを、以下のコードで完全に置き換えてください ★★★
