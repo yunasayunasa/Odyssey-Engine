@@ -18,37 +18,37 @@ export function handleFlip(manager, params) {
 
     const time = Number(params.time) || 500;
     const halfTime = time / 2;
+    const face = params.face; // 新しい表情名
 
-    // ★★★ Tweenを順番に実行する chain() を使用 ★★★
-
-    // Tween 1: 半分の時間かけて、画像を横に潰す
-    const tween1 = {
-        targets: chara,
-        scaleX: 0,
-        duration: halfTime,
-        ease: 'Linear',
-    };
-
-    // Tween 2: 潰れた瞬間に、画像を左右反転させる
-    const tween2 = {
-        targets: chara,
-        scaleX: 1, // 元の大きさに戻す
-        duration: halfTime,
-        ease: 'Linear',
-        // ★★★ このTweenが始まる瞬間に呼ばれるコールバック ★★★
-        onStart: () => {
-            chara.toggleFlipX(); // 画像を反転
-        }
-    };
-    
-    // ★★★ 2つのTweenを連結して実行 ★★★
     manager.scene.tweens.chain({
-        tweens: [tween1, tween2],
-        
-        // すべてのTweenが完了した後に呼ばれる
+        tweens: [
+            { targets: chara, scaleX: 0, duration: halfTime, ease: 'Linear' },
+            {
+                targets: chara,
+                duration: 0,
+                onStart: () => {
+                    chara.toggleFlipX(); // まず反転
+                    // ★ face属性があれば、テクスチャを差し替え ★
+                    if (face) {
+                        const def = manager.characterDefs[name];
+                        const newStorage = def ? def.face[face] : null;
+                        if (newStorage) {
+                            chara.setTexture(newStorage);
+                            // StateManagerの状態も更新
+                            const charaData = manager.stateManager.getState().layers.characters[name];
+                            if(charaData) {
+                                charaData.face = face;
+                                charaData.storage = newStorage;
+                                manager.stateManager.updateChara(name, charaData);
+                            }
+                        }
+                    }
+                }
+            },
+            { targets: chara, scaleX: 1, duration: halfTime, ease: 'Linear' }
+        ],
         onComplete: () => {
             manager.finishTagExecution();
-           // manager.next();
         }
     });
 }
