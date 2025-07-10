@@ -120,7 +120,7 @@ export default class ScenarioManager {
     // それ以外のタグは完了を待つ
     this.isWaitingTag = true;
     await handler(this, params);
-}
+
 
                 // ★★★ もしPromiseが返ってきたら、それが終わるまで待つ ★★★
                 if (promise instanceof Promise) {
