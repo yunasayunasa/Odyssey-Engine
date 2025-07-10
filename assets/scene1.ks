@@ -1,45 +1,50 @@
-; === 演出タグ最終テストシナリオ ===
+export function handleCharaJump(manager, params) {
+    const name = params.name;
+    if (!name) { console.warn('[chara_jump] nameは必須です。'); manager.finishTagExecution(); return; }
+    const chara = manager.scene.characters[name];
+    if (!chara) { console.warn(`[chara_jump] キャラクター[${name}]が見つかりません。`); manager.finishTagExecution(); return; }
 
-[bg storage="bg_school"]
-[chara_show name="yuna" pos="center"]
-[wait time=500]
+    // --- パラメータ取得 ---
+    const time = Number(params.time) || 500;
+    const height = Number(params.height) || 50;
+    const x_add = Number(params.x_add) || 0;
+    const y_add = Number(params.y_add) || 0;
+    const loop = params.loop === 'true';
+    const noWait = params.nowait === 'true';
 
-yuna:「これから、flipとjumpの最終テストを始めます。」
-[p]
+    // --- 座標計算 ---
+    const originX = chara.x;
+    const originY = chara.y;
+    const targetX = originX + x_add;
+    const targetY = originY + y_add;
 
-yuna:「まずは、反転しながら表情を『笑顔』に変えてみますね。」
-[p]
+    // --- Tween定義 ---
+    const tweenConfig = {
+        targets: chara,
+        props: {
+            x: { value: targetX, duration: time, ease: 'Linear' },
+            y: { value: originY - height, duration: time / 2, yoyo: true, ease: 'Sine.Out' }
+        },
+        onComplete: () => {
+            // ★ onCompleteは、ループしない場合 と nowaitでない場合 の両方を満たす時だけ呼ばれる
+            if (!loop && !noWait) {
+                chara.setPosition(targetX, targetY);
+                // (ここに状態更新ロジックを入れると、より正確になる)
+                manager.finishTagExecution();
+            }
+        }
+    };
+    
+    if (loop) {
+        tweenConfig.repeat = -1;
+    }
 
-; ★ 反転と同時に、表情をsmileに差し替える
-[flip name="yuna" face="smile" time=400]
-[wait time=500]
+    // --- Tween実行 ---
+    manager.scene.tweens.add(tweenConfig);
 
-yuna:「どうかな？笑顔で、左向きになりましたか？」
-[p]
-
-yuna:「次は、怒った顔で戻ります！」
-[p]
-
-; ★ 再び反転し、今度はangry表情に戻す
-[flip name="yuna" face="angry" time=400]
-[wait time=500]
-
-yuna:「ふん！これが怒った顔よ！」
-[p]
-
-yuna:「最後に、喜びの舞をお見せします！[br]左右にジャンプし続けるわよ！」
-[p]
-
-; ★ ループするジャンプを開始（nowaitで即座に次に進む）
-;[chara_jump name="yuna" x_add=100 height=30 time=400 loop=true nowait=true]
-;[wait time=2000] ; 2秒間、右にジャンプし続ける
-
-;[stop_anim name="yuna"]
-
-[chara_jump name="yuna" height=200 time=400  loop=true nowait=true]
-[wait time=2000] ; 2秒間、左にジャンプし続ける
-
-[stop_anim name="yuna"]
-
-yuna:「これで全ての演出テストは完了です！」
-[s]
+    // ★★★ nowaitの場合だけ、即座に完了を通知する ★★★
+    if (noWait) {
+        manager.finishTagExecution();
+    }
+    // ループの場合は、ここでは何も呼ばない！[stop_anim]を待つ。
+}
