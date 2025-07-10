@@ -5,7 +5,7 @@
       "yuna_smile": "assets/kaito_normal.png" ,
      "bg_school": "assets/bg_school.jpg" ,
     
-     "button_title": "assets/title_button.png",
+     "yuna_angry": "assets/title_button.png",
      "next_arrow": "assets/next_arrow.png"
   },
   "sounds": {

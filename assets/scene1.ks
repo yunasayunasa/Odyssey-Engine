@@ -21,7 +21,7 @@ yuna:「次は、怒った顔で戻ります！」
 [p]
 
 ; ★ 再び反転し、今度はangry表情に戻す
-[flip name="yuna" face="normal" time=400]
+[flip name="yuna" face="angry" time=400]
 [wait time=500]
 
 yuna:「ふん！これが怒った顔よ！」
