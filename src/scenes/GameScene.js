@@ -142,6 +142,8 @@ this.scenarioManager.registerTag('fadein', handleFadein);
             // 中断していたタグの処理を完了させ、次の行へ進む
             this.scenarioManager.finishTagExecution();
         });
+        // ★★★ SystemSceneをここで一度だけ起動する ★★★
+        this.scene.launch('SystemScene');
 
         // create完了後、少し待ってから最初のnextを呼ぶ
         this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
