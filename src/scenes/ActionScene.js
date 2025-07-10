@@ -22,11 +22,11 @@ export default class ActionScene extends Phaser.Scene {
         this.time.delayedCall(3000, () => {
             console.log("ActionScene: オーバーレイ表示をリクエストします。");
             
-            // ★★★ これが正しい呼び出し方です ★★★
+               // ★★★ これが、シーン間で通信する最も安全な方法 ★★★
             this.scene.get('SystemScene').events.emit('request-overlay', { 
                 scenario: 'overlay_test.ks'
             });
-
         });
     }
 }
+

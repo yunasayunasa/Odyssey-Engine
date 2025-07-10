@@ -7,8 +7,7 @@ export default class ConfigScene extends Phaser.Scene {
     create() {
         // GameSceneとUISceneからConfigManagerを受け取る
         const gameScene = this.scene.get('GameScene');
-        this.configManager = gameScene.configManager;
-
+ this.configManager = this.sys.registry.get('configManager');
         // 背景
         this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7).setOrigin(0, 0);
         

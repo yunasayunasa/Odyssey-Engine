@@ -6,11 +6,8 @@ import SaveLoadScene from './scenes/SaveLoadScene.js';
 import ConfigScene from './scenes/ConfigScene.js';
 import BacklogScene from './scenes/BacklogScene.js';
 import ActionScene from './scenes/ActionScene.js';
-import LoadingScene from './scenes/LoadingScene.js'; 
-import ConfigManager from './core/ConfigManager.js';
-
 import NovelOverlayScene from './scenes/NovelOverlayScene.js';
-
+import ConfigManager from './core/ConfigManager.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -21,23 +18,20 @@ const config = {
         width: 1280,
         height: 720
     },
-    // ★★★ 起動するシーンは、PreloadSceneだけでOK ★★★
-    scene: [PreloadScene, GameScene, UIScene, SaveLoadScene, ConfigScene, BacklogScene,  SystemScene, ActionScene, LoadingScene, NovelOverlayScene],
- callbacks: {
-        preBoot: (game) => {
-            game.config.globals = {
-                configManager: new ConfigManager(),
-               
-            }; 
-        }
-    }
+    // ★★★ すべてのシーンを、ただ配列に入れるだけ ★★★
+    scene: [
+        PreloadScene, 
+        GameScene, 
+        UIScene, 
+        SystemScene, 
+        SaveLoadScene, 
+        ConfigScene, 
+        BacklogScene, 
+        ActionScene, 
+        NovelOverlayScene
+    ]
 };
 
-
-
-
-
-
-
-
 const game = new Phaser.Game(config);
+
+// ★★★ preBootや手動addは、すべて削除 ★★★

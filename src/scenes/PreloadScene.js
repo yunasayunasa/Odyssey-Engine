@@ -28,6 +28,12 @@ export default class PreloadScene extends Phaser.Scene {
     create() {
         console.log("PreloadScene: ロード完了。ゲームの初期設定を行います。");
         const assetDefine = this.cache.json.get('asset_define');
+        // ★★★ 1. ConfigManagerを生成する ★★★
+        const configManager = new ConfigManager();
+        
+        // ★★★ 2. 生成したインスタンスを、レジストリに登録する ★★★
+        // これで、ゲーム内のどのシーンからでも 'configManager' というキーでアクセスできる
+        this.registry.set('configManager', configManager);
         
         // --- 3. asset_define.jsonに基づいて、画像と音声をロードキューに追加 ---
         // (この処理は、createの中で行う必要がある)
@@ -53,13 +59,10 @@ export default class PreloadScene extends Phaser.Scene {
                 }
             }
             
-            // ★ ConfigManagerを生成
-            const configManager = new ConfigManager();
-            
+         
             // ★★★ 全ての準備が整ったら、データを渡して次のシーンを開始 ★★★
             this.scene.start('GameScene', { 
                 charaDefs: charaDefs,
-                configManager: configManager
             });
             // UISceneとSystemSceneも同時に起動
             this.scene.launch('UIScene');
