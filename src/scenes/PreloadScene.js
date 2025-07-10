@@ -4,62 +4,66 @@ export default class PreloadScene extends Phaser.Scene {
     }
 
     preload() {
-        console.log("PreloadScene: 準備中...");
-        this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
+        console.log("PreloadScene: 起動。アセット定義ファイルを読み込みます。");
+        // ★★★ 共通アセットの定義ファイルだけをロード ★★★
         this.load.json('asset_define', 'assets/asset_define.json');
+        
+        // ★★★ 最初のクリックのためのWebフォントローダーもここで ★★★
+        this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
     }
 
     create() {
-        console.log("PreloadScene: アセット定義を解析・ロードします。");
+        console.log("PreloadScene: アセット定義を解析し、LoadingSceneに処理を依頼します。");
         const assetDefine = this.cache.json.get('asset_define');
         
-        // ★★★ キャラクター定義を自動生成するための空のオブジェクト ★★★
+        // --- ロードすべきアセットのリストを作成 ---
+        const assetsToLoad = [];
         const autoCharaDefs = {};
 
-        // --- imagesセクションのロードと、キャラクター定義の自動生成 ---
+        // キャラクター画像を解析してリストに追加
         for (const key in assetDefine.images) {
-            // まずは通常通り画像をロードリストに追加
-            this.load.image(key, assetDefine.images[key]);
-
-            // ★★★ キーを '_' で分割し、キャラクター定義を試みる ★★★
             const parts = key.split('_');
-            // 'yuna_normal' のように、分割して2つのパーツになったものだけを対象とする
             if (parts.length === 2) {
-                const charaName = parts[0]; // 'yuna'
-                const faceName = parts[1];  // 'normal'
-
-                // まだ定義がなければ、新しいキャラクター定義オブジェクトを作成
+                const charaName = parts[0];
+                const faceName = parts[1];
                 if (!autoCharaDefs[charaName]) {
-                    autoCharaDefs[charaName] = {
-                        jname: charaName, // とりあえずキャラ名を日本語名としておく
-                        face: {}
-                    };
+                    autoCharaDefs[charaName] = { jname: charaName, face: {} };
                 }
-                // 表情名と画像キーを紐付ける
-                // 例: autoCharaDefs['yuna']['face']['normal'] = 'yuna_normal';
                 autoCharaDefs[charaName].face[faceName] = key;
             }
+            assetsToLoad.push({ type: 'image', key: key, path: assetDefine.images[key] });
         }
-
-        // --- soundsセクションのロード ---
+        // 音声アセットをリストに追加
         for (const key in assetDefine.sounds) {
-            this.load.audio(key, assetDefine.sounds[key]);
+            assetsToLoad.push({ type: 'audio', key: key, path: assetDefine.sounds[key] });
         }
         
-        // --- ロードの進捗と完了処理 ---
-        this.load.on('progress', (value) => {
-            console.log(`Loading... ${Math.round(value * 100)}%`);
-        });
+        // 生成したキャラクター定義をグローバルに保存
+        this.sys.game.config.globals.charaDefs = autoCharaDefs;
 
-        this.load.on('complete', () => {
-            console.log("アセットロード完了。");
-            console.log("キャラクター定義を自動生成しました:", autoCharaDefs);
-            
-            // ★★★ 自動生成したcharaDefsをGameSceneに渡す ★★★
-            this.scene.start('GameScene', { charaDefs: autoCharaDefs });
+        // --- LoadingSceneを起動 ---
+        this.scene.launch('LoadingScene', {
+            assets: assetsToLoad,
+            onComplete: () => {
+                console.log("PreloadScene: 全アセットのロード完了通知を受け取りました。");
+                // ★★★ ここで「TAP TO START」を表示する ★★★
+                WebFont.load({
+                    google: { families: ['Noto Sans JP'] },
+                    active: () => this.showStartScreen(),
+                    inactive: () => this.showStartScreen()
+                });
+            }
         });
+    }
 
-        // ロードを開始
-        this.load.start();
+    showStartScreen() {
+        const startText = this.add.text(640, 360, 'TAP TO START', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+        
+        this.input.once('pointerdown', () => {
+            // ★★★ ゲームのメインシーンを開始 ★★★
+            this.scene.start('GameScene');
+            this.scene.start('UIScene');   // GameSceneと同時にUISceneも起動
+            // SystemSceneはactive:trueなので自動で起動している
+        });
     }
 }
