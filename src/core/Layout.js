@@ -20,5 +20,16 @@ export const Layout = {
             center: { x: 640, y: 450 },
             right:  { x: 1000, y: 450 }
         }
+    },
+     ui: {
+        messageWindow: {
+            x: 640,  // 画面中央 (1280 / 2)
+            y: 600,  // 画面下部
+            padding: 35
+        },
+        choiceButton: {
+            startY: 200,
+            stepY: 90
+        }
     }
 };
