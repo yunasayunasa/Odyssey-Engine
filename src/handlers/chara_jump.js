@@ -1,29 +1,10 @@
-/**
- * [chara_jump] タグの処理 // ← コメントも修正
- * 指定されたキャラクターをその場でジャンプさせる
- * @param {Object} params - {name, time, height}
- */
-// ★★★ 関数名も変更 ★★★
 export function handleCharaJump(manager, params) {
     const name = params.name;
-    // ★★★ エラーメッセージも修正 ★★★
-    if (!name) { console.warn('[chara_jump] nameは必須です。'); 
-       
-       
-        //manager.next(); 
-        manager.finishTagExecution();
-        return;
-    manager.finishTagExecution();
-    }
-
+    if (!name) { console.warn('[chara_jump] nameは必須です。'); manager.finishTagExecution(); return; }
     const chara = manager.scene.characters[name];
-    if (!chara) { console.warn(`[chara_jump] キャラクター[${name}]が見つかりません。`);
-    manager.finishTagExecution();
-   // manager.next(); 
-    return; }
+    if (!chara) { console.warn(`[chara_jump] キャラクター[${name}]が見つかりません。`); manager.finishTagExecution(); return; }
 
-
-     // --- パラメータ取得 ---
+    // --- パラメータ取得 ---
     const time = Number(params.time) || 500;
     const height = Number(params.height) || 50;
     const x_add = Number(params.x_add) || 0;
@@ -41,28 +22,29 @@ export function handleCharaJump(manager, params) {
     const tweenConfig = {
         targets: chara,
         props: {
-            x: { value: targetX, duration: time },
+            x: { value: targetX, duration: time, ease: 'Linear' },
             y: { value: originY - height, duration: time / 2, yoyo: true, ease: 'Sine.Out' }
         },
         onComplete: () => {
-            // ループしない場合のみ、完了処理を行う
-            if (!loop) {
-                chara.setPosition(targetX, targetY); // 最終位置に補正
-                // (状態更新のロジックもここに追加)
+            // ★ onCompleteは、ループしない場合 と nowaitでない場合 の両方を満たす時だけ呼ばれる
+            if (!loop && !noWait) {
+                chara.setPosition(targetX, targetY);
+                // (ここに状態更新ロジックを入れると、より正確になる)
                 manager.finishTagExecution();
             }
         }
     };
     
     if (loop) {
-        tweenConfig.repeat = -1; // 無限ループ
+        tweenConfig.repeat = -1;
     }
 
-    // Tween実行
+    // --- Tween実行 ---
     manager.scene.tweens.add(tweenConfig);
 
-    // ★ nowaitがtrueなら、アニメーションを待たずに即完了通知
-    if (noWait || loop) {
+    // ★★★ nowaitの場合だけ、即座に完了を通知する ★★★
+    if (noWait) {
         manager.finishTagExecution();
     }
+    // ループの場合は、ここでは何も呼ばない！[stop_anim]を待つ。
 }
