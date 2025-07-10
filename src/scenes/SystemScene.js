@@ -36,9 +36,13 @@ export default class SystemScene extends Phaser.Scene {
             console.log("SystemScene: オーバーレイ表示リクエストを受信", data);
             
             // 呼び出し元のシーン(ActionSceneなど)は止めない！
-            
+            const gameScene = this.scene.get('GameScene');
+            const charaDefs = gameScene.charaDefs;
             // NovelOverlaySceneとUISceneを上に重ねて起動
-            this.scene.launch('NovelOverlayScene', data);
+            this.scene.launch('NovelOverlayScene', { 
+                scenario: data.scenario,
+                charaDefs: charaDefs 
+            });
             this.scene.launch('UIScene');
         });
 

@@ -56,10 +56,11 @@ export default class GameScene extends Phaser.Scene {
         this.uiButtons = [];
     }
 
-   init(data) {
+       init(data) {
         // どのシナリオを再生するか、呼び出し元から受け取る
         this.startScenario = data.scenario || 'scene1.ks';
-        this.charaDefs = this.sys.game.config.globals.charaDefs;
+        // ★★★ SystemSceneから渡されたcharaDefsを受け取る ★★★
+        this.charaDefs = data.charaDefs || {};
     }
     
 
