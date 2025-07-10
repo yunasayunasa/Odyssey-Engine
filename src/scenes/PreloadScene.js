@@ -1,69 +1,72 @@
+import ConfigManager from '../core/ConfigManager.js'; // ConfigManagerをここでimport
+
 export default class PreloadScene extends Phaser.Scene {
     constructor() {
         super('PreloadScene');
     }
 
     preload() {
-        console.log("PreloadScene: 起動。アセット定義ファイルを読み込みます。");
-        // ★★★ 共通アセットの定義ファイルだけをロード ★★★
-        this.load.json('asset_define', 'assets/asset_define.json');
+        console.log("PreloadScene: 起動。全アセットのロードを開始します。");
         
-        // ★★★ 最初のクリックのためのWebフォントローダーもここで ★★★
+        // --- 1. ロード画面UIの表示 ---
+        const progressBar = this.add.graphics();
+        const progressBox = this.add.graphics();
+        progressBox.fillStyle(0x222222, 0.8).fillRect(340, 320, 600, 50);
+        const percentText = this.add.text(640, 345, '0%', { fontSize: '24px', fill: '#fff' }).setOrigin(0.5);
+        this.add.text(640, 280, 'Now Loading...', { fontSize: '36px', fill: '#ffffff' }).setOrigin(0.5);
+        
+        this.load.on('progress', (value) => {
+            percentText.setText(parseInt(value * 100) + '%');
+            progressBar.clear().fillStyle(0xffffff, 1).fillRect(350, 330, 580 * value, 30);
+        });
+        
+        // --- 2. アセットのロード ---
+        this.load.json('asset_define', 'assets/asset_define.json');
         this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
     }
 
     create() {
-        console.log("PreloadScene: アセット定義を解析し、LoadingSceneに処理を依頼します。");
+        console.log("PreloadScene: ロード完了。ゲームの初期設定を行います。");
         const assetDefine = this.cache.json.get('asset_define');
         
-        // --- ロードすべきアセットのリストを作成 ---
-        const assetsToLoad = [];
-        const autoCharaDefs = {};
-
-        // キャラクター画像を解析してリストに追加
+        // --- 3. asset_define.jsonに基づいて、画像と音声をロードキューに追加 ---
+        // (この処理は、createの中で行う必要がある)
         for (const key in assetDefine.images) {
-            const parts = key.split('_');
-            if (parts.length === 2) {
-                const charaName = parts[0];
-                const faceName = parts[1];
-                if (!autoCharaDefs[charaName]) {
-                    autoCharaDefs[charaName] = { jname: charaName, face: {} };
-                }
-                autoCharaDefs[charaName].face[faceName] = key;
-            }
-            assetsToLoad.push({ type: 'image', key: key, path: assetDefine.images[key] });
+            this.load.image(key, assetDefine.images[key]);
         }
-        // 音声アセットをリストに追加
         for (const key in assetDefine.sounds) {
-            assetsToLoad.push({ type: 'audio', key: key, path: assetDefine.sounds[key] });
+            this.load.audio(key, assetDefine.sounds[key]);
         }
         
-        // 生成したキャラクター定義をグローバルに保存
-        this.sys.game.config.globals.charaDefs = autoCharaDefs;
-
-        // --- LoadingSceneを起動 ---
-        this.scene.launch('LoadingScene', {
-            assets: assetsToLoad,
-            onComplete: () => {
-                console.log("PreloadScene: 全アセットのロード完了通知を受け取りました。");
-                // ★★★ ここで「TAP TO START」を表示する ★★★
-                WebFont.load({
-                    google: { families: ['Noto Sans JP'] },
-                    active: () => this.showStartScreen(),
-                    inactive: () => this.showStartScreen()
-                });
+        // --- 4. ロード完了後の処理を定義 ---
+        this.load.once('complete', () => {
+            console.log("全アセットロード完了。");
+            
+            // ★ キャラクター定義を生成
+            const charaDefs = {};
+            for (const key in assetDefine.images) {
+                const parts = key.split('_');
+                if (parts.length === 2) {
+                    const [charaName, faceName] = parts;
+                    if (!charaDefs[charaName]) charaDefs[charaName] = { jname: charaName, face: {} };
+                    charaDefs[charaName].face[faceName] = key;
+                }
             }
+            
+            // ★ ConfigManagerを生成
+            const configManager = new ConfigManager();
+            
+            // ★★★ 全ての準備が整ったら、データを渡して次のシーンを開始 ★★★
+            this.scene.start('GameScene', { 
+                charaDefs: charaDefs,
+                configManager: configManager
+            });
+            // UISceneとSystemSceneも同時に起動
+            this.scene.launch('UIScene');
+            this.scene.launch('SystemScene');
         });
-    }
-
-    showStartScreen() {
-        const startText = this.add.text(640, 360, 'TAP TO START', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
         
-        this.input.once('pointerdown', () => {
-            // ★★★ ゲームのメインシーンを開始 ★★★
-            this.scene.start('GameScene');
-            this.scene.start('UIScene');   // GameSceneと同時にUISceneも起動
-            // SystemSceneはactive:trueなので自動で起動している
-        });
+        // --- 5. 追加アセットのロードを開始 ---
+        this.load.start();
     }
 }
