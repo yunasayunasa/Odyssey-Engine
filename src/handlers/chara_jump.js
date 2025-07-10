@@ -23,34 +23,46 @@ export function handleCharaJump(manager, params) {
     return; }
 
 
-    const time = Number(params.time) || 500; // ジャンプ全体の時間(ms)
-    const halfTime = time / 2; // 片道の時間
-    const height = Number(params.height) || 50; // ジャンプの高さ(px)
+     // --- パラメータ取得 ---
+    const time = Number(params.time) || 500;
+    const height = Number(params.height) || 50;
+    const x_add = Number(params.x_add) || 0;
+    const y_add = Number(params.y_add) || 0;
+    const loop = params.loop === 'true';
+    const noWait = params.nowait === 'true';
 
-    // 元のY座標を保存
+    // --- 座標計算 ---
+    const originX = chara.x;
     const originY = chara.y;
+    const targetX = originX + x_add;
+    const targetY = originY + y_add;
 
-    // Tweenでジャンプアニメーションを実行
-    manager.scene.tweens.add({
+    // --- Tween定義 ---
+    const tweenConfig = {
         targets: chara,
-        y: originY - height, // 目標のY座標（上へ）
-        duration: halfTime,
-        ease: 'Power1', // 飛び出す時
-        yoyo: true, // trueにすると、アニメーション後、元の状態(originY)に自動で戻る
-        
-        // ★★★ yoyoで戻ってくる時のイージングは別に指定できる ★★★
-        easeParams: [],
-        easeEquations: {
-            yoyo: 'Bounce.easeOut' // 戻ってくる時は、少しだけ跳ねるような感じ
+        props: {
+            x: { value: targetX, duration: time },
+            y: { value: originY - height, duration: time / 2, yoyo: true, ease: 'Sine.Out' }
         },
-
         onComplete: () => {
-            // Y座標が微妙にずれることがあるので、正確な位置に戻す
-            chara.y = originY;
-            
-            // 次のシナリオへ
-            manager.finishTagExecution();
-            //manager.next();
+            // ループしない場合のみ、完了処理を行う
+            if (!loop) {
+                chara.setPosition(targetX, targetY); // 最終位置に補正
+                // (状態更新のロジックもここに追加)
+                manager.finishTagExecution();
+            }
         }
-    });
+    };
+    
+    if (loop) {
+        tweenConfig.repeat = -1; // 無限ループ
+    }
+
+    // Tween実行
+    manager.scene.tweens.add(tweenConfig);
+
+    // ★ nowaitがtrueなら、アニメーションを待たずに即完了通知
+    if (noWait || loop) {
+        manager.finishTagExecution();
+    }
 }
