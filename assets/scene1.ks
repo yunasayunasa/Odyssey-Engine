@@ -1,25 +1,45 @@
-; 登場人物を配置
-[chara_show name="yuna" pos="left"]
-[chara_show name="kaito" pos="right" visible=false] ; kaitoは見えない状態で配置
+; === 演出タグ最終テストシナリオ ===
 
-; yunaがループでジャンプを開始（nowaitなので、すぐに次の行へ）
-[chara_jump name="yuna" loop="true" nowait="true" height=20 speed=150]
+[bg storage="bg_school"]
+[chara_show name="yuna" pos="center"]
+[wait time=500]
 
-yuna:「ジャンプしながら喋っています！[br]楽しい！」
+yuna:「これから、flipとjumpの最終テストを始めます。」
 [p]
 
-; yunaのジャンプを止める
+yuna:「まずは、反転しながら表情を『笑顔』に変えてみますね。」
+[p]
+
+; ★ 反転と同時に、表情をsmileに差し替える
+[flip name="yuna" face="smile" time=400]
+[wait time=500]
+
+yuna:「どうかな？笑顔で、左向きになりましたか？」
+[p]
+
+yuna:「次は、怒った顔で戻ります！」
+[p]
+
+; ★ 再び反転し、今度はangry表情に戻す
+[flip name="yuna" face="normal" time=400]
+[wait time=500]
+
+yuna:「ふん！これが怒った顔よ！」
+[p]
+
+yuna:「最後に、喜びの舞をお見せします！[br]左右にジャンプし続けるわよ！」
+[p]
+
+; ★ ループするジャンプを開始（nowaitで即座に次に進む）
+[chara_jump name="yuna" x_add=100 height=30 time=400 loop=true nowait=true]
+[wait time=2000] ; 2秒間、右にジャンプし続ける
+
 [stop_anim name="yuna"]
 
-yuna:「ジャンプ、止まったかな？」
-[p]
+[chara_jump name="yuna" x_add=-100 height=30 time=400 loop=true nowait=true]
+[wait time=2000] ; 2秒間、左にジャンプし続ける
 
-; kaitoを登場させて、喜びの舞
-[chara_show name="kaito" visible=true time=500]
-[wait time=500]
-[call storage="dance_routine.ks"] ; 喜びの舞をサブルーチンで呼び出す
+[stop_anim name="yuna"]
 
-yuna:「すごい、二人で踊っちゃった！」
-[p]
-
+yuna:「これで全ての演出テストは完了です！」
 [s]
