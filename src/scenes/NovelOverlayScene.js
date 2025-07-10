@@ -48,7 +48,7 @@ export default class NovelOverlayScene extends Phaser.Scene {
     }
 
 
-       iinit(data) {
+       init(data) {
         this.startScenario = data.scenario;
         this.charaDefs = data.charaDefs;
     }
