@@ -46,7 +46,7 @@ export function handleCharaJump(manager, params) {
         },
         onComplete: () => {
             // ループしない場合のみ、完了処理を行う
-            if (!nowait) {
+            if (!loop) {
                 chara.setPosition(targetX, targetY); // 最終位置に補正
                 // (状態更新のロジックもここに追加)
                 manager.finishTagExecution();

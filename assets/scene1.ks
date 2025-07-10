@@ -36,7 +36,7 @@ yuna:「最後に、喜びの舞をお見せします！[br]左右にジャン�
 
 [stop_anim name="yuna"]
 
-[chara_jump name="yuna" x_add=-100 height=30 time=400 loop=true nowait=true]
+[chara_jump name="yuna"  time=400  nowait=true]
 [wait time=2000] ; 2秒間、左にジャンプし続ける
 
 [stop_anim name="yuna"]
