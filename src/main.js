@@ -7,7 +7,8 @@ import ConfigScene from './scenes/ConfigScene.js';
 import BacklogScene from './scenes/BacklogScene.js';
 import ActionScene from './scenes/ActionScene.js';
 import LoadingScene from './scenes/LoadingScene.js'; 
-// ConfigManagerのimportは不要になる
+import ConfigManager from './core/ConfigManager.js';
+
 import NovelOverlayScene from './scenes/NovelOverlayScene.js';
 
 
