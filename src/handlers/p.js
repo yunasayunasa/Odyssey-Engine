@@ -9,6 +9,7 @@ export function handlePageBreak(manager, params) {
         // 選択肢を表示して待つので、ここで処理は終わり
         // ★★★ 選択肢を表示したら、ここで処理を中断する ★★★
         // finishTagExecution() は呼ばない！クリックを待つ。
+        manager.isWaitingClick = true;
     } else {
         manager.isWaitingClick = true;
         manager.messageWindow.showNextArrow();
