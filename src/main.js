@@ -8,6 +8,8 @@ import BacklogScene from './scenes/BacklogScene.js';
 import ActionScene from './scenes/ActionScene.js';
 import LoadingScene from './scenes/LoadingScene.js'; 
 // ConfigManagerのimportは不要になる
+import NovelOverlayScene from './scenes/NovelOverlayScene.js';
+
 
 const config = {
     type: Phaser.AUTO,
@@ -19,7 +21,7 @@ const config = {
         height: 720
     },
     // ★★★ 起動するシーンは、PreloadSceneだけでOK ★★★
-    scene: [PreloadScene, GameScene, UIScene, SystemScene, SaveLoadScene, ConfigScene, BacklogScene, ActionScene, LoadingScene]
+    scene: [PreloadScene, GameScene, UIScene, SystemScene, SaveLoadScene, ConfigScene, BacklogScene, ActionScene, LoadingScene, NovelOverlayScene]
 };
 
 const game = new Phaser.Game(config);
