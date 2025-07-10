@@ -74,13 +74,18 @@ export default class NovelOverlayScene extends Phaser.Scene {
           this.configManager = this.sys.registry.get('configManager');
         this.stateManager = new StateManager();
         this.soundManager = new SoundManager(this, this.configManager);
+         // 1. MessageWindowを生成
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
-         // MessageWindowの位置決めと追加
+        
+        // 2. Layout.jsに従って位置を決める
         const mwLayout = Layout.ui.messageWindow;
         this.messageWindow.setPosition(mwLayout.x, mwLayout.y);
-        this.layer.message.add(this.messageWindow);
-        this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
         
+        // 3. レイヤーに追加する
+        this.layer.message.add(this.messageWindow);
+        
+        // 4. ScenarioManagerを生成
+        this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
         // --- タグハンドラの登録 ---
         this.scenarioManager.registerTag('chara_show', handleCharaShow);
         this.scenarioManager.registerTag('chara_hide', handleCharaHide);
