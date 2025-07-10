@@ -4,12 +4,11 @@ export default class ActionScene extends Phaser.Scene {
     }
 
     create() {
-        // 背景色
+        console.log("ActionScene: create 開始");
         this.cameras.main.setBackgroundColor('#4a86e8');
 
-        // ★★★ "ゲームが動いている感"を出すためのダミーオブジェクト ★★★
+        // ダミーのプレイヤーオブジェクト
         const player = this.add.text(100, 360, 'PLAYER', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
-        // 右に移動し続けるアニメーション
         this.tweens.add({
             targets: player,
             x: 1180,
@@ -19,14 +18,13 @@ export default class ActionScene extends Phaser.Scene {
             repeat: -1
         });
         
-        // ★★★ 3秒後に、オーバーレイ表示をリクエストする ★★★
+        // ★★★ 3秒後に、一度だけオーバーレイ表示をリクエストする ★★★
         this.time.delayedCall(3000, () => {
             console.log("ActionScene: オーバーレイ表示をリクエストします。");
             this.scene.get('SystemScene').events.emit('request-overlay', { 
-                scenario: 'overlay_test.ks' // 表示したいシナリオファイルを指定
+                // ★★★ ".ks" を付け忘れないこと！ ★★★
+                scenario: 'overlay_test.ks'
             });
         });
-
-        // 戻るボタンは、オーバーレイが終了すれば不要なので削除してもOK
     }
 }
