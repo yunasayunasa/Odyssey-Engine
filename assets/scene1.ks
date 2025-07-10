@@ -40,6 +40,6 @@ yuna:「最後に、喜びの舞をお見せします！[br]左右にジャン�
 [wait time=2000] ; 2秒間、左にジャンプし続ける
 
 [stop_anim name="yuna"]
-
+[call storage="ActionScene.js"]
 yuna:「これで全ての演出テストは完了です！」
 [s]
