@@ -1,7 +1,7 @@
 ; === scene2.ks ===
 ; このシナリオで使うアセットを宣言
-@asset image key=cg_secret path=assets/event_cg_01.jpg
-@asset audio key=smash path=assets/smash.mp3
+asset type=image key=cg_secret path=assetsevent_cg_01.jpg
+@asset type=audio key=smash path=assets/smash.mp3
 
 *start
 kaito:「やあ、ここはscene2.ksだよ。」
