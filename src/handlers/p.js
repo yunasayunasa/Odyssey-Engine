@@ -7,10 +7,11 @@ export function handlePageBreak(manager, params) {
         manager.isWaitingChoice = true;
         manager.scene.displayChoiceButtons();
         // 選択肢を表示して待つので、ここで処理は終わり
-        return;
+        // ★★★ 選択肢を表示したら、ここで処理を中断する ★★★
+        // finishTagExecution() は呼ばない！クリックを待つ。
+    } else {
+        manager.isWaitingClick = true;
+        manager.messageWindow.showNextArrow();
+        // ★★★ クリック待ちなので、こちらもfinishTagExecution()は呼ばない！ ★★★
     }
-    
-    // 通常のクリック待ち
-    manager.isWaitingClick = true;
-    manager.messageWindow.showNextArrow();
 }
