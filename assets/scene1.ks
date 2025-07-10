@@ -49,7 +49,6 @@ yuna:「じゃあ、私は向こうに歩いていくね。」
 kaito:「さて、&f.player_name。僕に話しかけてみるかい？」
 [link target="*talk_to_kaito" text="話しかける"]
 [link target="*ignore_kaito" text="無視する"]
-[p]
 
 *talk_to_kaito
 [eval exp="f.love_meter += 10"]
