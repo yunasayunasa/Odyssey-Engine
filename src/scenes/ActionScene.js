@@ -18,13 +18,15 @@ export default class ActionScene extends Phaser.Scene {
             repeat: -1
         });
         
-        // ★★★ 3秒後に、一度だけオーバーレイ表示をリクエストする ★★★
+        // 3秒後に、オーバーレイ表示をリクエストする
         this.time.delayedCall(3000, () => {
             console.log("ActionScene: オーバーレイ表示をリクエストします。");
-        this.sys.game.config.globals.systemScene.events.emit('request-overlay', { 
-                // ★★★ ".ks" を付け忘れないこと！ ★★★
+            
+            // ★★★ これが正しい呼び出し方です ★★★
+            this.scene.get('SystemScene').events.emit('request-overlay', { 
                 scenario: 'overlay_test.ks'
             });
+
         });
     }
 }
