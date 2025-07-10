@@ -2,9 +2,9 @@
   "images": {
     "message_window": "assets/message_window.png",
      "yuna_normal": "assets/yuna_smile.png",
-      "yuna_smile": "assets/kaito_normal.png" ,
+      "kaito_normal": "assets/kaito_normal.png" ,
      "bg_school": "assets/bg_school.jpg" ,
-    
+    "cg01": "assets/event_cg_01.jpg" ,
      "yuna_angry": "assets/title_button.png",
      "next_arrow": "assets/next_arrow.png"
   },
