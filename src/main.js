@@ -6,6 +6,7 @@ import SaveLoadScene from './scenes/SaveLoadScene.js';
 import ConfigScene from './scenes/ConfigScene.js';
 import BacklogScene from './scenes/BacklogScene.js';
 import ActionScene from './scenes/ActionScene.js';
+import LoadingScene from './scenes/LoadingScene.js'; 
 // ConfigManagerのimportは不要になる
 
 const config = {
