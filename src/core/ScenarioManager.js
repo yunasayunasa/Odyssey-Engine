@@ -182,9 +182,10 @@ export default class ScenarioManager {
                 const { type, key, path } = params;
                 if (!type || !key || !path) continue;
 
-                if ((type === 'image' && !this.scene.textures.exists(key)) || (type === 'audio' && !this.scene.cache.audio.has(key))) {
-                    assetsToLoad.push({ type, key, path });
-                }
+                if ((type === 'image' && !this.scene.textures.exists(key)) ||
+                (type === 'audio' && !this.scene.cache.audio.has(key))) {
+                assetsToLoad.push({ type, key, path });
+            }
             }
             if (trimedLine.startsWith('*')) break;
         }
@@ -208,7 +209,7 @@ export default class ScenarioManager {
             this.jumpTo(targetLabel);
         }
     }
-    
+
     jumpTo(target) {
         const labelName = target.substring(1);
         const targetLineIndex = this.scenario.findIndex(line => line.trim().startsWith('*') && line.trim().substring(1) === labelName);
