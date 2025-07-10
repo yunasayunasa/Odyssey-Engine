@@ -77,9 +77,6 @@ export default class NovelOverlayScene extends Phaser.Scene {
          // 1. MessageWindowを生成
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
         
-        // 2. Layout.jsに従って位置を決める
-        const mwLayout = Layout.ui.messageWindow;
-        this.messageWindow.setPosition(mwLayout.x, mwLayout.y);
         
         // 3. レイヤーに追加する
         this.layer.message.add(this.messageWindow);
