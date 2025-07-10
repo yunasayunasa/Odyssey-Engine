@@ -22,7 +22,7 @@ const config = {
         height: 720
     },
     // ★★★ 起動するシーンは、PreloadSceneだけでOK ★★★
-    scene: [PreloadScene, GameScene, UIScene, SaveLoadScene, ConfigScene, BacklogScene,  SystemSceneActionScene, LoadingScene, NovelOverlayScene],
+    scene: [PreloadScene, GameScene, UIScene, SaveLoadScene, ConfigScene, BacklogScene,  SystemScene, ActionScene, LoadingScene, NovelOverlayScene],
  callbacks: {
         preBoot: (game) => {
             game.config.globals = {
