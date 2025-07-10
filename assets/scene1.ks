@@ -33,14 +33,16 @@ yuna:「じゃあ、いくつか演出を見せるね。まずは揺れてみる
 [wait time=500]
 kaito:「わっ、びっくりした！」
 
-yuna:「次は、ジャンプ！」
+
 [chara_jump name="kaito" height=50 time=600]
 [wait time=600]
+yuna:「次は、ジャンプ！」
 
-yuna:「じゃあ、私は向こうに歩いていくね。」
+
 [flip name="yuna" time=400]
 [walk name="yuna" x=-200 time=2000]
 [wait time=2000]
+yuna:「じゃあ、私は向こうに歩いていくね。」
 [chara_hide name="yuna"]
 
 ; --- ３．条件分岐と選択肢 ---
