@@ -109,14 +109,7 @@ export default class ScenarioManager {
             if (handler) {
                 // ★★★ isWaitingTagはもう使わない ★★★
                 // this.isWaitingTag = true;
- // ★★★ p, link は特別扱い ★★★
-        if (tagName === 'p' || tagName === 'link') {
-            handler(this, params); // ハンドラは待機状態に入るだけ
-            return; // parseを抜ける
-        }
-        // それ以外のタグは完了を待つ
-        this.isWaitingTag = true;
-        await handler(this, params);
+ // ★★★ 
                 // ★★★ ハンドラの実行結果を受け取る ★★★
                 const promise = handler(this, params);
 
