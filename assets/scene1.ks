@@ -27,10 +27,11 @@ kaito:「僕の`[chara_show]`は、`time`属性でフェードインしたよ。
 yuna:「じゃあ、いくつか演出を見せるね。まずは揺れてみる。」
 
 ; --- ２．動的演出タグ ---
-kaito:「わっ、びっくりした！」
+
 [shake name="yuna" time=500 power=10]
 [vibrate time=300 power=0.01]
 [wait time=500]
+kaito:「わっ、びっくりした！」
 
 yuna:「次は、ジャンプ！」
 [chara_jump name="kaito" height=50 time=600]
@@ -58,7 +59,7 @@ kaito:「話しかけてくれて嬉しいよ！ありがとう。」
 kaito:「そっか…ちょっと寂しいな。」
 [jump target="*choice_end"]
 
-*end_choice
+*choice_end
 [log exp="f.love_meter"]
 [if exp="f.love_meter > 0"]
   kaito:「君は優しい人だね。」
