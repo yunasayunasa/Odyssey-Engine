@@ -6,7 +6,7 @@
 
 yuna:「これから、flipとjumpの最終テストを始めます。」
 [p]
-[chara_jump name="yuna" x_add=100 height=30 time=400 loop=true nowait=true]
+[chara_jump name="yuna" x_add=100 height=30 time=400 loop=false nowait=true]
 yuna:「まずは、反転しながら表情を『笑顔』に変えてみますね。」
 [p]
 
