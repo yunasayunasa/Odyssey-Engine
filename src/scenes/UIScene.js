@@ -67,29 +67,34 @@ export default class UIScene extends Phaser.Scene {
                 duration: 300,
                 ease: 'Cubic.easeInOut'
             });
+            event.stopPropagation();
         });
 
         // パネル内の各ボタンの動作
         saveButton.on('pointerdown', () => {
             this.scene.pause('GameScene');
             this.scene.launch('SaveLoadScene', { mode: 'save' });
+        event.stopPropagation();
         });
         loadButton.on('pointerdown', () => {
             this.scene.pause('GameScene');
             this.scene.launch('SaveLoadScene', { mode: 'load' });
+       event.stopPropagation();
         });
         configButton.on('pointerdown', () => {
             this.scene.pause('GameScene');
             this.scene.pause('UIScene'); // Configを開くときはUIも止める
             this.scene.launch('ConfigScene');
+        event.stopPropagation();
         });
          // ★★★ バックログボタンの動作を定義 ★★★
         backlogButton.on('pointerdown', () => {
             this.scene.pause('GameScene');
             this.scene.pause('UIScene');
             this.scene.launch('BacklogScene');
+        event.stopPropagation();
         });
-      
+      this.input.setGlobalTopOnly(false);
          // ★★★ 初期レイアウト適用と、リサイズイベントの監視 ★★★
        /* this.checkOrientation(); // 起動時に一度チェック
         this.scale.on('resize', this.checkOrientation, this);*/
