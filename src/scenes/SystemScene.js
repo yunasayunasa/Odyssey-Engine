@@ -5,8 +5,10 @@ export default class SystemScene extends Phaser.Scene {
     }
 
     create() {
-        console.log("SystemScene: 起動しました。イベント監視を開始します。");
-        
+        console.log("SystemScene: 手動起動しました。イベント監視を開始します。");
+           // ★★★ 他のシーンは、グローバル変数経由でこのシーンを参照する ★★★
+        const systemEvents = this.sys.game.config.globals.systemScene.events;
+
         // ★★★ 他のシーンからの「シーン遷移して」という依頼を受信するリスナー ★★★
         this.events.on('request-scene-change', (data) => {
             console.log("SystemScene: シーン遷移リクエストを受信", data);

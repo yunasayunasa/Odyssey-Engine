@@ -21,7 +21,27 @@ const config = {
         height: 720
     },
     // ★★★ 起動するシーンは、PreloadSceneだけでOK ★★★
-    scene: [PreloadScene, GameScene, UIScene, SystemScene, SaveLoadScene, ConfigScene, BacklogScene, ActionScene, LoadingScene, NovelOverlayScene]
+    scene: [PreloadScene, GameScene, UIScene, SaveLoadScene, ConfigScene, BacklogScene, ActionScene, LoadingScene, NovelOverlayScene],
+ callbacks: {
+        preBoot: (game) => {
+            game.config.globals = {
+                configManager: new ConfigManager(),
+                systemScene: null // ★ 司令塔を保持する場所を確保
+
+            };
+        }
+    }
 };
 
+
+
+
+
+
+
+
 const game = new Phaser.Game(config);
+//★★★ ゲームが起動した直後に、手動でSystemSceneを生成・追加 ★★★
+game.scene.add('SystemScene', SystemScene, true);
+// ★★★ 生成したインスタンスを、グローバル変数に保存 ★★★
+game.config.globals.systemScene = game.scene.getScene('SystemScene');

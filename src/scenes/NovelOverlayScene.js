@@ -86,7 +86,7 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
              this.scenarioManager.registerTag('overlay_end', (manager) => {
             // SystemSceneに終了を報告
-            this.scene.get('SystemScene').events.emit('end-overlay', { from: 'NovelOverlayScene' });
+            this.sys.game.config.globals.systemScene.events.emit('end-overlay', { from: 'NovelOverlayScene' });
         });
         
         // --- タグハンドラの登録 ---
