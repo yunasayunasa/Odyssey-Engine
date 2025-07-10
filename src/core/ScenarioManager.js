@@ -112,6 +112,15 @@ export default class ScenarioManager {
  // ★★★ 
                 // ★★★ ハンドラの実行結果を受け取る ★★★
                 const promise = handler(this, params);
+                    // ★ jump, return, call(シーン遷移)は、自分でフロー制御するので待たない
+    if (['jump', 'return', 'call'].includes(tagName)) {
+        handler(this, params);
+        return; // parseはここで終了
+    }
+    // それ以外のタグは完了を待つ
+    this.isWaitingTag = true;
+    await handler(this, params);
+}
 
                 // ★★★ もしPromiseが返ってきたら、それが終わるまで待つ ★★★
                 if (promise instanceof Promise) {
