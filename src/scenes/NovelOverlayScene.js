@@ -39,32 +39,28 @@ import { handleStopAnim } from '../handlers/stop_anim.js';
 import { handleOverlayEnd } from '../handlers/overlay_end.js';
 import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
+import { Layout } from '../core/Layout.js';
 
 export default class NovelOverlayScene extends Phaser.Scene {
     constructor() {
         super('NovelOverlayScene');
-        this.scenarioManager = null;
-        this.soundManager = null;
-        this.stateManager = null;
-        this.messageWindow = null;
-        this.layer = {  character: null, cg: null, message: null };
-        this.charaDefs = null;
-        this.characters = {};
-    
+        Object.assign(this, { scenarioManager: null, soundManager: null, stateManager: null, messageWindow: null, configManager: null, layer: {}, charaDefs: null, characters: {} });
     }
 
-       init(data) {
-        // どのシナリオを再生するか、呼び出し元から受け取る
-        this.startScenario = data.scenario || 'scene1.ks';
-        // ★★★ SystemSceneから渡されたcharaDefsを受け取る ★★★
-        this.charaDefs = data.charaDefs || {};
+
+       iinit(data) {
+        this.startScenario = data.scenario;
+        this.charaDefs = data.charaDefs;
     }
     
 
     // ★★★ preloadメソッドを追加し、必要なシナリオを読み込む ★★★
+    // ★★★ 2. 受け取ったシナリオファイルだけをロードする ★★★
     preload() {
-        console.log(`NovelOverlayScene: シナリオ[${this.startScenario}]を読み込みます。`);
-        this.load.text(this.startScenario, `assets/${this.startScenario}`);
+        if (this.startScenario) {
+            console.log(`NovelOverlayScene: シナリオ[${this.startScenario}]を読み込みます。`);
+            this.load.text(this.startScenario, `assets/${this.startScenario}`);
+        }
     }
     create() {
          this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
@@ -79,9 +75,10 @@ export default class NovelOverlayScene extends Phaser.Scene {
         this.stateManager = new StateManager();
         this.soundManager = new SoundManager(this, this.configManager);
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
-        this.messageWindow.setPosition(640, 600); // 横画面用の座標
+         // MessageWindowの位置決めと追加
+        const mwLayout = Layout.ui.messageWindow;
+        this.messageWindow.setPosition(mwLayout.x, mwLayout.y);
         this.layer.message.add(this.messageWindow);
-        
         this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
         
         // --- タグハンドラの登録 ---
@@ -121,12 +118,13 @@ export default class NovelOverlayScene extends Phaser.Scene {
         this.scenarioManager.registerTag('overlay_end', handleOverlayEnd);
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
-        
-         // ゲーム開始
+         // --- ゲーム開始 ---
         this.scenarioManager.load(this.startScenario);
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
         this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
+        console.log("NovelOverlayScene: create 完了");
     }
+
 
 
     // GameSceneクラスの中に追加
