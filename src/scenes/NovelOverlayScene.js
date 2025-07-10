@@ -40,20 +40,17 @@ import { handleOverlayEnd } from '../handlers/overlay_end.js';
 import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
 
-export default class GameScene extends Phaser.Scene {
+export default class NovelOverlayScene extends Phaser.Scene {
     constructor() {
         super('NovelOverlayScene');
         this.scenarioManager = null;
         this.soundManager = null;
         this.stateManager = null;
         this.messageWindow = null;
-        this.layer = { background: null, character: null, cg: null, message: null };
+        this.layer = {  character: null, cg: null, message: null };
         this.charaDefs = null;
         this.characters = {};
-        this.configManager = null;
-        this.choiceButtons = []; 
-        this.pendingChoices = []; // ★★★ 選択肢の一時保管場所 ★★★
-        this.uiButtons = [];
+    
     }
 
        init(data) {
@@ -64,10 +61,11 @@ export default class GameScene extends Phaser.Scene {
     }
     
 
+    // ★★★ preloadメソッドを追加し、必要なシナリオを読み込む ★★★
     preload() {
-        this.load.text('scene1', 'assets/scene1.ks');
+        console.log(`NovelOverlayScene: シナリオ[${this.startScenario}]を読み込みます。`);
+        this.load.text(this.startScenario, `assets/${this.startScenario}`);
     }
-
     create() {
          this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
         
@@ -77,17 +75,14 @@ export default class GameScene extends Phaser.Scene {
         this.layer.cg = this.add.container(0, 0);
         this.layer.message = this.add.container(0, 0);
 
-        // --- マネージャー/UIクラスの生成 (依存関係に注意) ---
-        this.configManager = new ConfigManager();
+          this.configManager = this.sys.registry.get('configManager');
         this.stateManager = new StateManager();
         this.soundManager = new SoundManager(this, this.configManager);
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
+        this.messageWindow.setPosition(640, 600); // 横画面用の座標
         this.layer.message.add(this.messageWindow);
+        
         this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
-             this.scenarioManager.registerTag('overlay_end', (manager) => {
-            // SystemSceneに終了を報告
-            this.sys.game.config.globals.systemScene.events.emit('end-overlay', { from: 'NovelOverlayScene' });
-        });
         
         // --- タグハンドラの登録 ---
         this.scenarioManager.registerTag('chara_show', handleCharaShow);
@@ -127,8 +122,7 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
         
-        // --- ゲーム開始 ---
-      // 受け取ったシナリオをロードして開始
+         // ゲーム開始
         this.scenarioManager.load(this.startScenario);
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
         this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
