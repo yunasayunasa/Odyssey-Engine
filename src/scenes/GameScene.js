@@ -36,6 +36,10 @@ import { handleButton } from '../handlers/button.js';
 import { handleCall } from '../handlers/call.js';
 import { handleReturn } from '../handlers/return.js';
 import { handleStopAnim } from '../handlers/stop_anim.js';
+// import文に追加
+import { handleFadeout } from '../handlers/fadeout.js';
+import { handleFadein } from '../handlers/fadein.js';
+
 
 
 export default class GameScene extends Phaser.Scene {
@@ -113,6 +117,8 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager.registerTag('call', handleCall);
         this.scenarioManager.registerTag('return', handleReturn);
         this.scenarioManager.registerTag('stop_anim', handleStopAnim);
+        this.scenarioManager.registerTag('fadeout', handleFadeout);
+this.scenarioManager.registerTag('fadein', handleFadein);
         
         // --- ゲーム開始 ---
         this.scenarioManager.load('scene1');
