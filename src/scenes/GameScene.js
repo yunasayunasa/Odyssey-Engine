@@ -78,6 +78,9 @@ export default class GameScene extends Phaser.Scene {
         this.layer.character = this.add.container(0, 0);
         this.layer.cg = this.add.container(0, 0);
         this.layer.message = this.add.container(0, 0);
+        this.inputBlocker = this.add.rectangle(640, 360, 1280, 720)
+        .setInteractive()
+        .setVisible(false);
 
         // --- マネージャー/UIクラスの生成 (依存関係に注意) ---
         this.configManager = this.sys.registry.get('configManager');
@@ -157,6 +160,7 @@ performSave(slot) {
  * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
  */
 displayChoiceButtons() {
+    this.inputBlocker.setVisible(true);
     // Y座標の計算を、全体のボタン数に基づいて行う
     const totalButtons = this.pendingChoices.length;
     const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
@@ -181,6 +185,7 @@ displayChoiceButtons() {
  
 // ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
 clearChoiceButtons() {
+    this.inputBlocker.setVisible(false);
     this.choiceButtons.forEach(button => button.destroy());
     this.choiceButtons = []; // 配列を空にする
     // 選択肢待ち状態を解除
