@@ -19,22 +19,21 @@ export default class SystemScene extends Phaser.Scene {
                 console.error("SystemScene ERROR: GameSceneが見つかりません。");
                 return;
             }
-
-            // 呼び出し元のサブシーンを停止
-            if (fromSceneKey && this.scene.isActive(fromSceneKey)) {
-                this.scene.stop(fromSceneKey);
-            }
             
-            // ★★★ GameSceneを「再起動」し、復帰情報をinitデータとして渡す ★★★
-            this.scene.start('GameScene', { 
-                resumedFrom: fromSceneKey, // どのシーンから戻ってきたか
-                returnParams: params       // [return]タグやサブシーンからのパラメータ
-            });
+            
+            if (data.from && this.scene.isActive(data.from)) {
+                console.log(`シーン[${data.from}]を停止します。`);
+                this.scene.stop(data.from);
+            }
 
-            // ★★★ UISceneも再起動する ★★★
-            // stopせずにlaunchすると、古いUIが残ってしまうことがあるため、
-            // startでクリーンな状態から始めるのが安全
-            this.scene.start('UIScene');
+            console.log("GameSceneとUISceneを再開/起動します。");
+            if (!gameScene.sys.isActive()) {
+                this.scene.resume('GameScene');
+                this.scene.resume('UIScene');
+            }
+
+            console.log("GameSceneに 'execute-return' を命令します。");
+            gameScene.events.emit('execute-return', data.params);
         });
         // --- request-overlay イベントのリスナー ---
         this.events.on('request-overlay', (data) => {
