@@ -124,10 +124,7 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager.registerTag('stop_anim', handleStopAnim);
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
-       for (const key in tags) {
-            const tagName = key.replace('handle', '').replace(/([A-Z])/g, '_$1').toLowerCase().substring(1);
-            this.scenarioManager.registerTag(tagName, tags[key]);
-        }
+    
         
         this.input.once('pointerdown', () => { if (this.sound.context.state === 'suspended') this.sound.context.resume(); }, this);
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
