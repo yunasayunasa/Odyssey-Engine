@@ -49,7 +49,7 @@ export default class SystemScene extends Phaser.Scene {
             this.scene.launch('NovelOverlayScene', { 
                 scenario: data.scenario,
                 charaDefs: charaDefs,
-                returnTo: data.from // ★ returnTo情報も渡す
+              //  returnTo: data.from // ★ returnTo情報も渡す
             });
         });
         
