@@ -17,6 +17,7 @@ export default class UIScene extends Phaser.Scene {
         gameScene.scenarioManager.jumpTo(data.target);
         gameScene.scenarioManager.next();
     });
+    
 
         // --- 1. メニューパネル（ボタンの入れ物）を作成 ---
         // 最初は画面の外に隠しておく
@@ -106,6 +107,9 @@ export default class UIScene extends Phaser.Scene {
          // ★★★ 初期レイアウト適用と、リサイズイベントの監視 ★★★
        /* this.checkOrientation(); // 起動時に一度チェック
         this.scale.on('resize', this.checkOrientation, this);*/
+        this.scene.get('GameScene').events.on('display-choices', () => {
+    this.displayChoiceButtons();
+});
     }
 
     // 新しいメソッドを追加
