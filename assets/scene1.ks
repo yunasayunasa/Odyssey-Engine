@@ -72,7 +72,15 @@ kaito:「そっか…ちょっと寂しいな。」
 kaito:「ここで、思い出の一枚絵を表示してみよう。」
 [image storage="cg01" layer="cg" time=1000]
 [wait time=1500]
-[video storage="opening"]
+yuna:「見て！背景が動画になったよ！」
+kaito:「すごい！この上で普通に会話が進められるんだね。」
+[p]
+
+; 再び静的な背景に戻す
+[bg storage="bg_school" time=1500]
+[wait time=1500]
+
+yuna:「静止画にも問題なく戻れるね。完璧！」
 
 ; ↑動画の再生が終わると、自動的にこの行に進む
 
