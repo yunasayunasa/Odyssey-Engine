@@ -187,15 +187,16 @@ displayChoiceButtons() {
 // ★★★ ボタンの見た目をここで定義 ★★★
     const buttonStyle = {
         fontSize: '40px', // 文字を少し大きく
-        fill: '#fff',
+        fill: '#ccc',
         backgroundColor: '#333333',
         // 内側の余白を調整
         padding: {
             x: 40, // 横の余白を増やす
-            y: 20  // 縦の余白を増やす
+            y: 10  // 縦の余白を増やす
         },
         align: 'center'
     };
+     const buttonHeight = 120; // ボタン間のY座標の間隔
     this.pendingChoices.forEach((choice, index) => {
         const y = startY + (index * 120); // ボタン間のスペース
 
