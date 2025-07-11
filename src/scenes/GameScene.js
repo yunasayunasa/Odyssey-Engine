@@ -133,8 +133,13 @@ this.scenarioManager.registerTag('fadein', handleFadein);
         }
         
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
+         // ★★★ SystemSceneからの命令を待つリスナー ★★★
+        this.events.on('execute-return', (params) => {
+            this.performReturn(params);
+        });
         this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
     }
+    
 
     // GameSceneクラスの中に追加
 performSave(slot) {
@@ -184,6 +189,8 @@ clearChoiceButtons() {
         this.scenarioManager.isWaitingChoice = false;
     }
 }
+
+
 
 clearChoiceButtons() {
     this.choiceButtons.forEach(button => button.destroy());
@@ -244,6 +251,28 @@ async performLoad(slot) { // asyncに戻しておくと後々安全
         console.error(`ロード処理でエラーが発生しました。`, e);
     }
 }
+ performReturn(params) {
+        if (this.scenarioManager.callStack.length === 0) return;
+        const returnInfo = this.scenarioManager.callStack.pop();
+
+        for (const key in params) {
+            if (key.startsWith('f.') || key.startsWith('sf.')) {
+                this.scenarioManager.stateManager.eval(`${key}="${params[key]}"`);
+            }
+        }
+        
+        const rawText = this.cache.text.get(returnInfo.file);
+        if(!rawText) { console.error(`[return] 復帰先のシナリオ[${returnInfo.file}]が見つかりません。`); return; }
+
+        this.scenarioManager.scenario = rawText.split(/\r\n|\n|\r/).filter(line => line.trim() !== '');
+        this.scenarioManager.currentFile = returnInfo.file;
+        this.scenarioManager.currentLine = returnInfo.line;
+        
+        rebuildScene(this, this.scenarioManager.stateManager.getState()); // ★ 画面を再構築
+        
+        this.scenarioManager.next();
+    }
+
 }
 /**
  * ロードした状態に基づいて、シーンの表示を再構築するヘルパー関数
@@ -324,4 +353,6 @@ function rebuildScene(manager, state) {
     manager.highlightSpeaker(speakerName);*/
     
     console.log("--- rebuildScene 正常終了 ---");
+    
 }
+

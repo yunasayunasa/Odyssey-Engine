@@ -3,47 +3,51 @@ export default class SystemScene extends Phaser.Scene {
         super({ key: 'SystemScene', active: true });
     }
 
- // SystemScene.js の create メソッド
-
     create() {
         console.log("SystemScene: 起動・イベント監視開始");
         
         // --- request-overlay イベントのリスナー ---
         this.events.on('request-overlay', (data) => {
-            console.log("SystemScene: オーバーレイ表示リクエストを受信", data);
-            
-            // ★★★ GameSceneのインスタンスを安全に取得 ★★★
             const gameScene = this.scene.get('GameScene');
-            if (!gameScene) {
-                console.error("SystemScene: GameSceneが見つかりません。オーバーレイを起動できません。");
-                return;
-            }
-
-            // ★★★ GameSceneがプロパティとして持っているcharaDefsを取得 ★★★
-            const charaDefs = gameScene.charaDefs;
-            
-            // NovelOverlaySceneを起動し、取得したcharaDefsを渡す
+            const charaDefs = gameScene.sys.isActive() ? gameScene.charaDefs : {};
             this.scene.launch('NovelOverlayScene', { 
                 scenario: data.scenario,
                 charaDefs: charaDefs 
             });
         });
         
-        // --- end-overlay イベントのリスナー (こちらは変更なしでOK) ---
+        // --- end-overlay イベントのリスナー ---
         this.events.on('end-overlay', (data) => {
-            console.log("SystemScene: オーバーレイ終了報告を受信", data);
-            
-            if (this.scene.isActive(data.from)) {
-                this.scene.stop(data.from);
+            const actionScene = this.scene.get(data.returnTo);
+            if (actionScene && actionScene.sys.isActive()) {
+                actionScene.input.enabled = true;
             }
-
-            // ActionSceneなどから戻ってきた場合は、UISceneは存在しないので、
-            // 起動しているか確認してから止めるのが安全
-            if (this.scene.isActive('UIScene')) {
-                this.scene.stop('UIScene');
-            }
+            this.scene.stop(data.from);
         });
 
-        // --- call/return用のシーン遷移リスナーもここ ---
-        // (省略)
-    }}
+        // ★★★ すべての「ノベルパートへの帰還」を処理するリスナー ★★★
+        this.events.on('return-to-novel', (data) => {
+            const params = data.params;
+            const fromSceneKey = data.from;
+
+            console.log(`SystemScene: [${fromSceneKey}]からの帰還命令を受信`, params);
+
+            const gameScene = this.scene.get('GameScene');
+            if (!gameScene) return;
+
+            // 呼び出し元のサブシーンを停止
+            if (fromSceneKey && this.scene.isActive(fromSceneKey)) {
+                this.scene.stop(fromSceneKey);
+            }
+
+            // GameSceneが止まっていたら、再開させる
+            if (!gameScene.sys.isActive()) {
+                this.scene.resume('GameScene');
+                this.scene.resume('UIScene');
+            }
+
+            // GameSceneに、return処理の実行を命令
+            gameScene.events.emit('execute-return', params);
+        });
+    }
+}

@@ -18,15 +18,25 @@ export default class ActionScene extends Phaser.Scene {
             repeat: -1
         });
         
-        // 3秒後に、オーバーレイ表示をリクエストする
-        this.time.delayedCall(3000, () => {
+      this.time.delayedCall(3000, () => {
             console.log("ActionScene: オーバーレイ表示をリクエストします。");
             
-               // ★★★ これが、シーン間で通信する最も安全な方法 ★★★
+            // ★★★ 司令塔に、オーバーレイの起動を依頼 ★★★
             this.scene.get('SystemScene').events.emit('request-overlay', { 
-                scenario: 'overlay_test.ks'
+                from: 'ActionScene', // 誰が依頼したか
+                scenario: 'overlay_test.ks' // どのシナリオを再生するか
             });
+
+            // 依頼を出したら、自分は入力を受け付けなくする
+            this.input.enabled = false;
         });
+        
+    }
+       bossDefeated() {
+        this.scene.get('SystemScene').events.emit('return-to-novel', { 
+            'f.battle_result': 'win'
+        });
+        this.scene.stop();
     }
 }
 

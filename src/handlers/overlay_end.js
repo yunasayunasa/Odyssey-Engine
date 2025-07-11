@@ -1,12 +1,8 @@
 export function handleOverlayEnd(manager, params) {
-    console.log("[overlay_end] タグ実行。オーバーレイを終了します。", params);
+    console.log("[overlay_end] タグ実行。オーバーレイ終了を報告します。");
     
-    // SystemSceneに、終了報告と「次の行き先」情報を渡す
+    // ★★★ 司令塔に、オーバーレイの終了を報告 ★★★
     manager.scene.scene.get('SystemScene').events.emit('end-overlay', { 
-        from: manager.scene.scene.key,
-        targetStorage: params.storage, // 次のシナリオファイル or シーンキー
-        targetLabel: params.target    // 次のラベル
+        from: manager.scene.scene.key // 'NovelOverlayScene'
     });
-
-    // このタグはフローを終了させるので、next()等は呼ばない
 }
