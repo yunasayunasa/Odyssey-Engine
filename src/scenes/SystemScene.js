@@ -33,7 +33,7 @@ export default class SystemScene extends Phaser.Scene {
             }
 
             console.log("GameSceneに 'execute-return' を命令します。");
-            gameScene.events.emit('execute-return', data.params);
+          //  gameScene.events.emit('execute-return', data.params);
         });
         // --- request-overlay イベントのリスナー ---
         this.events.on('request-overlay', (data) => {
