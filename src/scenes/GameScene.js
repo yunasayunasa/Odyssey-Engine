@@ -80,9 +80,16 @@ export default class GameScene extends Phaser.Scene {
         this.layer.character = this.add.container(0, 0);
         this.layer.cg = this.add.container(0, 0);
         this.layer.message = this.add.container(0, 0);
-        this.inputBlocker = this.add.rectangle(1280, 720)
+           // ★ 全画面を覆う、透明で見えない入力ブロッカーを作成
+    this.choiceInputBlocker = this.add.rectangle(640, 360, 1280, 720)
         .setInteractive()
         .setVisible(false);
+    
+    // ブロッカーがクリックされた時のイベント（何もしない、で入力を止める）
+    this.choiceInputBlocker.on('pointerdown', (pointer) => {
+        // 必要なら「選択してください」などのフィードバックを出す
+        console.log("選択肢を選んでください");
+    });
 
         // --- マネージャー/UIクラスの生成 (依存関係に注意) ---
         this.configManager = this.sys.registry.get('configManager');
@@ -171,7 +178,9 @@ performSave(slot) {
  * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
  */
 displayChoiceButtons() {
-    this.inputBlocker.setVisible(true);
+     // ★ 選択肢表示時に、ブロッカーを最前面に表示
+    this.choiceInputBlocker.setVisible(true);
+    this.children.bringToTop(this.choiceInputBlocker);
     // Y座標の計算を、全体のボタン数に基づいて行う
     const totalButtons = this.pendingChoices.length;
     const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
@@ -179,7 +188,7 @@ displayChoiceButtons() {
     this.pendingChoices.forEach((choice, index) => {
         const y = startY + (index * 120); // ボタン間のスペース
 
-    const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '36px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 }})
+    const button = this.add.text(this.scale.width , y, choice.text, { fontSize: '36px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 }})
         .setOrigin(0.5)
         .setInteractive();
     
@@ -196,6 +205,8 @@ displayChoiceButtons() {
  
 // ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
 clearChoiceButtons() {
+     // ★ 選択肢を消す時に、ブロッカーも非表示にする
+    this.choiceInputBlocker.setVisible(false);
     this.inputBlocker.setVisible(false);
     this.choiceButtons.forEach(button => button.destroy());
     this.choiceButtons = []; // 配列を空にする
