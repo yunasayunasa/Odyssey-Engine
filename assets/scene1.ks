@@ -72,6 +72,14 @@ kaito:「そっか…ちょっと寂しいな。」
 kaito:「ここで、思い出の一枚絵を表示してみよう。」
 [image storage="cg01" layer="cg" time=1000]
 [wait time=1500]
+[p]
+[freeimage layer="cg"]
+[bg storage="opening" time=1500]
+[wait time=1500]
+
+[chara_show name="yuna" pos="left"]
+[chara_show name="kaito" pos="right"]
+
 yuna:「見て！背景が動画になったよ！」
 kaito:「すごい！この上で普通に会話が進められるんだね。」
 [p]
