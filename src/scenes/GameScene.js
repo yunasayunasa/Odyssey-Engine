@@ -60,7 +60,11 @@ export default class GameScene extends Phaser.Scene {
 
     init(data) {
         this.charaDefs = data.charaDefs;
+         // ★★★ 起動時に開始シナリオが指定されていれば、それをセット ★★★
+        this.startScenario = data.startScenario || 'scene1.ks';
+        this.startLabel = data.startLabel || null;
     }
+    
 
     preload() {
         this.load.text('scene1', 'assets/scene1.ks');
@@ -122,34 +126,14 @@ export default class GameScene extends Phaser.Scene {
 this.scenarioManager.registerTag('fadein', handleFadein);
         
         // --- ゲーム開始 ---
-        this.scenarioManager.load('scene1');
-         // 最初の1回目のクリック/タップだけ実行される特別なイベントリスナー
-        this.input.once('pointerdown', () => {
-            // AudioContextが一時停止状態なら、再開させる
-            if (this.sound.context.state === 'suspended') {
-                this.sound.context.resume();
-                console.log("AudioContextを再開しました。");
-            }
-        });
+ // ★★★ ゲーム開始部分を修正 ★★★
+        this.scenarioManager.load(this.startScenario);
+        if (this.startLabel) {
+            this.scenarioManager.jumpTo(this.startLabel);
+        }
+        
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
-          // ★★★ next()を直接呼ばず、安全なタイミングで呼び出す ★★★
-        this.time.delayedCall(10, () => {
-            this.scenarioManager.next();
-        }, [], this);
-          // ★★★ このリスナーが最後のピースです ★★★
-         // ★★★ SystemSceneからの「シナリオ再開」命令を待つリスナー ★★★
-        this.events.on('execute-next-command', () => {
-            console.log("GameScene: SystemSceneから実行再開命令を受信しました。");
-            // 中断していたタグの処理を完了させ、次の行へ進む
-            this.scenarioManager.finishTagExecution();
-        });
-        // ★★★ SystemSceneをここで一度だけ起動する ★★★
-        this.scene.launch('SystemScene');
-
-        // create完了後、少し待ってから最初のnextを呼ぶ
         this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
-        console.log("GameScene: create 完了");
-
     }
 
     // GameSceneクラスの中に追加
