@@ -57,7 +57,11 @@ export default class ScenarioManager {
     
   async  onClick() {
         if (this.isEnd || this.isWaitingTag) return;
-        
+          // ★★★ 選択肢の表示中は、通常のクリック進行を無効化 ★★★
+        if (this.isWaitingChoice) {
+            console.log("選択肢の選択を待っています...");
+            return; // 何もせずに終了
+        }
         this.messageWindow.hideNextArrow();
         if (this.messageWindow.isTyping) {
             this.messageWindow.skipTyping();
