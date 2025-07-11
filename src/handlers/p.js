@@ -1,13 +1,18 @@
+/**
+ * [p] タグの処理 (クリック待ち)
+ */
 export function handlePageBreak(manager, params) {
-    // ★★★ UISceneに選択肢の表示を依頼 ★★★
-    const choiceCount = manager.scene.scene.get('UIScene').getPendingChoiceCount();
-    if (choiceCount > 0) {
+    // もし[link]タグで溜まっている選択肢があれば、それを表示する
+    if (manager.scene.pendingChoices.length > 0) {
         manager.isWaitingChoice = true;
-        manager.scene.scene.get('UIScene').displayChoices();
-        // 待機状態に入るので、nextは呼ばない
+        manager.scene.displayChoiceButtons();
+        // 選択肢を表示して待つので、ここで処理は終わり
+        // ★★★ 選択肢を表示したら、ここで処理を中断する ★★★
+        // finishTagExecution() は呼ばない！クリックを待つ。
+        manager.isWaitingClick = true;
     } else {
         manager.isWaitingClick = true;
         manager.messageWindow.showNextArrow();
-        // 待機状態に入るので、nextは呼ばない
+        // ★★★ クリック待ちなので、こちらもfinishTagExecution()は呼ばない！ ★★★
     }
 }
