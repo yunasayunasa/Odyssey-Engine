@@ -121,6 +121,22 @@ export default class MessageWindow extends Container{
         if (this.charByCharTimer) {
             this.charByCharTimer.remove();
         }
+
+          // ★★★ コンフィグから、現在のタイプ音設定を取得 ★★★
+        const typeSoundMode = this.configManager.getValue('typeSound');
+
+        // --- 読み上げモードの場合 ---
+        if (typeSoundMode === 'voice') {
+            this.textObject.setText(text); // テキストは即時表示
+            this.isTyping = false; // タイピングはしない
+
+            // ★ 読み上げが終わったら、完了コールバックを呼ぶ
+            this.soundManager.playVoice(text).then(() => {
+                if(onComplete) onComplete();
+            });
+            return; // 読み上げを開始したら、このメソッドの処理は終わり
+        }
+
         
         // テロップ表示を使わない条件を判定
         if (!useTyping || text.length === 0 || this.currentTextDelay <= 0) {
@@ -130,15 +146,16 @@ export default class MessageWindow extends Container{
             return;
         }
         
-        // --- ここからテロップ表示処理 ---
+        // テロップ表示処理
         this.isTyping = true;
-        let index = 0; // ★★★ index変数はここで一度だけ宣言 ★★★
-        
+        let index = 0;
         const timerConfig = {
             delay: this.currentTextDelay,
             callback: () => {
-                // タイプ音を再生
-                this.soundManager.playSe('popopo');
+                // ★ 効果音モードの場合だけ音を鳴らす
+                if (typeSoundMode === 'se') {
+                    this.soundManager.playSe('popopo');
+                }
 
                 // 文字を追加 (timerConfigのfullTextを参照)
                 this.textObject.text += timerConfig.fullText[index];

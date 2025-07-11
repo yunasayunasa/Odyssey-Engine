@@ -26,6 +26,46 @@ export default class SoundManager {
         }
         this.scene.sound.play(key, config);
     }
+
+    /* 指定されたテキストを音声合成で読み上げる
+     * @param {string} text - 読み上げるテキスト
+     * @returns {Promise} 読み上げ完了を待つためのPromise
+     */
+    playVoice(text) {
+        // Web Speech APIが使えるかチェック
+        if (!('speechSynthesis' in window)) {
+            console.warn("このブラウザはWeb Speech APIに対応していません。");
+            return Promise.resolve(); // 即座に完了を返す
+        }
+
+        return new Promise((resolve) => {
+            // 既存の読み上げがあればキャンセル
+            window.speechSynthesis.cancel();
+            
+            // 発話オブジェクトを作成
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // ★ 声や言語を設定（任意）★
+            // 利用可能な音声リストから日本語のものを探す
+            const voices = window.speechSynthesis.getVoices();
+            const japaneseVoice = voices.find(voice => voice.lang === 'ja-JP');
+            if (japaneseVoice) {
+                utterance.voice = japaneseVoice;
+            }
+            utterance.lang = 'ja-JP';
+            utterance.rate = 1.2; // 読み上げ速度 (少し速め)
+            utterance.pitch = 1;  // 声の高さ
+
+            // ★ 読み上げが終了したら、Promiseを解決する
+            utterance.onend = () => {
+                console.log("読み上げ完了:", text);
+                resolve();
+            };
+
+            // 読み上げ開始
+            window.speechSynthesis.speak(utterance);
+        });
+    }
     
     playBgm(key, volume, fadeInTime = 0) {
         // ★★★ BGM音量の設定を反映 ★★★

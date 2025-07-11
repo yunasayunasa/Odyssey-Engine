@@ -4,7 +4,17 @@ const EventEmitter = Phaser.Events.EventEmitter;
 const configDefs = {
     bgmVolume: { type: 'slider', label: 'BGM 音量', min: 0, max: 1, step: 0.1, defaultValue: 0.5 },
     seVolume: { type: 'slider', label: 'SE 音量', min: 0, max: 1, step: 0.1, defaultValue: 0.8 },
-    textSpeed: { type: 'slider', label: 'テキスト速度', min: 0, max: 100, step: 10, defaultValue: 50 }
+    textSpeed: { type: 'slider', label: 'テキスト速度', min: 0, max: 100, step: 10, defaultValue: 50 },
+    typeSound: {
+        type: 'option', // UIの種類 (スライダーではない)
+        label: 'タイプ音',
+        options: {
+            'se': '効果音',      // 'se'という内部値に対して、UIでは'効果音'と表示
+            'voice': '読み上げ',  // 'voice' -> '読み上げ'
+            'none': '無し'        // 'none' -> '無し'
+        },
+        defaultValue: 'se' // デフォルトは効果音
+    }
 };
 
 // ローカルストレージに保存する時のキー

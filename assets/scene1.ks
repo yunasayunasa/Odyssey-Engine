@@ -74,25 +74,8 @@ kaito:「ここで、思い出の一枚絵を表示してみよう。」
 [wait time=1500]
 [p]
 [freeimage layer="cg"]
-[bg storage="opening" time=1500]
-[wait time=1500]
 
-[chara_show name="yuna" pos="left"]
-[chara_show name="kaito" pos="right"]
 
-yuna:「見て！背景が動画になったよ！」
-kaito:「すごい！この上で普通に会話が進められるんだね。」
-[p]
-
-; 再び静的な背景に戻す
-[bg storage="bg_school" time=1500]
-[wait time=1500]
-
-yuna:「静止画にも問題なく戻れるね。完璧！」
-
-; ↑動画の再生が終わると、自動的にこの行に進む
-
-kaito:「ムービー、どうだった？」
 [cm]
 [wait time=500]
 [freeimage layer="cg" time=1000]
@@ -115,6 +98,9 @@ yuna:「サブルーチンから戻ってきました。次はアクションシ
 [wait time=500]
 [call storage="ActionScene"]
 [fadein time=500]
+
+[chara_show name="yuna" pos="left"]
+[chara_show name="kaito" pos="right"]
 
 yuna:「すべてのアクションから戻ってきました！[br]これにて、チュートリアルを終了します！」
 
