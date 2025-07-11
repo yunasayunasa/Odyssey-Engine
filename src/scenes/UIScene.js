@@ -107,7 +107,7 @@ export default class UIScene extends Phaser.Scene {
          // ★★★ 初期レイアウト適用と、リサイズイベントの監視 ★★★
        /* this.checkOrientation(); // 起動時に一度チェック
         this.scale.on('resize', this.checkOrientation, this);*/
-        this.scene.get('GameScene').events.on('display-choices', () => {
+        this.scene.get('GameScene').events.on('displaychoices', () => {
     this.displayChoiceButtons();
 });
     }
