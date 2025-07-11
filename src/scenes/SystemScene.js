@@ -3,7 +3,7 @@ export default class SystemScene extends Phaser.Scene {
         super({ key: 'SystemScene', active: true });
     }
 
-    create() {
+ create() {
         console.log("SystemScene: 起動・イベント監視開始");
         
         // --- request-overlay イベントのリスナー ---
