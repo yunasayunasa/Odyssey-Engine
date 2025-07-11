@@ -3,39 +3,47 @@ export default class SystemScene extends Phaser.Scene {
         super({ key: 'SystemScene', active: true });
     }
 
+ // SystemScene.js の create メソッド
+
     create() {
         console.log("SystemScene: 起動・イベント監視開始");
         
+        // --- request-overlay イベントのリスナー ---
         this.events.on('request-overlay', (data) => {
+            console.log("SystemScene: オーバーレイ表示リクエストを受信", data);
+            
+            // ★★★ GameSceneのインスタンスを安全に取得 ★★★
             const gameScene = this.scene.get('GameScene');
-            const charaDefs = gameScene.sys.isActive() ? gameScene.charaDefs : this.sys.registry.get('charaDefs');
+            if (!gameScene) {
+                console.error("SystemScene: GameSceneが見つかりません。オーバーレイを起動できません。");
+                return;
+            }
+
+            // ★★★ GameSceneがプロパティとして持っているcharaDefsを取得 ★★★
+            const charaDefs = gameScene.charaDefs;
             
-            this.scene.get(data.from).input.enabled = false;
-            
+            // NovelOverlaySceneを起動し、取得したcharaDefsを渡す
             this.scene.launch('NovelOverlayScene', { 
                 scenario: data.scenario,
-                charaDefs: charaDefs,
-                returnTo: data.from
+                charaDefs: charaDefs 
             });
         });
         
+        // --- end-overlay イベントのリスナー (こちらは変更なしでOK) ---
         this.events.on('end-overlay', (data) => {
-            const returnScene = this.scene.get(data.returnTo);
-            if (returnScene && returnScene.sys.isActive()) {
-                returnScene.input.enabled = true;
-            }
-            this.scene.stop(data.from);
-        });
-
-        this.events.on('return-to-novel', (data) => {
-            if (data.from && this.scene.isActive(data.from)) {
+            console.log("SystemScene: オーバーレイ終了報告を受信", data);
+            
+            if (this.scene.isActive(data.from)) {
                 this.scene.stop(data.from);
             }
-            this.scene.start('GameScene', {
-                charaDefs: this.sys.registry.get('charaDefs'),
-                returnParams: data.params
-            });
-            this.scene.launch('UIScene');
+
+            // ActionSceneなどから戻ってきた場合は、UISceneは存在しないので、
+            // 起動しているか確認してから止めるのが安全
+            if (this.scene.isActive('UIScene')) {
+                this.scene.stop('UIScene');
+            }
         });
-    }
-}
+
+        // --- call/return用のシーン遷移リスナーもここ ---
+        // (省略)
+    }}

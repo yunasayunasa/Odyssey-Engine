@@ -124,21 +124,16 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager.registerTag('stop_anim', handleStopAnim);
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
-    
         
-        this.input.once('pointerdown', () => { if (this.sound.context.state === 'suspended') this.sound.context.resume(); }, this);
-        this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
-
-        if (this.returnParams) {
-            this.performReturn(this.returnParams);
-        } else {
-            this.scenarioManager.load(this.startScenario);
-            if (this.startLabel) {
-                this.scenarioManager.jumpTo(this.startLabel);
-            }
-            this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
+        // --- ゲーム開始 ---
+ // ★★★ ゲーム開始部分を修正 ★★★
+        this.scenarioManager.load(this.startScenario);
+        if (this.startLabel) {
+            this.scenarioManager.jumpTo(this.startLabel);
         }
-        console.log("GameScene: create 完了");
+        
+        this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
+        this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
     }
 
     // GameSceneクラスの中に追加
