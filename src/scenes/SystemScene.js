@@ -3,48 +3,47 @@ export default class SystemScene extends Phaser.Scene {
         super({ key: 'SystemScene', active: true });
     }
 
- create() {
+ // SystemScene.js の create メソッド
+
+    create() {
         console.log("SystemScene: 起動・イベント監視開始");
         
         // --- request-overlay イベントのリスナー ---
         this.events.on('request-overlay', (data) => {
             console.log("SystemScene: オーバーレイ表示リクエストを受信", data);
             
+            // ★★★ GameSceneのインスタンスを安全に取得 ★★★
             const gameScene = this.scene.get('GameScene');
-            const charaDefs = gameScene.sys.isActive() ? gameScene.charaDefs : (this.sys.game.config.globals.charaDefs || {});
+            if (!gameScene) {
+                console.error("SystemScene: GameSceneが見つかりません。オーバーレイを起動できません。");
+                return;
+            }
+
+            // ★★★ GameSceneがプロパティとして持っているcharaDefsを取得 ★★★
+            const charaDefs = gameScene.charaDefs;
             
+            // NovelOverlaySceneを起動し、取得したcharaDefsを渡す
             this.scene.launch('NovelOverlayScene', { 
                 scenario: data.scenario,
                 charaDefs: charaDefs 
             });
-            // オーバーレイ表示中は、メインのUIは起動しない方がシンプル
-            // this.scene.launch('UIScene');
         });
         
-        // --- end-overlay イベントのリスナー ---
+        // --- end-overlay イベントのリスナー (こちらは変更なしでOK) ---
         this.events.on('end-overlay', (data) => {
             console.log("SystemScene: オーバーレイ終了報告を受信", data);
             
             if (this.scene.isActive(data.from)) {
                 this.scene.stop(data.from);
             }
-            // if (this.scene.isActive('UIScene')) {
-            //     this.scene.stop('UIScene');
-            // }
 
-            if (data.targetStorage) {
-                console.log(`次のシーン[${data.targetStorage}]へ遷移します。`);
-                this.scene.start('GameScene', {
-                    startScenario: data.targetStorage,
-                    startLabel: data.targetLabel
-                });
-                this.scene.launch('UIScene');
-            } else {
-                console.log("呼び出し元のシーンの操作に戻ります。");
+            // ActionSceneなどから戻ってきた場合は、UISceneは存在しないので、
+            // 起動しているか確認してから止めるのが安全
+            if (this.scene.isActive('UIScene')) {
+                this.scene.stop('UIScene');
             }
         });
 
-        // --- call/return用のシーン遷移リスナーもここにあると美しい ---
+        // --- call/return用のシーン遷移リスナーもここ ---
         // (省略)
     }
-}
