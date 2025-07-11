@@ -213,33 +213,26 @@ clearChoiceButtons() {
         this.scenarioManager.isWaitingChoice = false;
     }
 }
- performReturn(params) {
-        console.log("--- GameScene: performReturn 実行 ---");
-        if (this.scenarioManager.callStack.length === 0) {
-            console.error("performReturn ERROR: コールスタックが空です。");
-            return;
-        }
-
-        const returnInfo = this.scenarioManager.callStack.pop();
-        console.log("復帰情報:", returnInfo);
-
+// GameScene.js
+    async performReturn(params, returnInfo) {
+        console.log("GameScene: performReturn実行", params, returnInfo);
+        
+        // 1. 変数更新
         for (const key in params) {
-            if (key.startsWith('f.') || key.startsWith('sf.')) {
-                this.scenarioManager.stateManager.eval(`${key}="${params[key]}"`);
-            }
+            this.scenarioManager.stateManager.eval(`${key}="${params[key]}"`);
         }
         
+        // 2. シナリオコンテキストを復元
+        // (loadScenarioは使わない)
         const rawText = this.cache.text.get(returnInfo.file);
-        if(!rawText) { console.error(`[return] 復帰先のシナリオ[${returnInfo.file}]が見つかりません。`); return; }
-
         this.scenarioManager.scenario = rawText.split(/\r\n|\n|\r/).filter(line => line.trim() !== '');
         this.scenarioManager.currentFile = returnInfo.file;
         this.scenarioManager.currentLine = returnInfo.line;
-        
-        console.log("画面を再構築します...");
-        rebuildScene(this, this.scenarioManager.stateManager.getState());
-        
-        console.log("シナリオを再開します...");
+
+        // 3. 画面の再構築
+        // rebuildSceneのロジックをここに展開しても良いが、
+        // 戻るだけなら、現在の画面を維持した方が自然な場合も多い。
+        // ここでは、単純に次の行から再開する。
         this.scenarioManager.next();
     }
 

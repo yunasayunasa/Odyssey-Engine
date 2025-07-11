@@ -25,17 +25,12 @@ export default class ActionScene extends Phaser.Scene {
                 params: { 'f.battle_result': 'win' }
             });
         });
-    }bossDefeated() {
-        console.log("--- ActionScene: bossDefeated 実行 ---");
-        
-        const data = { 
-            from: 'ActionScene',
-            params: { 'f.battle_result': 'win' }
-        };
-        console.log("SystemSceneに 'return-to-novel' を発行します。データ:", data);
-      this.scene.get('SystemScene').events.emit('return-to-novel', data);
-
-        console.log("ActionSceneを停止します。");
+    }    bossDefeated() {
+        const gameScene = this.scene.get('GameScene');
+        // ★★★ ActionScene自身は停止し、GameSceneに復帰処理を依頼 ★★★
         this.scene.stop();
+        this.scene.resume('UIScene');
+        this.scene.resume('GameScene');
+        gameScene.performReturn({ 'f.battle_result': 'win' });
     }
 }

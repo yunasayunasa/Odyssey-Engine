@@ -65,11 +65,11 @@ export default class SystemScene extends Phaser.Scene {
             this.scene.stop(data.from);
             
             // ★★★ 戻り先のシーンの入力を再開させる ★★★
-            const returnScene = this.scene.get(data.returnTo);
+        /*    const returnScene = this.scene.get(data.returnTo);
             if (returnScene) {
                 returnScene.input.enabled = true;
                 console.log(`シーン[${data.returnTo}]の入力を再開しました。`);
-            }
+            }*/
         });
 
         // --- call/return用のシーン遷移リスナーもここ ---
