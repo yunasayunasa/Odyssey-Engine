@@ -60,10 +60,12 @@ export default class GameScene extends Phaser.Scene {
 
     init(data) {
         this.charaDefs = data.charaDefs;
-         // ★★★ 起動時に開始シナリオが指定されていれば、それをセット ★★★
-        this.startScenario = data.startScenario || 'scene1.ks';
+          this.startScenario = data.startScenario || 'scene1.ks';
         this.startLabel = data.startLabel || null;
+        this.isResuming = data.resumedFrom ? true : false;
+        this.returnParams = data.returnParams || null;
     }
+
     
 
     preload() {
@@ -132,15 +134,24 @@ this.scenarioManager.registerTag('fadein', handleFadein);
             console.log("受信パラメータ:", params);
             this.performReturn(params);
         });
-        // --- ゲーム開始 ---
- // ★★★ ゲーム開始部分を修正 ★★★
-        this.scenarioManager.load(this.startScenario);
-        if (this.startLabel) {
-            this.scenarioManager.jumpTo(this.startLabel);
+       // ★★★ ゲーム開始ロジックを、起動状態によって分岐させる ★★★
+        if (this.isResuming) {
+            // --- サブシーンからの復帰の場合 ---
+            console.log("GameScene: 復帰処理を実行します。");
+            this.performReturn(this.returnParams);
+        } else {
+            // --- 通常の初回起動の場合 ---
+            this.scenarioManager.load(this.startScenario);
+            if (this.startLabel) {
+                this.scenarioManager.jumpTo(this.startLabel);
+            }
+            this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
         }
         
+        this.input.once('pointerdown', () => { if (this.sound.context.state === 'suspended') this.sound.context.resume(); }, this);
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
-        this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
+        
+        console.log("GameScene: create 完了");
     }
 
     // GameSceneクラスの中に追加

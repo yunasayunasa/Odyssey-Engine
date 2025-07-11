@@ -8,28 +8,33 @@ export default class SystemScene extends Phaser.Scene {
     create() {
         console.log("SystemScene: 起動・イベント監視開始");
          this.events.on('return-to-novel', (data) => {
+            const params = data.params;
+            const fromSceneKey = data.from;
             console.log("--- SystemScene: 'return-to-novel' 受信！ ---");
             console.log("受信データ:", data);
+            console.log(`SystemScene: [${fromSceneKey}]からの帰還命令を受信`, params);
 
             const gameScene = this.scene.get('GameScene');
             if (!gameScene) {
                 console.error("SystemScene ERROR: GameSceneが見つかりません。");
                 return;
             }
+
+            // 呼び出し元のサブシーンを停止
+            if (fromSceneKey && this.scene.isActive(fromSceneKey)) {
+                this.scene.stop(fromSceneKey);
+            }
             
-            if (data.from && this.scene.isActive(data.from)) {
-                console.log(`シーン[${data.from}]を停止します。`);
-                this.scene.stop(data.from);
-            }
+            // ★★★ GameSceneを「再起動」し、復帰情報をinitデータとして渡す ★★★
+            this.scene.start('GameScene', { 
+                resumedFrom: fromSceneKey, // どのシーンから戻ってきたか
+                returnParams: params       // [return]タグやサブシーンからのパラメータ
+            });
 
-            console.log("GameSceneとUISceneを再開/起動します。");
-            if (!gameScene.sys.isActive()) {
-                this.scene.resume('GameScene');
-                this.scene.resume('UIScene');
-            }
-
-            console.log("GameSceneに 'execute-return' を命令します。");
-            gameScene.events.emit('execute-return', data.params);
+            // ★★★ UISceneも再起動する ★★★
+            // stopせずにlaunchすると、古いUIが残ってしまうことがあるため、
+            // startでクリーンな状態から始めるのが安全
+            this.scene.start('UIScene');
         });
         // --- request-overlay イベントのリスナー ---
         this.events.on('request-overlay', (data) => {
