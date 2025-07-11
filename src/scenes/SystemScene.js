@@ -29,18 +29,18 @@ export default class SystemScene extends Phaser.Scene {
             });
         });
         
-        // --- end-overlay イベントのリスナー (こちらは変更なしでOK) ---
+         // --- オーバーレイ終了報告の受付 ---
         this.events.on('end-overlay', (data) => {
-            console.log("SystemScene: オーバーレイ終了報告を受信", data);
+            console.log(`SystemScene: オーバーレイ終了報告。${data.returnTo} に戻ります。`);
             
-            if (this.scene.isActive(data.from)) {
-                this.scene.stop(data.from);
-            }
-
-            // ActionSceneなどから戻ってきた場合は、UISceneは存在しないので、
-            // 起動しているか確認してから止めるのが安全
-            if (this.scene.isActive('UIScene')) {
-                this.scene.stop('UIScene');
+            // オーバーレイシーンを停止
+            this.scene.stop(data.from);
+            
+            // ★★★ 戻り先のシーンの入力を再開させる ★★★
+            const returnScene = this.scene.get(data.returnTo);
+            if (returnScene) {
+                returnScene.input.enabled = true;
+                console.log(`シーン[${data.returnTo}]の入力を再開しました。`);
             }
         });
 

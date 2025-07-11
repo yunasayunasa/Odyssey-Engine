@@ -48,9 +48,11 @@ export default class NovelOverlayScene extends Phaser.Scene {
     }
 
 
-       init(data) {
+      nit(data) {
         this.startScenario = data.scenario;
         this.charaDefs = data.charaDefs;
+        // ★★★ 戻り先のシーンキーを保存 ★★★
+        this.returnTo = data.from; // 'request-overlay'で渡された'from'キー
     }
     
 
