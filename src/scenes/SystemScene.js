@@ -6,38 +6,45 @@ export default class SystemScene extends Phaser.Scene {
     create() {
         console.log("SystemScene: 起動・イベント監視開始");
         
-        // createメソッドの中
-        // ★★★ オーバーレイ終了報告リスナーを、このように書き換える ★★★
+        // --- request-overlay イベントのリスナー ---
+        this.events.on('request-overlay', (data) => {
+            console.log("SystemScene: オーバーレイ表示リクエストを受信", data);
+            
+            const gameScene = this.scene.get('GameScene');
+            const charaDefs = gameScene.sys.isActive() ? gameScene.charaDefs : (this.sys.game.config.globals.charaDefs || {});
+            
+            this.scene.launch('NovelOverlayScene', { 
+                scenario: data.scenario,
+                charaDefs: charaDefs 
+            });
+            // オーバーレイ表示中は、メインのUIは起動しない方がシンプル
+            // this.scene.launch('UIScene');
+        });
+        
+        // --- end-overlay イベントのリスナー ---
         this.events.on('end-overlay', (data) => {
             console.log("SystemScene: オーバーレイ終了報告を受信", data);
             
-            // --- まず、オーバーレイしていたシーンを停止させる ---
-            // NovelOverlaySceneを停止
             if (this.scene.isActive(data.from)) {
                 this.scene.stop(data.from);
             }
-            // UISceneも止める
-            if (this.scene.isActive('UIScene')) {
-                this.scene.stop('UIScene');
-            }
+            // if (this.scene.isActive('UIScene')) {
+            //     this.scene.stop('UIScene');
+            // }
 
-            // --- 次の行き先を判断 ---
             if (data.targetStorage) {
-                // ★ 行き先が指定されている場合 (例:エンディングへ)
                 console.log(`次のシーン[${data.targetStorage}]へ遷移します。`);
-                
-                // GameSceneを再起動し、新しいシナリオをロードさせる
                 this.scene.start('GameScene', {
                     startScenario: data.targetStorage,
                     startLabel: data.targetLabel
                 });
-                // UISceneも再起動
                 this.scene.launch('UIScene');
-
             } else {
-                // ★ 行き先が指定されていない場合 (例:アクションシーンの操作に戻る)
                 console.log("呼び出し元のシーンの操作に戻ります。");
-                // 何もしない。ActionSceneは動き続けているので、
-                // オーバーレイが消えるだけで、プレイヤーは操作を再開できる。
             }
         });
+
+        // --- call/return用のシーン遷移リスナーもここにあると美しい ---
+        // (省略)
+    }
+}
