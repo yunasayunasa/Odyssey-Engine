@@ -184,11 +184,22 @@ displayChoiceButtons() {
     // Y座標の計算を、全体のボタン数に基づいて行う
     const totalButtons = this.pendingChoices.length;
     const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
-
+// ★★★ ボタンの見た目をここで定義 ★★★
+    const buttonStyle = {
+        fontSize: '40px', // 文字を少し大きく
+        fill: '#fff',
+        backgroundColor: '#333333',
+        // 内側の余白を調整
+        padding: {
+            x: 40, // 横の余白を増やす
+            y: 20  // 縦の余白を増やす
+        },
+        align: 'center'
+    };
     this.pendingChoices.forEach((choice, index) => {
         const y = startY + (index * 120); // ボタン間のスペース
 
-    const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '36px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 }})
+    const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '100px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 }})
         .setOrigin(0.5)
         .setInteractive();
    
