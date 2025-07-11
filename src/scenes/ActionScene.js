@@ -13,7 +13,7 @@ export default class ActionScene extends Phaser.Scene {
                 from: 'ActionScene',
                 scenario: 'overlay_test.ks'
             });
-            this.input.enabled = false;
+            this.input.enabled = true;
         });
 
         const returnButton = this.add.text(640, 600, 'ボスを倒してノベルパートに戻る', { fontSize: '32px', fill: '#fff', backgroundColor: '#c00' })

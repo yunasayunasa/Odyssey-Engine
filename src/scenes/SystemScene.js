@@ -48,7 +48,8 @@ export default class SystemScene extends Phaser.Scene {
             // NovelOverlaySceneを起動し、取得したcharaDefsを渡す
             this.scene.launch('NovelOverlayScene', { 
                 scenario: data.scenario,
-                charaDefs: charaDefs 
+                charaDefs: charaDefs,
+                returnTo: data.from // ★ returnTo情報も渡す
             });
         });
         
