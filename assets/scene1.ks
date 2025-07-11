@@ -72,6 +72,11 @@ kaito:「そっか…ちょっと寂しいな。」
 kaito:「ここで、思い出の一枚絵を表示してみよう。」
 [image storage="cg01" layer="cg" time=1000]
 [wait time=1500]
+[video storage="opening"]
+
+; ↑動画の再生が終わると、自動的にこの行に進む
+
+kaito:「ムービー、どうだった？」
 [cm]
 [wait time=500]
 [freeimage layer="cg" time=1000]

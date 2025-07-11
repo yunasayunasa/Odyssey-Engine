@@ -12,6 +12,8 @@
 "popopo": "assets/gyakuten_popopo.mp3",
 
 "ronpa_bgm": "assets/ronpa_bgm.mp3"
+  },
+  "videos": {
+    "opening": "assets/opening.mov"
   }
- 
   }

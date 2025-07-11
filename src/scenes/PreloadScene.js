@@ -42,7 +42,12 @@ export default class PreloadScene extends Phaser.Scene {
         }
         for (const key in assetDefine.sounds) {
             this.load.audio(key, assetDefine.sounds[key]);
+        
         }
+           // ★★★ videosセクションのロードを追加 ★★★
+    for (const key in assetDefine.videos) {
+        this.load.video(key, assetDefine.videos[key], 'canplaythrough', false, true);
+    }
            // ★★★ ここに、最初のシナリオファイルのロードを追加 ★★★
         this.load.text('scene1.ks', 'assets/scene1.ks');
         // ★★★ 必要であれば、他の初期シナリオもここでロード ★★★

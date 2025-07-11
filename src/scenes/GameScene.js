@@ -39,6 +39,7 @@ import { handleStopAnim } from '../handlers/stop_anim.js';
 // import文に追加
 import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
+import { handleVideo } from '../handlers/video.js';
 
 
 
@@ -136,6 +137,7 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager.registerTag('stop_anim', handleStopAnim);
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
+this.scenarioManager.registerTag('video', handleVideo);
          this.events.on('execute-return', (params) => {
             console.log("--- GameScene: 'execute-return' 受信！ ---");
             console.log("受信パラメータ:", params);

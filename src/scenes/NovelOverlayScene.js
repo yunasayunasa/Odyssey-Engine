@@ -40,6 +40,7 @@ import { handleOverlayEnd } from '../handlers/overlay_end.js';
 import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
 import { Layout } from '../core/Layout.js';
+import { handleVideo } from '../handlers/video.js';
 
 export default class NovelOverlayScene extends Phaser.Scene {
     constructor() {
@@ -124,6 +125,7 @@ this.inputBlocker = this.add.rectangle(640, 360, 1280, 720)
         this.scenarioManager.registerTag('overlay_end', handleOverlayEnd);
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
+this.scenarioManager.registerTag('video', handleVideo);
          // --- ゲーム開始 ---
         this.scenarioManager.load(this.startScenario);
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
