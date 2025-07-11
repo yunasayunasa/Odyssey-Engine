@@ -2,7 +2,6 @@ import ScenarioManager from '../core/ScenarioManager.js';
 import SoundManager from '../core/SoundManager.js';
 import StateManager from '../core/StateManager.js';
 import MessageWindow from '../ui/MessageWindow.js';
-import { Layout } from '../core/Layout.js';
 import { handleCharaShow } from '../handlers/chara_show.js';
 import { handleCharaHide } from '../handlers/chara_hide.js';
 import { handleCharaMod } from '../handlers/chara_mod.js';
@@ -12,6 +11,7 @@ import { handleBg } from '../handlers/bg.js';
 import { handlePlaySe } from '../handlers/playse.js';
 import { handlePlayBgm } from '../handlers/playbgm.js';
 import { handleStopBgm } from '../handlers/stopbgm.js';
+import ConfigManager from '../core/ConfigManager.js';
 import { handleLink } from '../handlers/link.js';
 import { handleJump } from '../handlers/jump.js';
 import { handleMove } from '../handlers/move.js';
@@ -32,11 +32,15 @@ import { handleErase } from '../handlers/er.js';
 import { handleDelay } from '../handlers/delay.js';
 import { handleImage } from '../handlers/image.js';
 import { handleFreeImage } from '../handlers/freeimage.js';
+import { handleButton } from '../handlers/button.js';
 import { handleCall } from '../handlers/call.js';
 import { handleReturn } from '../handlers/return.js';
 import { handleStopAnim } from '../handlers/stop_anim.js';
+// import文に追加
 import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
+
+
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -45,37 +49,82 @@ export default class GameScene extends Phaser.Scene {
         this.soundManager = null;
         this.stateManager = null;
         this.messageWindow = null;
-        this.configManager = null;
         this.layer = { background: null, character: null, cg: null, message: null };
         this.charaDefs = null;
         this.characters = {};
-        this.choiceButtons = [];
-        this.pendingChoices = [];
+        this.configManager = null;
+        this.choiceButtons = []; 
+        this.pendingChoices = []; // ★★★ 選択肢の一時保管場所 ★★★
+        this.uiButtons = [];
     }
 
     init(data) {
-        this.charaDefs = data.charaDefs || this.sys.registry.get('charaDefs');
+        this.charaDefs = data.charaDefs;
+         // ★★★ 起動時に開始シナリオが指定されていれば、それをセット ★★★
         this.startScenario = data.startScenario || 'scene1.ks';
         this.startLabel = data.startLabel || null;
-        this.returnParams = data.returnParams || null;
+    }
+    
+
+    preload() {
+        this.load.text('scene1', 'assets/scene1.ks');
     }
 
     create() {
-        console.log("GameScene: create 開始");
         this.cameras.main.setBackgroundColor('#000000');
         
-        ['background', 'character', 'cg', 'message'].forEach(key => this.layer[key] = this.add.container(0, 0));
+        // --- レイヤー生成 ---
+        this.layer.background = this.add.container(0, 0);
+        this.layer.character = this.add.container(0, 0);
+        this.layer.cg = this.add.container(0, 0);
+        this.layer.message = this.add.container(0, 0);
 
+        // --- マネージャー/UIクラスの生成 (依存関係に注意) ---
         this.configManager = this.sys.registry.get('configManager');
+        
         this.stateManager = new StateManager();
         this.soundManager = new SoundManager(this, this.configManager);
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
-        this.messageWindow.setPosition(Layout.ui.messageWindow.x, Layout.ui.messageWindow.y);
         this.layer.message.add(this.messageWindow);
         this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
         
-        const tags = { handleCharaShow, handleCharaHide, handleCharaMod, handlePageBreak, handleWait, handleBg, handlePlaySe, handlePlayBgm, handleStopBgm, handleLink, handleJump, handleMove, handleWalk, handleShake, handleVibrate, handleFlip, handleCharaJump, handleEval, handleLog, handleIf, handleElsif, handleElse, handleEndif, handleStop, handleClearMessage, handleErase, handleDelay, handleImage, handleFreeImage, handleCall, handleReturn, handleStopAnim, handleFadeout, handleFadein };
-        for (const key in tags) {
+        // --- タグハンドラの登録 ---
+        this.scenarioManager.registerTag('chara_show', handleCharaShow);
+        this.scenarioManager.registerTag('chara_hide', handleCharaHide);
+        this.scenarioManager.registerTag('chara_mod', handleCharaMod);
+        this.scenarioManager.registerTag('p', handlePageBreak);
+        this.scenarioManager.registerTag('wait', handleWait);
+        this.scenarioManager.registerTag('bg', handleBg);
+        this.scenarioManager.registerTag('playse', handlePlaySe);
+        this.scenarioManager.registerTag('playbgm', handlePlayBgm);
+        this.scenarioManager.registerTag('stopbgm', handleStopBgm);
+        this.scenarioManager.registerTag('link', handleLink);
+        this.scenarioManager.registerTag('jump', handleJump);
+        this.scenarioManager.registerTag('move', handleMove);
+        this.scenarioManager.registerTag('walk', handleWalk);
+        this.scenarioManager.registerTag('shake', handleShake);
+        this.scenarioManager.registerTag('vibrate', handleVibrate);
+        this.scenarioManager.registerTag('flip', handleFlip);
+        this.scenarioManager.registerTag('chara_jump', handleCharaJump);
+        this.scenarioManager.registerTag('eval', handleEval);
+        this.scenarioManager.registerTag('log', handleLog);
+        this.scenarioManager.registerTag('if', handleIf);
+        this.scenarioManager.registerTag('elsif', handleElsif);
+        this.scenarioManager.registerTag('else', handleElse);
+        this.scenarioManager.registerTag('endif', handleEndif);
+        this.scenarioManager.registerTag('s', handleStop);
+　　　　　this.scenarioManager.registerTag('cm', handleClearMessage);
+　　　　　this.scenarioManager.registerTag('er', handleErase);
+        this.scenarioManager.registerTag('delay', handleDelay);
+        this.scenarioManager.registerTag('image', handleImage);
+        this.scenarioManager.registerTag('freeimage', handleFreeImage);
+        this.scenarioManager.registerTag('button', handleButton);
+        this.scenarioManager.registerTag('call', handleCall);
+        this.scenarioManager.registerTag('return', handleReturn);
+        this.scenarioManager.registerTag('stop_anim', handleStopAnim);
+        this.scenarioManager.registerTag('fadeout', handleFadeout);
+this.scenarioManager.registerTag('fadein', handleFadein);
+       for (const key in tags) {
             const tagName = key.replace('handle', '').replace(/([A-Z])/g, '_$1').toLowerCase().substring(1);
             this.scenarioManager.registerTag(tagName, tags[key]);
         }
@@ -96,16 +145,64 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // GameSceneクラスの中に追加
- performSave(slot) {
-        try {
-            const gameState = this.stateManager.getState();
-            gameState.saveDate = new Date().toLocaleString();
-            localStorage.setItem(`save_data_${slot}`, JSON.stringify(gameState));
-        } catch (e) {
-            console.error(`セーブに失敗しました`, e);
-        }
+performSave(slot) {
+    try {
+        const gameState = this.stateManager.getState();
+        gameState.saveDate = new Date().toLocaleString();
+        const jsonString = JSON.stringify(gameState);
+        localStorage.setItem(`save_data_${slot}`, jsonString);
+        console.log(`スロット[${slot}]にセーブしました。`, gameState);
+    } catch (e) {
+        console.error(`セーブに失敗しました: スロット[${slot}]`, e);
     }
+}
+
+/**
+ * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
+ */
+displayChoiceButtons() {
+    // Y座標の計算を、全体のボタン数に基づいて行う
+    const totalButtons = this.pendingChoices.length;
+    const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
+
+    this.pendingChoices.forEach((choice, index) => {
+        const y = startY + (index * 120); // ボタン間のスペース
+
+    const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '36px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 }})
+        .setOrigin(0.5)
+        .setInteractive();
     
+        button.on('pointerdown', () => {
+            this.clearChoiceButtons();
+            this.scenarioManager.jumpTo(choice.target);
+        });
+
+        this.choiceButtons.push(button);
+    });
+
+    this.pendingChoices = []; // 溜めていた情報はクリア
+}
+ 
+// ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
+clearChoiceButtons() {
+    this.choiceButtons.forEach(button => button.destroy());
+    this.choiceButtons = []; // 配列を空にする
+    // 選択肢待ち状態を解除
+    if (this.scenarioManager) {
+        this.scenarioManager.isWaitingChoice = false;
+    }
+}
+
+clearChoiceButtons() {
+    this.choiceButtons.forEach(button => button.destroy());
+    this.choiceButtons = [];
+    this.pendingChoices = []; // 念のためこちらもクリア
+    if (this.scenarioManager) {
+        this.scenarioManager.isWaitingChoice = false;
+    }
+}
+
+
     // GameSceneクラスの中に追加
 async performLoad(slot) { // asyncに戻しておくと後々安全
     try {
@@ -155,77 +252,6 @@ async performLoad(slot) { // asyncに戻しておくと後々安全
         console.error(`ロード処理でエラーが発生しました。`, e);
     }
 }
-
-/**
- * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
- */
-displayChoiceButtons() {
-    // Y座標の計算を、全体のボタン数に基づいて行う
-    const totalButtons = this.pendingChoices.length;
-    const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
-
-    this.pendingChoices.forEach((choice, index) => {
-        const y = startY + (index * 120); // ボタン間のスペース
-
-    const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '36px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 }})
-        .setOrigin(0.5)
-        .setInteractive();
-    
-        button.on('pointerdown', () => {
-            this.clearChoiceButtons();
-            this.scenarioManager.jumpTo(choice.target);
-        });
-
-        this.choiceButtons.push(button);
-    });
-
-    this.pendingChoices = []; // 溜めていた情報はクリア
-}
- 
-// ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
-clearChoiceButtons() {
-    this.choiceButtons.forEach(button => button.destroy());
-    this.choiceButtons = []; // 配列を空にする
-    // 選択肢待ち状態を解除
-    if (this.scenarioManager) {
-        this.scenarioManager.isWaitingChoice = false;
-    }
-}
-
-
-
-clearChoiceButtons() {
-    this.choiceButtons.forEach(button => button.destroy());
-    this.choiceButtons = [];
-    this.pendingChoices = []; // 念のためこちらもクリア
-    if (this.scenarioManager) {
-        this.scenarioManager.isWaitingChoice = false;
-    }
-}
-
-
- performReturn(params) {
-        if (this.scenarioManager.callStack.length === 0) return;
-        const returnInfo = this.scenarioManager.callStack.pop();
-
-        for (const key in params) {
-            if (key.startsWith('f.') || key.startsWith('sf.')) {
-                this.scenarioManager.stateManager.eval(`${key}="${params[key]}"`);
-            }
-        }
-        
-        const rawText = this.cache.text.get(returnInfo.file);
-        if(!rawText) { console.error(`[return] 復帰先のシナリオ[${returnInfo.file}]が見つかりません。`); return; }
-
-        this.scenarioManager.scenario = rawText.split(/\r\n|\n|\r/).filter(line => line.trim() !== '');
-        this.scenarioManager.currentFile = returnInfo.file;
-        this.scenarioManager.currentLine = returnInfo.line;
-        
-        rebuildScene(this, this.scenarioManager.stateManager.getState()); // ★ 画面を再構築
-        
-        this.scenarioManager.next();
-    }
-
 }
 /**
  * ロードした状態に基づいて、シーンの表示を再構築するヘルパー関数
@@ -306,6 +332,4 @@ function rebuildScene(manager, state) {
     manager.highlightSpeaker(speakerName);*/
     
     console.log("--- rebuildScene 正常終了 ---");
-    
 }
-
