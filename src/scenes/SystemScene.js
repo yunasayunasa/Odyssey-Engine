@@ -7,7 +7,30 @@ export default class SystemScene extends Phaser.Scene {
 
     create() {
         console.log("SystemScene: 起動・イベント監視開始");
-        
+         this.events.on('return-to-novel', (data) => {
+            console.log("--- SystemScene: 'return-to-novel' 受信！ ---");
+            console.log("受信データ:", data);
+
+            const gameScene = this.scene.get('GameScene');
+            if (!gameScene) {
+                console.error("SystemScene ERROR: GameSceneが見つかりません。");
+                return;
+            }
+            
+            if (data.from && this.scene.isActive(data.from)) {
+                console.log(`シーン[${data.from}]を停止します。`);
+                this.scene.stop(data.from);
+            }
+
+            console.log("GameSceneとUISceneを再開/起動します。");
+            if (!gameScene.sys.isActive()) {
+                this.scene.resume('GameScene');
+                this.scene.resume('UIScene');
+            }
+
+            console.log("GameSceneに 'execute-return' を命令します。");
+            gameScene.events.emit('execute-return', data.params);
+        });
         // --- request-overlay イベントのリスナー ---
         this.events.on('request-overlay', (data) => {
             console.log("SystemScene: オーバーレイ表示リクエストを受信", data);

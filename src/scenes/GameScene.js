@@ -124,7 +124,11 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager.registerTag('stop_anim', handleStopAnim);
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
-        
+         this.events.on('execute-return', (params) => {
+            console.log("--- GameScene: 'execute-return' 受信！ ---");
+            console.log("受信パラメータ:", params);
+            this.performReturn(params);
+        });
         // --- ゲーム開始 ---
  // ★★★ ゲーム開始部分を修正 ★★★
         this.scenarioManager.load(this.startScenario);
@@ -193,6 +197,35 @@ clearChoiceButtons() {
         this.scenarioManager.isWaitingChoice = false;
     }
 }
+ performReturn(params) {
+        console.log("--- GameScene: performReturn 実行 ---");
+        if (this.scenarioManager.callStack.length === 0) {
+            console.error("performReturn ERROR: コールスタックが空です。");
+            return;
+        }
+
+        const returnInfo = this.scenarioManager.callStack.pop();
+        console.log("復帰情報:", returnInfo);
+
+        for (const key in params) {
+            if (key.startsWith('f.') || key.startsWith('sf.')) {
+                this.scenarioManager.stateManager.eval(`${key}="${params[key]}"`);
+            }
+        }
+        
+        const rawText = this.cache.text.get(returnInfo.file);
+        if(!rawText) { console.error(`[return] 復帰先のシナリオ[${returnInfo.file}]が見つかりません。`); return; }
+
+        this.scenarioManager.scenario = rawText.split(/\r\n|\n|\r/).filter(line => line.trim() !== '');
+        this.scenarioManager.currentFile = returnInfo.file;
+        this.scenarioManager.currentLine = returnInfo.line;
+        
+        console.log("画面を再構築します...");
+        rebuildScene(this, this.scenarioManager.stateManager.getState());
+        
+        console.log("シナリオを再開します...");
+        this.scenarioManager.next();
+    }
 
 
     // GameSceneクラスの中に追加
