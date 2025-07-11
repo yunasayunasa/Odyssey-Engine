@@ -8,11 +8,9 @@ export function handleLink(manager, params) {
     const text = params.text;
     if (!target || !text){ console.warn('[link] target属性は必須です。'); return; }
 
-    // ★★★ GameSceneのpendingChoicesに選択肢情報を追加 ★★★
-    manager.scene.pendingChoices.push({ text: text, target: target });
+     // ★★★ UISceneに選択肢情報を登録するよう依頼 ★
+    manager.scene.scene.get('UIScene').addPendingChoice({ text, target });
     
-    // ★★★ isWaitingChoiceにはしない！ ★★★
-    // すぐに次の行（次の[link]タグ）に進む
-  //  manager.next();
-  manager.finishTagExecution();
+    // 登録したら、すぐに次の行へ
+    manager.next();
 }

@@ -3,12 +3,20 @@ export default class UIScene extends Phaser.Scene {
         // key: このシーンを呼び出すための名前
         // active: true にすることで、他のシーンと同時に自動で起動・表示される
         super({ key: 'UIScene', active: true });
+         this.pendingChoices = [];
+    this.choiceButtons = [];
     }
 
    create() {
         console.log("UIScene: 作成されました。");
         const gameWidth = this.scale.width;
         const gameHeight = this.scale.height;
+
+        this.events.on('jump-to', (data) => {
+        const gameScene = this.scene.get('GameScene');
+        gameScene.scenarioManager.jumpTo(data.target);
+        gameScene.scenarioManager.next();
+    });
 
         // --- 1. メニューパネル（ボタンの入れ物）を作成 ---
         // 最初は画面の外に隠しておく
@@ -99,7 +107,53 @@ export default class UIScene extends Phaser.Scene {
        /* this.checkOrientation(); // 起動時に一度チェック
         this.scale.on('resize', this.checkOrientation, this);*/
     }
+
+    // 新しいメソッドを追加
+addPendingChoice(choiceData) {
+    this.pendingChoices.push(choiceData);
+}
+getPendingChoiceCount() {
+    return this.pendingChoices.length;
+}
+
+/**
+ * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
+ */
+displayChoiceButtons() {
+    this.inputBlocker.setVisible(true);
+    // Y座標の計算を、全体のボタン数に基づいて行う
+    const totalButtons = this.pendingChoices.length;
+    const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
+
+    this.pendingChoices.forEach((choice, index) => {
+        const y = startY + (index * 120); // ボタン間のスペース
+
+    const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '36px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 }})
+        .setOrigin(0.5)
+        .setInteractive();
     
+        button.on('pointerdown', () => {
+            this.clearChoiceButtons();
+            this.scenarioManager.jumpTo(choice.target);
+        });
+
+        this.choiceButtons.push(button);
+    });
+
+    this.pendingChoices = []; // 溜めていた情報はクリア
+}
+ 
+// ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
+clearChoiceButtons() {
+    this.inputBlocker.setVisible(false);
+    this.choiceButtons.forEach(button => button.destroy());
+    this.choiceButtons = []; // 配列を空にする
+    // 選択肢待ち状態を解除
+    if (this.scenarioManager) {
+        this.scenarioManager.isWaitingChoice = false;
+    }
+}
+
     // ★★★ 画面の向きをチェックするメソッドを新設 ★★★
   /*  checkOrientation() {
         const overlay = document.getElementById('orientation-overlay');

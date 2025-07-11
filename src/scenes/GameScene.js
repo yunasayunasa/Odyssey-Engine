@@ -156,52 +156,6 @@ performSave(slot) {
     }
 }
 
-/**
- * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
- */
-displayChoiceButtons() {
-    this.inputBlocker.setVisible(true);
-    // Y座標の計算を、全体のボタン数に基づいて行う
-    const totalButtons = this.pendingChoices.length;
-    const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
-
-    this.pendingChoices.forEach((choice, index) => {
-        const y = startY + (index * 120); // ボタン間のスペース
-
-    const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '36px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 }})
-        .setOrigin(0.5)
-        .setInteractive();
-    
-        button.on('pointerdown', () => {
-            this.clearChoiceButtons();
-            this.scenarioManager.jumpTo(choice.target);
-        });
-
-        this.choiceButtons.push(button);
-    });
-
-    this.pendingChoices = []; // 溜めていた情報はクリア
-}
- 
-// ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
-clearChoiceButtons() {
-    this.inputBlocker.setVisible(false);
-    this.choiceButtons.forEach(button => button.destroy());
-    this.choiceButtons = []; // 配列を空にする
-    // 選択肢待ち状態を解除
-    if (this.scenarioManager) {
-        this.scenarioManager.isWaitingChoice = false;
-    }
-}
-
-clearChoiceButtons() {
-    this.choiceButtons.forEach(button => button.destroy());
-    this.choiceButtons = [];
-    this.pendingChoices = []; // 念のためこちらもクリア
-    if (this.scenarioManager) {
-        this.scenarioManager.isWaitingChoice = false;
-    }
-}
  performReturn(params) {
         console.log("--- GameScene: performReturn 実行 ---");
         if (this.scenarioManager.callStack.length === 0) {
