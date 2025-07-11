@@ -43,6 +43,12 @@ export default class PreloadScene extends Phaser.Scene {
         for (const key in assetDefine.sounds) {
             this.load.audio(key, assetDefine.sounds[key]);
         }
+           // ★★★ ここに、最初のシナリオファイルのロードを追加 ★★★
+        this.load.text('scene1.ks', 'assets/scene1.ks');
+        // ★★★ 必要であれば、他の初期シナリオもここでロード ★★★
+        // this.load.text('scene2.ks', 'assets/scene2.ks');
+        // this.load.text('overlay_test.ks', 'assets/overlay_test.ks');
+
         
         // --- 4. ロード完了後の処理を定義 ---
         this.load.once('complete', () => {
