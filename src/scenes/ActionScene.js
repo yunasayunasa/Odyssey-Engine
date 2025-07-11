@@ -2,41 +2,28 @@ export default class ActionScene extends Phaser.Scene {
     constructor() {
         super('ActionScene');
     }
-
     create() {
         console.log("ActionScene: create 開始");
         this.cameras.main.setBackgroundColor('#4a86e8');
-
-        // ダミーのプレイヤーオブジェクト
         const player = this.add.text(100, 360, 'PLAYER', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
-        this.tweens.add({
-            targets: player,
-            x: 1180,
-            duration: 4000,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-            repeat: -1
-        });
+        this.tweens.add({ targets: player, x: 1180, duration: 4000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 });
         
-      this.time.delayedCall(3000, () => {
-            console.log("ActionScene: オーバーレイ表示をリクエストします。");
-            
-            // ★★★ 司令塔に、オーバーレイの起動を依頼 ★★★
+        this.time.delayedCall(3000, () => {
             this.scene.get('SystemScene').events.emit('request-overlay', { 
-                from: 'ActionScene', // 誰が依頼したか
-                scenario: 'overlay_test.ks' // どのシナリオを再生するか
+                from: 'ActionScene',
+                scenario: 'overlay_test.ks'
             });
-
-            // 依頼を出したら、自分は入力を受け付けなくする
             this.input.enabled = false;
         });
+
+        const returnButton = this.add.text(640, 600, 'ボスを倒してノベルパートに戻る', { fontSize: '32px', fill: '#fff', backgroundColor: '#c00' })
+            .setOrigin(0.5).setInteractive();
         
-    }
-       bossDefeated() {
-        this.scene.get('SystemScene').events.emit('return-to-novel', { 
-            'f.battle_result': 'win'
+        returnButton.on('pointerdown', () => {
+            this.scene.get('SystemScene').events.emit('return-to-novel', {
+                from: 'ActionScene',
+                params: { 'f.battle_result': 'win' }
+            });
         });
-        this.scene.stop();
     }
 }
-
