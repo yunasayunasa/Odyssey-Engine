@@ -46,4 +46,4 @@ export default class SystemScene extends Phaser.Scene {
 
         // --- call/return用のシーン遷移リスナーもここ ---
         // (省略)
-    }
+    }}
