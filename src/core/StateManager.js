@@ -18,7 +18,9 @@ export default class StateManager {
      * @returns {Object} 現在のゲーム状態のスナップショット
      */
     getState(scenarioManager) {
-       // const scene = scenarioManager.scene;
+         console.log("!!!!!!!!!! StateManager.getState が呼ばれました !!!!!!!!!!");
+
+       const scene = scenarioManager.scene;
         
         // 表示されているキャラクターの状態を収集
         const characterStates = {};
