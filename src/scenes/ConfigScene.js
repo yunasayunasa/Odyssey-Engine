@@ -36,29 +36,53 @@ export default class ConfigScene extends Phaser.Scene {
             const valueTextX = this.scale.width - 320;
             const valueText = this.add.text(valueTextX, y, this.configManager.getValue(key), { fontSize: '32px', fill: '#fff' }).setOrigin(1, 0.5);
 
-            // スライダーUIを模した簡単なクリックボタンを作成
-            // (本格的なスライダーUIは、外部ライブラリを使うか、自作する必要があり複雑なため)
-            const minusButton = this.add.text(this.scale.width - 250, y, '-', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-            const plusButton = this.add.text(this.scale.width - 150, y, '+', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+             // ★★★ 設定項目の種類(type)によって、生成するUIを変える ★★★
+            if (def.type === 'slider') {
+                // --- スライダーUIの生成 ---
+                const valueText = this.add.text(1280 - 320, y, this.configManager.getValue(key), { fontSize: '32px', fill: '#fff' }).setOrigin(1, 0.5);
+                const minusButton = this.add.text(1280 - 250, y, '-', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+                const plusButton = this.add.text(1280 - 150, y, '+', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
 
-            const updateValue = (newValue) => {
-                // 値が範囲内に収まるように調整
-                newValue = Phaser.Math.Clamp(newValue, def.min, def.max);
-                // stepに合わせる（例: 0.1単位にする）
-                newValue = Math.round(newValue / def.step) * def.step;
-                
-                this.configManager.setValue(key, parseFloat(newValue.toFixed(2)));
-                valueText.setText(this.configManager.getValue(key));
-            };
+                const updateValue = (newValue) => {
+                    newValue = Phaser.Math.Clamp(newValue, def.min, def.max);
+                    newValue = Math.round(newValue / def.step) * def.step;
+                    this.configManager.setValue(key, parseFloat(newValue.toFixed(2)));
+                    valueText.setText(this.configManager.getValue(key));
+                };
+                minusButton.on('pointerdown', () => updateValue(this.configManager.getValue(key) - def.step));
+                plusButton.on('pointerdown', () => updateValue(this.configManager.getValue(key) + def.step));
 
-            minusButton.on('pointerdown', () => {
-                updateValue(this.configManager.getValue(key) - def.step);
-            });
-            plusButton.on('pointerdown', () => {
-                updateValue(this.configManager.getValue(key) + def.step);
-            });
+            } else if (def.type === 'option') {
+                // --- オプション選択UIの生成 ---
+                const options = def.options;
+                const currentValue = this.configManager.getValue(key);
+                let buttonX = 1280 - 150; // ボタンを配置する右端のX座標
+
+                // optionsオブジェクトを逆順にループして、右からボタンを配置
+                Object.keys(options).reverse().forEach(optionKey => {
+                    const optionLabel = options[optionKey];
+                    const button = this.add.text(buttonX, y, optionLabel, { fontSize: '32px' })
+                        .setOrigin(1, 0.5)
+                        .setInteractive()
+                        .setPadding(10);
+                    
+                    // 現在選択されている値のボタンをハイライトする
+                    if (optionKey === currentValue) {
+                        button.setBackgroundColor('#555');
+                    }
+                    
+                    button.on('pointerdown', () => {
+                        this.configManager.setValue(key, optionKey);
+                        // UIを再生成して、ハイライトを更新する
+                        this.scene.restart(); 
+                    });
+
+                    // 次のボタンの位置を計算
+                    buttonX -= button.width + 20;
+                });
+            }
             
-            y += 100; // 次のUIのY座標
+            y += 100; // 次のUI項目のY座標
         }
     }
 }
