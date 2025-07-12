@@ -1,99 +1,81 @@
 export default class ConfigScene extends Phaser.Scene {
     constructor() {
         super('ConfigScene');
+        // constructorでは、キーの定義と、プロパティの存在宣言だけを行う
         this.configManager = null;
-        this.uiElements = []; // ★ UI要素を管理する配列を追加
+        this.uiElements = [];
     }
 
     create() {
-         // ★★★ 1. 前回作られたUIをすべて破棄する ★★★
+        console.log("ConfigScene: create 開始");
+
+        // ★★★ 1. createの冒頭で、プロパティを確実に初期化する ★★★
+        this.configManager = this.sys.registry.get('configManager');
+        // 前回作られたUI要素があれば、すべて破棄して配列を空にする
         this.uiElements.forEach(el => el.destroy());
         this.uiElements = [];
-        // GameSceneとUISceneからConfigManagerを受け取る
-        const gameScene = this.scene.get('GameScene');
- this.configManager = this.sys.registry.get('configManager');
-        // 背景
-        this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.7).setOrigin(0, 0);
-        
-        // タイトル
-        this.add.text(this.scale.width / 2, 100, 'コンフィグ', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
 
-        // 戻るボタン
+        // --- 2. UIのセットアップ (背景、タイトル、戻るボタン) ---
+        const bg = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.9).setOrigin(0, 0);
+        const title = this.add.text(this.scale.width / 2, 100, 'コンフィグ', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
         const backButton = this.add.text(this.scale.width - 100, 50, '戻る', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-         this.uiElements.push( title, backButton); // 管理リストに追加
+        
+        // 生成したUI要素を、管理リストに追加
+        this.uiElements.push(bg, title, backButton);
+
         backButton.on('pointerdown', () => {
             this.scene.stop();
             this.scene.resume('GameScene');
             this.scene.resume('UIScene');
         });
 
-        // --- 設定項目を自動生成 ---
+        // --- 3. 設定項目を定義から自動生成 ---
         const configDefs = this.configManager.getDefs();
-        let y = 250; // UIを配置する最初のY座標
+        let y = 250;
 
         for (const key in configDefs) {
             const def = configDefs[key];
             
-            // ラベルを表示
-            this.add.text(100, y, def.label, { fontSize: '32px', fill: '#fff' }).setOrigin(0, 0.5);
+            const label = this.add.text(100, y, def.label, { fontSize: '32px', fill: '#fff' }).setOrigin(0, 0.5);
+            this.uiElements.push(label);
 
-            // 値を表示
-            const valueTextX = this.scale.width - 320;
-            const valueText = this.add.text(valueTextX, y, this.configManager.getValue(key), { fontSize: '32px', fill: '#fff' }).setOrigin(1, 0.5);
-
-             // ★★★ 設定項目の種類(type)によって、生成するUIを変える ★★★
             if (def.type === 'slider') {
-                // --- スライダーUIの生成 ---
-                const valueText = this.add.text(1280 - 320, y, this.configManager.getValue(key), { fontSize: '32px', fill: '#fff' }).setOrigin(1, 0.5);
-                const minusButton = this.add.text(1280 - 250, y, '-', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-                const plusButton = this.add.text(1280 - 150, y, '+', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+                const valueText = this.add.text(1280 - 400, y, this.configManager.getValue(key), { fontSize: '32px', fill: '#fff' }).setOrigin(1, 0.5);
+                const minusButton = this.add.text(1280 - 300, y, '-', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+                const plusButton = this.add.text(1280 - 200, y, '+', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+                this.uiElements.push(valueText, minusButton, plusButton);
 
                 const updateValue = (newValue) => {
                     newValue = Phaser.Math.Clamp(newValue, def.min, def.max);
-                    newValue = Math.round(newValue / def.step) * def.step;
-                    this.configManager.setValue(key, parseFloat(newValue.toFixed(2)));
+                    newValue = parseFloat((Math.round(newValue / def.step) * def.step).toFixed(2));
+                    this.configManager.setValue(key, newValue);
                     valueText.setText(this.configManager.getValue(key));
                 };
                 minusButton.on('pointerdown', () => updateValue(this.configManager.getValue(key) - def.step));
                 plusButton.on('pointerdown', () => updateValue(this.configManager.getValue(key) + def.step));
 
             } else if (def.type === 'option') {
-                // --- オプション選択UIの生成 ---
                 const options = def.options;
                 const currentValue = this.configManager.getValue(key);
-                let buttonX = 1280 - 150; // ボタンを配置する右端のX座標
+                let buttonX = 1280 - 150;
 
-                // optionsオブジェクトを逆順にループして、右からボタンを配置
                 Object.keys(options).reverse().forEach(optionKey => {
                     const optionLabel = options[optionKey];
-                    const button = this.add.text(buttonX, y, optionLabel, { fontSize: '32px' })
-                        .setOrigin(1, 0.5)
-                        .setInteractive()
-                        .setPadding(10);
+                    const button = this.add.text(buttonX, y, optionLabel, { fontSize: '32px' }).setOrigin(1, 0.5).setInteractive().setPadding(10);
+                    this.uiElements.push(button);
                     
-                    // 現在選択されている値のボタンをハイライトする
                     if (optionKey === currentValue) {
                         button.setBackgroundColor('#555');
                     }
                     
                     button.on('pointerdown', () => {
                         this.configManager.setValue(key, optionKey);
-                        // UIを再生成して、ハイライトを更新する
                         this.scene.restart(); 
                     });
-
-                    // 次のボタンの位置を計算
                     buttonX -= button.width + 20;
                 });
-               // ★★★ オプションボタンのクリック処理 ★★★
-        button.on('pointerdown', () => {
-            this.configManager.setValue(key, optionKey);
-            // 値を更新したら、シーンを再起動して表示を更新する
-            this.scene.restart(); 
-        });
-    }
-            
-            y += 100; // 次のUI項目のY座標
+            }
+            y += 100;
         }
     }
 }
