@@ -324,7 +324,7 @@ async performLoad(slot) { // asyncに戻しておくと後々安全
  */
 function rebuildScene(scene, state) {
     console.log("--- rebuildScene 開始 ---");
-    const scene = manager.scene;
+    
 
      const manager = scene.scenarioManager;
     manager.ifStack = state.ifStack || [];
