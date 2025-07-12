@@ -52,15 +52,8 @@ export default class ScenarioManager {
 
             return;
         }
-        if (this.mode === 'skip') {
-            const line = this.scenario[this.currentLine];
-            // [p]や[wait]など、待機するタグの場合は、強制的に無視して即座に次のnextを呼ぶ
-            if (line.trim() === '[p]' || line.trim().startsWith('[wait')) {
-                this.currentLine++;
-                this.next();
-                return;
-            }
-        }
+        
+        
         this.stateManager.updateScenario(this.currentFile, this.currentLine);
         
         const line = this.scenario[this.currentLine];
@@ -82,17 +75,18 @@ export default class ScenarioManager {
             return;
         }
         if (this.isWaitingClick) {
-            this.isWaitingClick = false;
-          await  this.next();
-        }
-        if (this.isWaitingClick) {
-            // ★ オートモード中にクリックされたら、オートを一旦停止・再開する
+             // ★ オートモード中にクリックされたら、オートを一旦停止・再開する
             if (this.mode === 'auto' && this.autoTimer) {
                 this.autoTimer.remove();
                 this.autoTimer = null;
             }
             this.isWaitingClick = false;
-            this.next();
+          await  this.next();
+        }
+       // ★ スキップモード中は、クリックでスキップを解除する
+        if (this.mode === 'skip') {
+            this.setMode('normal');
+            return;
         }
     }
 
@@ -336,31 +330,45 @@ export default class ScenarioManager {
         // ...
 
     // ★★★ モードを切り替えるためのメソッド ★★★
-    setMode(newMode) {
-        // 同じモードなら何もしない
-        if (this.mode === newMode) return;
+       setMode(newMode) {
+        if (this.mode === newMode && newMode !== 'skip') {
+             // スキップモードでない時に同じボタンが押されたら、モードをノーマルに戻す
+             this.mode = 'normal';
+             if (this.autoTimer) this.autoTimer.remove();
+             console.log(`モード変更: ${newMode} -> normal`);
+             return;
+        }
 
         console.log(`モード変更: ${this.mode} -> ${newMode}`);
         this.mode = newMode;
 
-        // 既存のオートタイマーがあれば停止
-        if (this.autoTimer) {
-            this.autoTimer.remove();
-            this.autoTimer = null;
-        }
+        if (this.autoTimer) this.autoTimer.remove();
 
-        // 新しいモードに応じた処理を開始
         if (this.mode === 'skip') {
-            this.hideInterfaceForSkip(); // UIを隠す（推奨）
-            this.next(); // スキップを即座に開始
+            // ★★★ スキップループを開始 ★★★
+            this.skipLoop();
         } else if (this.mode === 'auto') {
-            this.showInterfaceForSkip(); // UIを戻す
             this.startAutoMode();
-        } else { // 'normal'モード
-            this.showInterfaceForSkip();
         }
     }
 
+    // ★★★ スキップ専用のループメソッドを新設 ★★★
+    skipLoop() {
+        // スキップモードでない、または待機状態ならループを止める
+        if (this.mode !== 'skip' || this.isWaitingChoice || this.isEnd) {
+            console.log("スキップを停止します。");
+            this.setMode('normal'); // 通常モードに戻す
+            return;
+        }
+
+        // isWaitingClickを強制的に解除し、次の行へ
+        this.isWaitingClick = false;
+        this.next();
+        
+        // ★★★ 非常に短い遅延で、自分自身をもう一度呼び出す ★★★
+        // これにより、ブラウザをフリーズさせずに高速なループを実現する
+        setTimeout(() => this.skipLoop(), 0);
+    }
     // ★★★ オートモードのタイマーを開始するメソッド ★★★
     startAutoMode() {
         if (this.isWaitingClick) {

@@ -78,13 +78,13 @@ kaito:「ここで、思い出の一枚絵を表示してみよう。」
 
 [cm]
 [wait time=500]
-[freeimage layer="cg" time=1000]
 [wait time=1000]
 [chara_hide name="kaito"]
 
 ; --- ５．セーブ＆ロードとファイル呼び出し ---
 [er layer="character"]
 yuna:「この状態でセーブができます。メニューから試してみてね。」
+
 yuna:「次に、`scene2.ks`をサブルーチンとして呼び出します。」
 
 [fadeout time=500]
