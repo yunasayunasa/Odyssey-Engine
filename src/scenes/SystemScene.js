@@ -5,32 +5,36 @@ export default class SystemScene extends Phaser.Scene {
 
  // SystemScene.js の create メソッド
 
-      create() {
+    create() {
         console.log("SystemScene: 起動・イベント監視開始");
-
-        // ★★★ すべての「ノベルパートへの帰還」を、この一つのリスナーで捌く ★★★
-        this.events.on('return-to-novel', (data) => {
+         this.events.on('return-to-novel', (data) => {
+            const params = data.params;
             const fromSceneKey = data.from;
-            console.log(`SystemScene: [${fromSceneKey}]からの帰還命令を受信`);
+            console.log("--- SystemScene: 'return-to-novel' 受信！ ---");
+            console.log("受信データ:", data);
+            console.log(`SystemScene: [${fromSceneKey}]からの帰還命令を受信`, params);
 
-            // サブシーンを停止
-            if (fromSceneKey && this.scene.isActive(fromSceneKey)) {
-                this.scene.stop(fromSceneKey);
+            const gameScene = this.scene.get('GameScene');
+            if (!gameScene) {
+                console.error("SystemScene ERROR: GameSceneが見つかりません。");
+                return;
+            }
+            
+            
+            if (data.from && this.scene.isActive(data.from)) {
+                console.log(`シーン[${data.from}]を停止します。`);
+                this.scene.stop(data.from);
             }
 
-            // GameSceneを再起動し、復帰のための情報を渡す
-            this.scene.start('GameScene', {
-                resumedFrom: fromSceneKey,
-                returnParams: data.params,
-                charaDefs: this.registry.get('charaDefs') // chardefsも渡す
-            });
+            console.log("GameSceneとUISceneを再開/起動します。");
+            if (!gameScene.sys.isActive()) {
+                this.scene.resume('GameScene');
+                this.scene.resume('UIScene');
+            }
 
-            // UISceneも再起動
-            this.scene.start('UIScene');
+            console.log("GameSceneに 'execute-return' を命令します。");
+          //  gameScene.events.emit('execute-return', data.params);
         });
-
-        // (オーバーレイ用のリスナーも、必要ならここに記述)
-    
         // --- request-overlay イベントのリスナー ---
         this.events.on('request-overlay', (data) => {
             console.log("SystemScene: オーバーレイ表示リクエストを受信", data);

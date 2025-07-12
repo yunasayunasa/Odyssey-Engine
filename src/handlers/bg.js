@@ -71,6 +71,6 @@ export function handleBg(manager, params) {
     // 4. 状態更新と完了通知
     manager.stateManager.updateBg(storage);
     scene.time.delayedCall(time, () => {
-      //  manager.finishTagExecution();
+        manager.finishTagExecution();
     });
 }

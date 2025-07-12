@@ -142,34 +142,27 @@ export default class GameScene extends Phaser.Scene {
 this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
 this.scenarioManager.registerTag('stopvideo', handleStopVideo);
-       // --- 4. 必要なイベントリスナーを設定 ---
-        this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
-        
-        // ★★★ サブシーンからの復帰命令を待つ、唯一のリスナー ★★★
-        this.events.on('return-from-sub-scene', (data) => {
-            console.log("GameScene: 復帰命令を受信しました。");
-            this.performReturn(data.params);
+         this.events.on('execute-return', (params) => {
+            console.log("--- GameScene: 'execute-return' 受信！ ---");
+            console.log("受信パラメータ:", params);
+            this.performReturn(params);
         });
-
-        // --- 5. ゲームの開始処理 ---
+       // ★★★ ゲーム開始ロジックを、起動状態によって分岐させる ★★★
         if (this.isResuming) {
-            // ★ サブシーンから戻ってきた場合 (startで再起動された場合)
-            // performReturnが呼ばれるのを待つので、ここでは何もしない
-            console.log("GameScene: 復帰待機状態で起動しました。");
+            // --- サブシーンからの復帰の場合 ---
+            console.log("GameScene: 復帰処理を実行します。");
+            this.performReturn(this.returnParams);
         } else {
-            // ★ 通常の初回起動の場合
+            // --- 通常の初回起動の場合 ---
             this.scenarioManager.load(this.startScenario);
             if (this.startLabel) {
                 this.scenarioManager.jumpTo(this.startLabel);
             }
-            this.time.delayedCall(10, () => {
-                // サウンド有効化もここで行うのが最も安全
-                if (this.sound.context.state === 'suspended') {
-                    this.sound.context.resume();
-                }
-                this.scenarioManager.next();
-            }, [], this);
+            this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
         }
+        
+        this.input.once('pointerdown', () => { if (this.sound.context.state === 'suspended') this.sound.context.resume(); }, this);
+        this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
         
         console.log("GameScene: create 完了");
     }
@@ -248,9 +241,6 @@ clearChoiceButtons() {
     this.pendingChoices = []; // 念のためこちらもクリア
     if (this.scenarioManager) {
         this.scenarioManager.isWaitingChoice = false;
-       // ★★★ StateManagerの状態もリセット ★★★
-        this.scenarioManager.stateManager.state.status.isWaitingChoice = false;
-        this.scenarioManager.stateManager.state.status.pendingChoices = [];
     }
 }
 // GameScene.js
@@ -277,76 +267,133 @@ clearChoiceButtons() {
     }
 
 
-    
-    // ★★★ performLoadメソッドを、この内容で完全に置き換えてください ★★★
-    performLoad(slot) {
-        try {
-            const jsonString = localStorage.getItem(`save_data_${slot}`);
-            if (!jsonString) {
-                console.warn(`スロット[${slot}]にセーブデータがありません。`);
-                return;
-            }
-            const loadedState = JSON.parse(jsonString);
-            console.log(`スロット[${slot}]からロードしました。`, loadedState);
-
-            // 1. rebuildSceneで、見た目と内部状態を復元する
-            rebuildScene(this, loadedState);
-            
-            // 2. 復元した行から、シナリオを再開する
-            this.scenarioManager.next();
-
-        } catch (e) {
-            console.error(`ロード処理でエラーが発生しました。`, e);
+    // GameSceneクラスの中に追加
+async performLoad(slot) { // asyncに戻しておくと後々安全
+    try {
+        const jsonString = localStorage.getItem(`save_data_${slot}`);
+        if (!jsonString) {
+            console.warn(`スロット[${slot}]にセーブデータがありません。`);
+            return;
         }
+        const loadedState = JSON.parse(jsonString);
+        this.stateManager.setState(loadedState);
+        console.log(`スロット[${slot}]からロードしました。`, loadedState);
+
+        rebuildScene(this.scenarioManager, loadedState);
+        
+        // ★★★ ここからデバッグログ ★★★
+        console.log("--- performLoad: シナリオ再開処理 ---");
+
+        // ScenarioManagerが持つシナリオ配列は正しいか？
+        if (!this.scenarioManager.scenario) {
+            console.error("エラー: scenarioManager.scenarioが存在しません！");
+            return;
+        }
+        console.log(`シナリオ配列の長さ: ${this.scenarioManager.scenario.length}`);
+        
+        // currentLineは正しいか？
+        console.log(`再開行番号: ${this.scenarioManager.currentLine}`);
+
+        if (this.scenarioManager.currentLine >= this.scenarioManager.scenario.length) {
+            console.error("エラー: 再開行番号がシナリオの範囲外です！");
+            return;
+        }
+        
+        // 行テキストの取得
+        const line = this.scenarioManager.scenario[this.scenarioManager.currentLine];
+        console.log(`再開する行テキスト: "${line}"`);
+
+        // 行番号を進める
+        this.scenarioManager.currentLine++;
+
+        // パース実行
+        console.log("parseを実行します...");
+        this.scenarioManager.parse(line);
+        console.log("performLoad 正常終了");
+        
+    } catch (e) {
+        // ★★★ エラーオブジェクトも出力する ★★★
+        console.error(`ロード処理でエラーが発生しました。`, e);
     }
 }
-
-// ★★★ rebuildSceneヘルパー関数を、この内容で完全に置き換えてください ★★★
-function rebuildScene(scene, state) {
+}
+/**
+ * ロードした状態に基づいて、シーンの表示を再構築するヘルパー関数
+ * @param {ScenarioManager} manager - 操作対象のシナリオマネージャー
+ * @param {Object} state - ロードした状態オブジェクト
+ */
+function rebuildScene(manager, state) {
     console.log("--- rebuildScene 開始 ---");
-    const manager = scene.scenarioManager;
+    const scene = manager.scene;
 
     // 1. 現在の表示をすべてクリア
-    scene.layer.background.removeAll(true);
-    scene.layer.character.removeAll(true);
-    scene.characters = {};
+    console.log("1. レイヤーをクリアします...");
+    manager.layers.background.removeAll(true);
+    manager.layers.character.removeAll(true);
+    scene.characters = {}; // キャラクター管理リストもリセット
     manager.soundManager.stopBgm();
+    console.log("...レイヤークリア完了");
 
-    // 2. StateManagerの状態を、ロードしたデータで完全に上書き
-    manager.stateManager.setState(state);
-    
-    // 3. ScenarioManagerの内部状態を、復元したstateから設定
+    // 2. シナリオを復元
+    console.log("2. シナリオ情報を復元します...");
     manager.currentFile = state.scenario.fileName;
     manager.currentLine = state.scenario.line;
-    manager.ifStack = state.ifStack || [];       // セーブデータにifStackがなければ空配列
-    manager.callStack = state.callStack || []; // セーブデータにcallStackがなければ空配列
+    console.log(`...シナリオ情報: file=${manager.currentFile}, line=${manager.currentLine}`);
 
-    // 4. シナリオ配列を再構築
-    const rawText = scene.cache.text.get(manager.currentFile);
-    if (!rawText) throw new Error(`シナリオ[${manager.currentFile}]のキャッシュが見つかりません。`);
-    manager.scenario = rawText.split(/\r\n|\n|\r/).filter(line => line.trim() !== '');
-
-    // 5. 見た目を再構築 (背景、キャラ、BGM)
-    if (state.layers.background) {
-        const bg = scene.add.image(640, 360, state.layers.background);
-        scene.layer.background.add(bg);
+    if (!scene.cache.text.has(manager.currentFile)) {
+        throw new Error(`シナリオファイル[${manager.currentFile}]がキャッシュにありません。`);
     }
+    const rawText = scene.cache.text.get(manager.currentFile);
+    manager.scenario = rawText.split(/\r\n|\n|\r/).filter(line => line.trim() !== '');
+    console.log("...シナリオキャッシュOK、再構築完了");
+
+    // 3. 背景を復元
+    console.log("3. 背景を復元します...");
+    if (state.layers.background) {
+        if (!scene.textures.exists(state.layers.background)) {
+            throw new Error(`背景テクスチャ[${state.layers.background}]がキャッシュにありません。`);
+        }
+        const bg = scene.add.image(scene.scale.width / 2, scene.scale.height / 2, state.layers.background);
+        bg.setDisplaySize(scene.scale.width, scene.scale.height);
+        manager.layers.background.add(bg);
+    }
+    console.log("...背景復元完了");
+    
+    // 4. キャラクターを復元
+    console.log("4. キャラクターを復元します...");
     for (const name in state.layers.characters) {
         const charaData = state.layers.characters[name];
+        console.log(`...キャラクター[${name}]を復元中...`);
+        if (!scene.textures.exists(charaData.storage)) {
+            throw new Error(`キャラクターテクスチャ[${charaData.storage}]がキャッシュにありません。`);
+        }
         const chara = scene.add.image(charaData.x, charaData.y, charaData.storage);
-        chara.setData('pos', charaData.pos);
-        chara.setTint(0xffffff); // 必ず明るい状態に戻す
-        chara.setFlipX(charaData.flipX || false); // 反転状態も復元
-        chara.setScale(charaData.scale || 1); // スケールも復元
-        scene.layer.character.add(chara);
-        scene.characters[name] = chara;
+        // ★★★ 必ずTintをリセットして明るい状態にする ★★★
+        chara.setTint(0xffffff);
+
+        manager.layers.character.add(chara);
+        scene.characters[name] = chara; // 管理リストに再登録
     }
+    console.log("...キャラクター復元完了");
+
+    // 5. BGMを復元
+   console.log("5. BGMを復元します...");
     if (state.sound.bgm) {
         manager.soundManager.playBgm(state.sound.bgm);
     }
+    console.log("...BGM復元完了");
     
-    // 6. UIをリセット
-    manager.messageWindow.setText('', false);
-    manager.highlightSpeaker(null);
+       // 6. メッセージウィンドウをリセット
+    manager.messageWindow.setText('');
+
+    // ★★★ 7. 話者とハイライトを復元 ★★★
+   /* let speakerName = null;
+    const line = manager.scenario[manager.currentLine];
+    const speakerMatch = line.trim().match(/^([a-zA-Z0-9_]+):/);
+    if (speakerMatch) {
+        speakerName = speakerMatch[1];
+    }
+    manager.highlightSpeaker(speakerName);*/
+    
     console.log("--- rebuildScene 正常終了 ---");
 }

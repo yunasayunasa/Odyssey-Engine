@@ -40,7 +40,6 @@ export default class ScenarioManager {
         this.currentFile = scenarioKey;
         this.currentLine = 0;
         console.log(`シナリオを解析しました: ${this.currentFile}`);
-          this.next();
     }
 
   async  next() {
@@ -82,7 +81,6 @@ export default class ScenarioManager {
                 this.autoTimer = null;
             }
             this.isWaitingClick = false;
-            this.stateManager.state.status.isWaitingClick = false;
           await  this.next();
         }
        // ★ スキップモード中は、クリックでスキップを解除する
@@ -92,51 +90,76 @@ export default class ScenarioManager {
         }
     }
 
-        async parse(line) {
+      async parse(line) {
         const processedLine = this.embedVariables(line);
         const trimedLine = processedLine.trim();
 
-        try {
-            // スキップ判定
-            const ifState = this.ifStack.length > 0 ? this.ifStack[this.ifStack.length - 1] : null;
-            if (ifState && ifState.skipping) {
-                const { tagName } = this.parseTag(trimedLine);
-                if (['if', 'elsif', 'else', 'endif'].includes(tagName)) {
-                    const handler = this.tagHandlers.get(tagName);
-                    if (handler) handler(this, this.parseTag(trimedLine).params);
-                }
-                this.next(); // スキップモードなら、必ず次に進む
-                return;
-            }
-            
-            // 通常実行
-            if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
-                this.next();
-            } else if (trimedLine.match(/^([a-zA-Z0-9_]+):/) || (trimedLine.length > 0 && !trimedLine.startsWith('['))) {
-                // 話者指定行、または地の文
-                this.isWaitingClick = true;
-                this.messageWindow.setText(processedLine, true, () => {
-                    this.messageWindow.showNextArrow();
-                });
-            } else if (trimedLine.startsWith('[')) {
-                // タグ行
-                const { tagName, params } = this.parseTag(trimedLine);
+        // スキップ判定
+        const ifState = this.ifStack.length > 0 ? this.ifStack[this.ifStack.length - 1] : null;
+        if (ifState && ifState.skipping) {
+            const { tagName } = this.parseTag(trimedLine);
+            if (['if', 'elsif', 'else', 'endif'].includes(tagName)) {
                 const handler = this.tagHandlers.get(tagName);
-                if (handler) {
-                    const promise = handler(this, params);
-                    if (promise instanceof Promise) {
-                        await promise;
-                    }
-                } else {
-                    console.warn(`未定義のタグです: [${tagName}]`);
-                }
-                this.next();
-            } else {
-                this.next();
+                if (handler) handler(this, this.parseTag(trimedLine).params);
             }
-        } catch (e) {
-            console.error(`パース中に致命的なエラーが発生しました: line="${line}"`, e);
-            // エラーが起きても、無理やり次の行に進んでみる
+            this.next();
+            return;
+        }
+        
+        // 通常実行
+        if (trimedLine.startsWith(';') || trimedLine.startsWith('*')|| trimedLine.startsWith('@')) {
+            this.next();
+        } else if (trimedLine.match(/^([a-zA-Z0-9_]+):/)) {
+            // 話者指定行
+            const speakerMatch = trimedLine.match(/^([a-zA-Z0-9_]+):/);
+            const speakerName = speakerMatch[1];
+            const dialogue = trimedLine.substring(speakerName.length + 1).trim();
+            this.stateManager.addHistory(speakerName, dialogue);
+            this.highlightSpeaker(speakerName);
+            const wrappedLine = this.manualWrap(dialogue);
+            this.isWaitingClick = true;
+            
+            this.messageWindow.setText(wrappedLine, true, () => {
+                this.messageWindow.showNextArrow();
+                if (this.mode === 'auto') {
+                    this.startAutoMode();
+                }
+            });
+            return;
+        } else if (trimedLine.startsWith('[')) {
+           // タグ行
+            const { tagName, params } = this.parseTag(trimedLine);
+            const handler = this.tagHandlers.get(tagName);
+            if (handler) {
+                // ★★★ isWaitingTagはもう使わない ★★★
+                // this.isWaitingTag = true;
+
+                // ★★★ ハンドラの実行結果を受け取る ★★★
+                const promise = handler(this, params);
+
+                // ★★★ もしPromiseが返ってきたら、それが終わるまで待つ ★★★
+                if (promise instanceof Promise) {
+                    await promise;
+                }
+            } else {
+                console.warn(`未定義のタグです: [${tagName}]`);
+            }
+            // ★★★ 最後に必ずnext()を呼ぶ ★★★
+            this.next();
+        
+        }  else if (trimedLine.length > 0) {
+            // 地の文
+            this.stateManager.addHistory(null, trimedLine);
+            this.highlightSpeaker(null);
+            this.isWaitingClick = true; 
+            const wrappedLine = this.manualWrap(trimedLine);
+            this.messageWindow.setText(wrappedLine, true, () => {
+                this.messageWindow.showNextArrow();
+                
+            });
+            return;
+        } else {
+            // 空行
             this.next();
         }
     }
