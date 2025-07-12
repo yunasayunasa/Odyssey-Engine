@@ -95,14 +95,35 @@ export default class GameScene extends Phaser.Scene {
         console.log("選択肢を選んでください");
     });
 
-        // --- マネージャー/UIクラスの生成 (依存関係に注意) ---
-        this.configManager = this.sys.registry.get('configManager');
+               // --- マネージャー/UIクラスの生成 (依存関係に注意) ---
         
-        this.stateManager = new StateManager();
+        // 1. 他から依存される、独立したマネージャーを先に作る
+        this.configManager = this.sys.registry.get('configManager');
         this.soundManager = new SoundManager(this, this.configManager);
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
+        
+        // MessageWindowの配置とレイヤーへの追加
+        this.messageWindow.setPosition(Layout.ui.messageWindow.x, Layout.ui.messageWindow.y);
         this.layer.message.add(this.messageWindow);
-        this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
+
+        // 2. StateManagerとScenarioManagerを、相互に参照させながら生成する
+        
+        // まず、ScenarioManagerのインスタンスを生成する。この時点ではstateManagerはまだ知らない。
+        this.scenarioManager = new ScenarioManager(
+            this,
+            this.layer,
+            this.charaDefs,
+            this.messageWindow,
+            this.soundManager,
+            null, // stateManagerは、まだないのでnullを渡す
+            this.configManager
+        );
+
+        // 次に、生成したscenarioManagerを渡して、StateManagerを生成する
+        this.stateManager = new StateManager(this.scenarioManager);
+
+        // 最後に、完成したstateManagerを、ScenarioManagerに教えてあげる
+        this.scenarioManager.setStateManager(this.stateManager);
         
         // --- タグハンドラの登録 ---
         this.scenarioManager.registerTag('chara_show', handleCharaShow);

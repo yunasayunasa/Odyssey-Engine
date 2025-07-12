@@ -25,6 +25,11 @@ export default class ScenarioManager {
         this.callStack = [];
     }
 
+     // ★★★ このメソッドを追加 ★★★
+    setStateManager(stateManager) {
+        this.stateManager = stateManager;
+    }
+
     registerTag(tagName, handler) {
         this.tagHandlers.set(tagName, handler);
     }
