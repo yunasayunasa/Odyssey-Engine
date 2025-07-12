@@ -103,7 +103,7 @@ export default class GameScene extends Phaser.Scene {
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
         
         // MessageWindowの配置とレイヤーへの追加
-        this.messageWindow.setPosition(Layout.ui.messageWindow.x, Layout.ui.messageWindow.y);
+        this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
         this.layer.message.add(this.messageWindow);
 
         // 2. StateManagerとScenarioManagerを、相互に参照させながら生成する
@@ -125,6 +125,7 @@ export default class GameScene extends Phaser.Scene {
         // 最後に、完成したstateManagerを、ScenarioManagerに教えてあげる
         this.scenarioManager.setStateManager(this.stateManager);
         
+      
         // --- タグハンドラの登録 ---
         this.scenarioManager.registerTag('chara_show', handleCharaShow);
         this.scenarioManager.registerTag('chara_hide', handleCharaHide);
@@ -186,6 +187,11 @@ this.scenarioManager.registerTag('stopvideo', handleStopVideo);
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
         
         console.log("GameScene: create 完了");
+    }
+
+    // ★★★ このメソッドを追加 ★★★
+    setStateManager(stateManager) {
+        this.stateManager = stateManager;
     }
 
     // GameSceneクラスの中に追加
