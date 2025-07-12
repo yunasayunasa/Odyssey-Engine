@@ -6,10 +6,12 @@
  * @returns {Promise<void>}
  */
 export function handleFlip(manager, params) {
+      console.log(`            [Handler:flip] >> 開始。Promiseを返します。`);
     return new Promise(resolve => {
         const name = params.name;
         if (!name) {
             console.warn('[flip] nameは必須です。');
+            
             resolve();
             return;
         }
@@ -68,11 +70,13 @@ export function handleFlip(manager, params) {
 
         // ★★★ タイムライン全体の完了を待つ ★★★
         timeline.on('complete', () => {
+             // ★★★ resolve()を呼ぶ直前にログを出す ★★★
+            console.log(`                [Handler:flip] Timeline完了。resolve()を呼び出します。`);
             // スケールを正確な値に戻す
             chara.setScale(chara.scaleX, chara.scaleY);
             resolve(); // Promiseを解決して完了を通知
         });
-
+   console.log(`            [Handler:flip] Timeline.play() を実行します。`);
         // タイムラインを実行
         timeline.play();
     });
