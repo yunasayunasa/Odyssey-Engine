@@ -25,41 +25,35 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
     }
 
-    create() {
+        create() {
         console.log("PreloadScene: ロード完了。ゲームの初期設定を行います。");
         const assetDefine = this.cache.json.get('asset_define');
-        // ★★★ 1. ConfigManagerを生成する ★★★
         const configManager = new ConfigManager();
-        
-        // ★★★ 2. 生成したインスタンスを、レジストリに登録する ★★★
-        // これで、ゲーム内のどのシーンからでも 'configManager' というキーでアクセスできる
         this.registry.set('configManager', configManager);
         
-        // --- 3. asset_define.jsonに基づいて、画像と音声をロードキューに追加 ---
-        // (この処理は、createの中で行う必要がある)
+        // --- アセットをロードキューに追加 ---
         for (const key in assetDefine.images) {
             this.load.image(key, assetDefine.images[key]);
         }
         for (const key in assetDefine.sounds) {
             this.load.audio(key, assetDefine.sounds[key]);
-        
         }
-           // ★★★ videosセクションのロードを追加 ★★★
-    for (const key in assetDefine.videos) {
-        this.load.video(key, assetDefine.videos[key], 'canplaythrough', false, true);
-    }
-         // ★★★ ここで、ゲームで使う可能性のあるシナリオファイルをすべてロードしておく ★★★
+        for (const key in assetDefine.videos) {
+            this.load.video(key, assetDefine.videos[key]);
+        }
+        // ★ ゲームで使う可能性のあるシナリオファイルをすべてロード
         this.load.text('scene1.ks', 'assets/scene1.ks');
         this.load.text('scene2.ks', 'assets/scene2.ks');
         this.load.text('overlay_test.ks', 'assets/overlay_test.ks');
-        this.load.text('test.ks', 'assets/test.ks');
-        
-        // --- 4. ロード完了後の処理を定義 ---
+        this.load.text('test.ks', 'assets/test.ks'); // テスト用
+
+        // --- ロード完了後の処理を定義 ---
         this.load.once('complete', () => {
             console.log("全アセットロード完了。");
             
-            // ★ キャラクター定義を生成
+            // ★★★ キャラクター定義の生成を、このコールバックの中で行う ★★★
             const charaDefs = {};
+            // assetDefineは、このスコープから参照できるのでOK
             for (const key in assetDefine.images) {
                 const parts = key.split('_');
                 if (parts.length === 2) {
@@ -68,23 +62,17 @@ export default class PreloadScene extends Phaser.Scene {
                     charaDefs[charaName].face[faceName] = key;
                 }
             }
-             // ★ GameSceneを開始する際に、開始シナリオを指定する
-            this.scene.start('GameScene', { 
-                charaDefs: autoCharaDefs,
-                // ★★★ ここでどのシナリオから始めるか決める ★★★
-                startScenario: 'test.ks'
-            });
-         
-            // ★★★ 全ての準備が整ったら、データを渡して次のシーンを開始 ★★★
+            
+            // ★★★ 生成したcharaDefsを渡して、次のシーンを開始 ★★★
             this.scene.start('GameScene', { 
                 charaDefs: charaDefs,
+                startScenario: 'test.ks' // 開始するシナリオを指定
             });
-            // UISceneとSystemSceneも同時に起動
             this.scene.launch('UIScene');
             this.scene.launch('SystemScene');
         });
         
-        // --- 5. 追加アセットのロードを開始 ---
+        // --- ロードを開始 ---
         this.load.start();
     }
 }
