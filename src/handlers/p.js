@@ -15,6 +15,7 @@ export function handlePageBreak(manager, params) {
         
         // 2. 溜まっていた選択肢をボタンとして表示する
         manager.scene.displayChoiceButtons();
+         manager.isWaitingClick = true;
         
         // ★ isWaitingClick は true にしない
         
