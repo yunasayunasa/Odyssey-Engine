@@ -216,7 +216,7 @@ export default class GameScene extends Phaser.Scene {
                 align: 'center',
                 fixedWidth: 500 // ボタンの幅を固定すると綺麗
             }).setOrigin(0.5).setInteractive();
-        
+            console.log("ボタン設置");
             button.on('pointerdown', () => {
                 this.clearChoiceButtons();
                 this.scenarioManager.jumpTo(choice.target);
