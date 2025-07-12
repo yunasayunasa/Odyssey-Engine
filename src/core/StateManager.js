@@ -6,8 +6,11 @@ export default class StateManager {
             sound: { bgm: null },
             variables: {},
             history: [], // ★★★ 履歴を保存する配列を追加 ★★★
-           
+           ifStack: [],
+            callStack: [],
+            pendingChoices: [] // 選択肢が表示されていた場合、その内容
         };
+        
         this.systemVariables = this.loadSystemVariables(); 
     }
 
@@ -72,7 +75,17 @@ export default class StateManager {
         console.log('History Updated:', this.state.history);
     }
 
-    getState() { return JSON.parse(JSON.stringify(this.state)); }
+    getState(manager) {
+        // ScenarioManagerから最新の状態をコピー
+        this.state.ifStack = manager.ifStack;
+        this.state.callStack = manager.callStack;
+        this.state.isWaitingChoice = manager.isWaitingChoice;
+        this.state.pendingChoices = manager.scene.pendingChoices;
+        this.state.scenario.fileName = manager.currentFile;
+        this.state.scenario.line = manager.currentLine;
+        
+        return JSON.parse(JSON.stringify(this.state));
+    }
     setState(newState) { this.state = newState; }
     updateScenario(fileName, line) { this.state.scenario.fileName = fileName; this.state.scenario.line = line; console.log('State Updated (Scenario):', this.state.scenario); }
     updateBg(storage) { this.state.layers.background = storage; console.log('State Updated (Background):', this.state.layers.background); }

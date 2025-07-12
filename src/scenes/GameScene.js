@@ -169,16 +169,16 @@ this.scenarioManager.registerTag('stopvideo', handleStopVideo);
 
     // GameSceneクラスの中に追加
 performSave(slot) {
-    try {
-        const gameState = this.stateManager.getState();
-        gameState.saveDate = new Date().toLocaleString();
-        const jsonString = JSON.stringify(gameState);
-        localStorage.setItem(`save_data_${slot}`, jsonString);
-        console.log(`スロット[${slot}]にセーブしました。`, gameState);
-    } catch (e) {
-        console.error(`セーブに失敗しました: スロット[${slot}]`, e);
+        try {
+            // ★★★ StateManagerに、ScenarioManagerのインスタンスを渡す ★★★
+            const gameState = this.stateManager.getState(this.scenarioManager);
+            gameState.saveDate = new Date().toLocaleString();
+            localStorage.setItem(`save_data_${slot}`, JSON.stringify(gameState));
+            console.log(`スロット[${slot}]にセーブしました。`);
+        } catch (e) {
+            console.error(`セーブに失敗しました: スロット[${slot}]`, e);
+        }
     }
-}
 
 /**
  * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
@@ -325,6 +325,12 @@ async performLoad(slot) { // asyncに戻しておくと後々安全
 function rebuildScene(manager, state) {
     console.log("--- rebuildScene 開始 ---");
     const scene = manager.scene;
+
+     const manager = scene.scenarioManager;
+    manager.ifStack = state.ifStack || [];
+    manager.callStack = state.callStack || [];
+    manager.isWaitingChoice = state.isWaitingChoice || false;
+    scene.pendingChoices = state.pendingChoices || [];
 
     // 1. 現在の表示をすべてクリア
     console.log("1. レイヤーをクリアします...");
