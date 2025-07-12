@@ -102,46 +102,46 @@ export default class ScenarioManager {
     }
 
  // --- parseメソッドは、状態を変更するだけ ---
+    // ScenarioManager.js の parse メソッド (最終版 Ver.2)
+
     async parse(line) {
         const trimedLine = this.embedVariables(line.trim());
 
         const ifState = this.ifStack.length > 0 ? this.ifStack[this.ifStack.length - 1] : null;
 
+        // --- 1. スキップ処理 ---
         if (ifState && ifState.skipping) {
-            // (スキップ処理は変更なし)
             const { tagName, params } = this.parseTag(trimedLine);
             if (['if', 'elsif', 'else', 'endif'].includes(tagName)) {
                 const handler = this.tagHandlers.get(tagName);
-                if (handler) handler(this, params);
+                // 同期ハンドラなのでawaitは不要だが、念のため付けても害はない
+                if (handler) await handler(this, params);
             }
-            return; // ★ 何も返さない
+            // スキップ中は、他のどの処理も行わずに関数を抜ける
+            return;
         }
 
+        // --- 2. 通常実行 (if - else if 構造で、二重処理を完全に防ぐ) ---
         if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
-            return; // ★ 何も返さない
-        }
-
-       // ScenarioManager.js の parseメソッドの[タグ行]の部分
-
-        if (trimedLine.startsWith('[')) {
+            // コメント行、ラベル行、アセット行は何もしない
+        
+        } else if (trimedLine.startsWith('[')) {
+            // --- タグ行 ---
             const { tagName, params } = this.parseTag(trimedLine);
             const handler = this.tagHandlers.get(tagName);
             if (handler) {
-                // ★★★ すべてのハンドラがPromiseを返すので、常にawaitする ★★★
+                // すべてのハンドラがPromiseを返すので、常にawaitで待つ
                 await handler(this, params);
             } else {
                 console.warn(`未定義のタグです: [${tagName}]`);
             }
-            // ★ ハンドラ内でisWaitingClickなどがtrueに設定されたかは、
-            // ★ whileループの条件式が次のループでチェックしてくれる。
-            // ★ ここでは何もreturnする必要はない。
-        }
         
-        if (trimedLine.length > 0) {
-            // (セリフ処理は変更なし)
+        } else if (trimedLine.length > 0) {
+            // --- セリフまたは地の文 ---
             let speakerName = null;
             let dialogue = trimedLine;
             const speakerMatch = trimedLine.match(/^([a-zA-Z0-9_]+):/);
+            
             if (speakerMatch) {
                 speakerName = speakerMatch[1];
                 dialogue = trimedLine.substring(speakerName.length + 1).trim();
@@ -150,14 +150,20 @@ export default class ScenarioManager {
             this.stateManager.addHistory(speakerName, dialogue);
             this.highlightSpeaker(speakerName);
             const wrappedLine = this.manualWrap(dialogue);
+            
             this.messageWindow.setText(wrappedLine, true, () => {
                 this.messageWindow.showNextArrow();
+                if (this.mode === 'auto') this.startAutoMode();
             }, speakerName);
-            
-            // ★★★ 状態を変更するだけ ★★★
+
+            // 状態を「クリック待ち」に設定
             this.isWaitingClick = true; 
-            return; // ★ 何も返さない
+        
+        } else {
+            // --- 空行は何もしない ---
         }
+
+        // parseメソッドは状態を変更するだけで、何もreturnしない
     }
  
 
