@@ -41,7 +41,7 @@ import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
 import { handleVideo } from '../handlers/video.js';
 import { handleStopVideo } from '../handlers/stopvideo.js';
-
+import Layout from '../core/Layout.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -54,21 +54,21 @@ export default class GameScene extends Phaser.Scene {
         this.charaDefs = null;
         this.characters = {};
         this.configManager = null;
-        this.choiceButtons = []; 
+        this.choiceButtons = [];
         this.pendingChoices = []; // ★★★ 選択肢の一時保管場所 ★★★
         this.uiButtons = [];
     }
 
     init(data) {
         this.charaDefs = data.charaDefs;
-      
-          this.startScenario = data.startScenario || 'scene1.ks';
+
+        this.startScenario = data.startScenario || 'scene1.ks';
         this.startLabel = data.startLabel || null;
         this.isResuming = data.resumedFrom ? true : false;
         this.returnParams = data.returnParams || null;
     }
 
-    
+
 
     preload() {
         this.load.text('scene1', 'assets/scene1.ks');
@@ -76,9 +76,9 @@ export default class GameScene extends Phaser.Scene {
 
     create() {
         this.cameras.main.setBackgroundColor('#000000');
-        
-       
-           
+
+
+
         // --- レイヤー生成 ---
         this.layer.background = this.add.container(0, 0);
         this.layer.character = this.add.container(0, 0);
@@ -86,16 +86,16 @@ export default class GameScene extends Phaser.Scene {
         this.layer.message = this.add.container(0, 0);
 
         // --- マネージャー/UIクラスの生成 (最終・確定版) ---
-        
+
         // 1. 独立した部品を作る
         this.configManager = this.sys.registry.get('configManager');
         this.soundManager = new SoundManager(this, this.configManager);
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
         // const mwLayout = Layout.landscape.ui.messageWindow; ではなく
-const mwLayout = Layout.ui.messageWindow; // ★ シンプルに
-this.messageWindow.setPosition(mwLayout.x, mwLayout.y);
+        const mwLayout = Layout.ui.messageWindow; // ★ シンプルに
+        this.messageWindow.setPosition(mwLayout.x, mwLayout.y);
         this.layer.message.add(this.messageWindow);
-        
+
         // 2. 相互に依存する、中核マネージャーを生成
         this.stateManager = new StateManager();
         this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
@@ -103,8 +103,8 @@ this.messageWindow.setPosition(mwLayout.x, mwLayout.y);
         // 3. ★★★ 相互参照を、ここで確立する ★★★
         this.stateManager.setScenarioManager(this.scenarioManager);
 
-        
-      
+
+
         // --- タグハンドラの登録 ---
         this.scenarioManager.registerTag('chara_show', handleCharaShow);
         this.scenarioManager.registerTag('chara_hide', handleCharaHide);
@@ -130,8 +130,8 @@ this.messageWindow.setPosition(mwLayout.x, mwLayout.y);
         this.scenarioManager.registerTag('else', handleElse);
         this.scenarioManager.registerTag('endif', handleEndif);
         this.scenarioManager.registerTag('s', handleStop);
-　　　　　this.scenarioManager.registerTag('cm', handleClearMessage);
-　　　　　this.scenarioManager.registerTag('er', handleErase);
+        this.scenarioManager.registerTag('cm', handleClearMessage);
+        this.scenarioManager.registerTag('er', handleErase);
         this.scenarioManager.registerTag('delay', handleDelay);
         this.scenarioManager.registerTag('image', handleImage);
         this.scenarioManager.registerTag('freeimage', handleFreeImage);
@@ -140,15 +140,15 @@ this.messageWindow.setPosition(mwLayout.x, mwLayout.y);
         this.scenarioManager.registerTag('return', handleReturn);
         this.scenarioManager.registerTag('stop_anim', handleStopAnim);
         this.scenarioManager.registerTag('fadeout', handleFadeout);
-this.scenarioManager.registerTag('fadein', handleFadein);
-this.scenarioManager.registerTag('video', handleVideo);
-this.scenarioManager.registerTag('stopvideo', handleStopVideo);
-         this.events.on('execute-return', (params) => {
+        this.scenarioManager.registerTag('fadein', handleFadein);
+        this.scenarioManager.registerTag('video', handleVideo);
+        this.scenarioManager.registerTag('stopvideo', handleStopVideo);
+        this.events.on('execute-return', (params) => {
             console.log("--- GameScene: 'execute-return' 受信！ ---");
             console.log("受信パラメータ:", params);
             this.performReturn(params);
         });
-       // ★★★ ゲーム開始ロジックを、起動状態によって分岐させる ★★★
+        // ★★★ ゲーム開始ロジックを、起動状態によって分岐させる ★★★
         if (this.isResuming) {
             // --- サブシーンからの復帰の場合 ---
             console.log("GameScene: 復帰処理を実行します。");
@@ -161,10 +161,10 @@ this.scenarioManager.registerTag('stopvideo', handleStopVideo);
             }
             this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
         }
-        
+
         this.input.once('pointerdown', () => { if (this.sound.context.state === 'suspended') this.sound.context.resume(); }, this);
         this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
-        
+
         console.log("GameScene: create 完了");
     }
 
@@ -186,78 +186,78 @@ this.scenarioManager.registerTag('stopvideo', handleStopVideo);
         }
     }
 
-/**
- * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
- */
-displayChoiceButtons() {
-     // ★ 選択肢表示時に、ブロッカーを最前面に表示
-    this.choiceInputBlocker.setVisible(true);
-    this.children.bringToTop(this.choiceInputBlocker);
-    // Y座標の計算を、全体のボタン数に基づいて行う
-    const totalButtons = this.pendingChoices.length;
-    const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
-// ★★★ ボタンの見た目をここで定義 ★★★
-    const buttonStyle = {
-        fontSize: '40px', // 文字を少し大きく
-        fill: '#ccc',
-        backgroundColor: '#333333',
-        // 内側の余白を調整
-        padding: {
-            x: 40, // 横の余白を増やす
-            y: 10  // 縦の余白を増やす
-        },
-        align: 'center'
-    };
-     const buttonHeight = 120; // ボタン間のY座標の間隔
-    this.pendingChoices.forEach((choice, index) => {
-        const y = startY + (index * 120); // ボタン間のスペース
+    /**
+     * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
+     */
+    displayChoiceButtons() {
+        // ★ 選択肢表示時に、ブロッカーを最前面に表示
+        this.choiceInputBlocker.setVisible(true);
+        this.children.bringToTop(this.choiceInputBlocker);
+        // Y座標の計算を、全体のボタン数に基づいて行う
+        const totalButtons = this.pendingChoices.length;
+        const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
+        // ★★★ ボタンの見た目をここで定義 ★★★
+        const buttonStyle = {
+            fontSize: '40px', // 文字を少し大きく
+            fill: '#ccc',
+            backgroundColor: '#333333',
+            // 内側の余白を調整
+            padding: {
+                x: 40, // 横の余白を増やす
+                y: 10  // 縦の余白を増やす
+            },
+            align: 'center'
+        };
+        const buttonHeight = 120; // ボタン間のY座標の間隔
+        this.pendingChoices.forEach((choice, index) => {
+            const y = startY + (index * 120); // ボタン間のスペース
 
-    const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '40px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 }})
-        .setOrigin(0.5)
-        .setInteractive();
-   
-        this.children.bringToTop(button);
-        button.on('pointerdown', () => {
-            this.clearChoiceButtons();
-            this.scenarioManager.jumpTo(choice.target);
+            const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '40px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 } })
+                .setOrigin(0.5)
+                .setInteractive();
+
+            this.children.bringToTop(button);
+            button.on('pointerdown', () => {
+                this.clearChoiceButtons();
+                this.scenarioManager.jumpTo(choice.target);
+            });
+
+            this.choiceButtons.push(button);
         });
 
-        this.choiceButtons.push(button);
-    });
-
-    this.pendingChoices = []; // 溜めていた情報はクリア
-}
- 
-// ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
-clearChoiceButtons() {
-     // ★ 選択肢を消す時に、ブロッカーも非表示にする
-    this.choiceInputBlocker.setVisible(false);
-    this.inputBlocker.setVisible(false);
-    this.choiceButtons.forEach(button => button.destroy());
-    this.choiceButtons = []; // 配列を空にする
-    // 選択肢待ち状態を解除
-    if (this.scenarioManager) {
-        this.scenarioManager.isWaitingChoice = false;
+        this.pendingChoices = []; // 溜めていた情報はクリア
     }
-}
 
-clearChoiceButtons() {
-    this.choiceButtons.forEach(button => button.destroy());
-    this.choiceButtons = [];
-    this.pendingChoices = []; // 念のためこちらもクリア
-    if (this.scenarioManager) {
-        this.scenarioManager.isWaitingChoice = false;
+    // ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
+    clearChoiceButtons() {
+        // ★ 選択肢を消す時に、ブロッカーも非表示にする
+        this.choiceInputBlocker.setVisible(false);
+        this.inputBlocker.setVisible(false);
+        this.choiceButtons.forEach(button => button.destroy());
+        this.choiceButtons = []; // 配列を空にする
+        // 選択肢待ち状態を解除
+        if (this.scenarioManager) {
+            this.scenarioManager.isWaitingChoice = false;
+        }
     }
-}
-// GameScene.js
+
+    clearChoiceButtons() {
+        this.choiceButtons.forEach(button => button.destroy());
+        this.choiceButtons = [];
+        this.pendingChoices = []; // 念のためこちらもクリア
+        if (this.scenarioManager) {
+            this.scenarioManager.isWaitingChoice = false;
+        }
+    }
+    // GameScene.js
     async performReturn(params, returnInfo) {
         console.log("GameScene: performReturn実行", params, returnInfo);
-        
+
         // 1. 変数更新
         for (const key in params) {
             this.scenarioManager.stateManager.eval(`${key}="${params[key]}"`);
         }
-        
+
         // 2. シナリオコンテキストを復元
         // (loadScenarioは使わない)
         const rawText = this.cache.text.get(returnInfo.file);
@@ -274,7 +274,7 @@ clearChoiceButtons() {
 
 
     // GameSceneクラスの中に追加
-performLoad(slot) {
+    performLoad(slot) {
         try {
             const jsonString = localStorage.getItem(`save_data_${slot}`);
             if (!jsonString) { return; }
@@ -282,7 +282,7 @@ performLoad(slot) {
 
             // ★★★ rebuildSceneに、this(GameScene自身)を渡す ★★★
             rebuildScene(this, loadedState);
-            
+
             // 復元された状態からシナリオを再開
             if (!this.scenarioManager.isWaitingChoice && !this.scenarioManager.isWaitingClick) {
                 this.scenarioManager.next();
@@ -290,7 +290,8 @@ performLoad(slot) {
         } catch (e) {
             console.error(`ロード処理でエラーが発生しました。`, e);
         }
-    }}
+    }
+}
 /**
 
 // ★★★ rebuildSceneの定義を、引数を2つ受け取る形に修正 ★★★
@@ -319,7 +320,7 @@ function rebuildScene(scene, state) {
         isWaitingClick: state.status.isWaitingClick || false, // ★ state.statusから取得
     });
     scene.pendingChoices = state.pendingChoices || [];
-    
+
     // --- 3. シナリオ配列の再構築 ---
     const rawText = scene.cache.text.get(manager.currentFile);
     if (!rawText) throw new Error(`シナリオ[${manager.currentFile}]のキャッシュが見つかりません。`);
@@ -339,7 +340,7 @@ function rebuildScene(scene, state) {
         scene.characters[name] = chara;
     }
     if (state.sound.bgm) { manager.soundManager.playBgm(state.sound.bgm); }
-    
+
     // --- 5. UIの再構築 ---
     manager.messageWindow.setText('', false);
     manager.highlightSpeaker(null);
