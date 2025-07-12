@@ -20,20 +20,20 @@ export function handleErase(manager, params) {
         } else {
             console.warn(`[er] 消去対象のオブジェクト[${params.name}]が見つかりません。`);
         }
-        return; // 個別削除の場合はここで終了
+       return Promise.resolve();// 個別削除の場合はここで終了
     }
 
     // ★★★ layer属性で一括削除 ★★★
     const layerName = params.layer;
     if (!layerName) {
         console.warn('[er] layer属性またはname属性は必須です。');
-        return;
+        return Promise.resolve();
     }
 
     const targetLayer = manager.layers[layerName];
     if (!targetLayer) {
         console.warn(`[er] 指定されたレイヤー[${layerName}]が見つかりません。`);
-        return;
+        return Promise.resolve();
     }
     
     // レイヤー内のすべてのオブジェクトを破棄
@@ -52,6 +52,6 @@ export function handleErase(manager, params) {
             manager.scene.uiButtons = [];
         }
     }
-
+return Promise.resolve();
     // ★★★ このタグの処理は一瞬で終わるので、何も呼び出す必要はない ★★★
 }

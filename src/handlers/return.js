@@ -8,7 +8,7 @@ export async function handleReturn(manager, params) {
     if (manager.callStack.length === 0) {
         console.warn('[return] 呼び出し元(callStack)がありません。');
         // 戻る場所がないので、現在のシナリオを普通に次に進める
-        return; 
+        return Promise.resolve();
     }
     
     // 1. callStackから戻り先の情報を取得
@@ -23,7 +23,7 @@ export async function handleReturn(manager, params) {
     
     // 3. 戻り先の行番号にジャンプ
     manager.currentLine = line;
-
+return Promise.resolve();
     // ★★★ この後、ScenarioManagerのメインループがnext()を呼び出す ★★★
     // これにより、[call]タグの次の行から処理が正しく再開される
 }

@@ -7,7 +7,7 @@
 export function handleElse(manager, params) {
     if (manager.ifStack.length === 0) {
         console.error("[else] 対応する[if]が存在しません。");
-        return;
+         return Promise.resolve();
     }
 
     const ifState = manager.ifStack[manager.ifStack.length - 1];
@@ -22,7 +22,7 @@ export function handleElse(manager, params) {
         // この[else]が実行されたので、このif文全体としては「条件が満たされた」ことになる
         ifState.conditionMet = true;
     }
-
+ return Promise.resolve();
     // ★★★ このタグの処理は一瞬で終わるので、何も呼び出す必要はない ★★★
     // ScenarioManagerのメインループが、この関数の終了後に次の行の処理に進む
 }

@@ -11,6 +11,6 @@ export function handleClearMessage(manager, params) {
 
     // 3. ★★★ クリック待ちアイコンを表示する ★★★
     manager.messageWindow.showNextArrow();
-    
+    return Promise.resolve();
     // next()は呼ばない。クリックを待つ。
 }

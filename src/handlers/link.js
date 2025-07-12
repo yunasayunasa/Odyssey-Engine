@@ -11,11 +11,11 @@ export function handleLink(manager, params) {
     // 必須パラメータのチェック
     if (!target) {
         console.warn('[link] target属性は必須です。');
-        return; // 何もせず同期的に完了
+        return Promise.resolve();// 何もせず同期的に完了
     }
     if (!text) {
         console.warn('[link] text属性は必須です。');
-        return; // 何もせず同期的に完了
+       return Promise.resolve();// 何もせず同期的に完了
     }
 
     // GameSceneが持つ pendingChoices 配列に選択肢情報を追加
@@ -25,7 +25,7 @@ export function handleLink(manager, params) {
         // 念のため、pendingChoicesが存在しない場合にエラーを出しておく
         console.error("エラー: manager.scene.pendingChoices が存在しません。GameSceneを確認してください。");
     }
-
+return Promise.resolve();
     // ★★★ このタグの処理は一瞬で終わるので、何も呼び出す必要はない ★★★
     // すぐに次の行（次の[link]タグや[p]タグ）の処理に進む
 }

@@ -8,19 +8,19 @@ export function handleStopAnim(manager, params) {
     const name = params.name;
     if (!name) {
         console.warn('[stop_anim] name属性は必須です。');
-        return; // 何もせず同期的に完了
+        return Promise.resolve();// 何もせず同期的に完了
     }
     
     // キャラクターだけでなく、name属性を持つあらゆるオブジェクトを対象にできる
     const target = manager.scene.characters[name]; 
     if (!target) {
         console.warn(`[stop_anim] 停止対象のオブジェクト[${name}]が見つかりません。`);
-        return;
+      return Promise.resolve();
     }
 
     // ★★★ 指定されたターゲットに紐づくTweenをすべて停止・削除する ★★★
     manager.scene.tweens.killTweensOf(target);
-
+return Promise.resolve();
     console.log(`オブジェクト[${name}]のアニメーションを停止しました。`);
 
     // ★★★ StateManagerに関する処理はすべて不要 ★★★

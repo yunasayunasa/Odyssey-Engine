@@ -8,12 +8,14 @@ export function handleEval(manager, params) {
     const exp = params.exp;
     if (!exp) {
         console.warn('[eval] exp属性は必須です。');
+      return Promise.resolve();
         return; // 何もせず同期的に完了
     }
 
     // StateManagerに式の実行を依頼する
     try {
         manager.stateManager.eval(exp);
+        return Promise.resolve();
     } catch (e) {
         // StateManagerのeval内でエラーが捕捉されなかった場合に備える
         console.error(`[eval] 式の実行中に予期せぬエラーが発生しました: "${exp}"`, e);
