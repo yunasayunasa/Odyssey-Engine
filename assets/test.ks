@@ -93,7 +93,7 @@ yuna:「次に、`scene2.ks`をサブルーチンとして呼び出します。�
 [fadein time=500]
 
 yuna:「サブルーチンから戻ってきました。次はアクションシーンを呼び出します。」
-
+yuna:コールタグによるテストです。
 [fadeout time=500]
 [wait time=500]
 [call storage="ActionScene"]
