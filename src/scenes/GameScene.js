@@ -41,7 +41,7 @@ import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
 import { handleVideo } from '../handlers/video.js';
 import { handleStopVideo } from '../handlers/stopvideo.js';
-import Layout from '../core/Layout.js';
+
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
