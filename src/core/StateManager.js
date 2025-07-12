@@ -81,14 +81,22 @@ export default class StateManager {
         this.f = loadedState.variables.f || {};
     }
 
-    // `eval` メソッドは変更の必要なし。そのままでOK。
+   // core/StateManager.js の eval メソッド
+
     eval(exp) {
-        // 'use strict' スコープ内で安全に実行
         try {
-            return (function(f, sf) {
+            const f = this.f;
+            const sf = this.sf; // sfもスコープに入れる
+
+            const result = (function(f, sf) {
                 'use strict';
-                return eval(exp);
-            })(this.f, this.sf);
+                return eval(exp); 
+            })(f, sf); // sfも引数として渡す
+
+            // ★★★ 修正箇所: ここでsfが変更された可能性があるので保存する ★★★
+            this.saveSystemVariables(); 
+            return result;
+
         } catch (e) {
             console.error(`[eval] 式の評価中にエラーが発生しました: "${exp}"`, e);
             return undefined;
