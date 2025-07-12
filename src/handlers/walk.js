@@ -21,11 +21,11 @@ export function handleWalk(manager, params) {
             return;
         }
 
-        const time = Number(params.time) || 2000;
+        const time = Number(params.time) || 2000; // 歩く総時間
         const targetX = params.x !== undefined ? Number(params.x) : chara.x;
-        const targetY = params.y !== undefined ? Number(params.y) : chara.y;
-        const walkHeight = Number(params.height) || 10;
-        const walkSpeed = Number(params.speed) || 150;
+        const targetY = params.y !== undefined ? Number(params.y) : chara.y; // 最終目標Y座標
+        const walkHeight = Number(params.height) || 10; // 上下に動く幅
+        const walkSpeed = Number(params.speed) || 150; // 1回の上下動にかかる時間(ms)
 
         // ★★★ StateManagerに関する処理はすべて不要 ★★★
 
@@ -34,46 +34,48 @@ export function handleWalk(manager, params) {
         const moveTween = manager.scene.tweens.add({
             targets: chara,
             x: targetX,
-            y: targetY,
+            y: targetY, // キャラクターの最終的なY座標もこのTweenが操作する
             duration: time,
             ease: 'Linear',
             onComplete: () => {
-                // ★ 移動が完了したら、上下動Tweenを停止し、最終処理を行う
+                // ★★★ 移動が完了したら、上下動Tweenとupdateリスナーを停止・解除 ★★★
                 walkTween.stop();
-                // 最終座標を正確に設定
+                manager.scene.events.off('update', onUpdate);
+                
+                // 最終座標を正確に設定（Tweenが自動でやってくれるはずだが念のため）
                 chara.setPosition(targetX, targetY);
+
                 // 完了を通知
                 resolve();
             }
         });
 
         // --- 2. 上下動のTween (無限ループ) ---
-        // y座標の競合を避けるため、このTweenは直接chara.yを操作しない。
-        // 代わりに、charaオブジェクトにカスタムプロパティ(walkOffset)を追加し、それを動かす。
-        chara.setData('walkOffsetY', 0); // カスタムプロパティを初期化
+        // Y座標の競合を避けるため、キャラクターの「実際のY座標」ではなく、
+        // 「Y座標に加算するオフセット値」を操作するためのカスタムプロパティを使う
+        chara.setData('walkOffsetY', 0); // キャラクターのデータストアにオフセット値を初期化
 
         const walkTween = manager.scene.tweens.add({
-            targets: chara.data.values, // カスタムプロパティをターゲットにする
-            walkOffsetY: -walkHeight,   // 上に移動
-            duration: walkSpeed,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-            repeat: -1
+            targets: chara.data.values, // キャラクターのデータストアをターゲットにする
+            walkOffsetY: {
+                from: 0,
+                to: -walkHeight, // 上に移動
+                yoyo: true,      // 元の高さに戻る
+                repeat: -1,      // 無限ループ
+                ease: 'Sine.easeInOut'
+            },
+            duration: walkSpeed
         });
 
         // --- 3. Phaserの `update` イベントで、2つのTweenの結果を合成する ---
+        // 毎フレーム、キャラクターのY座標を再計算する
         const onUpdate = () => {
-            // moveTweenによって変更されたy座標に、walkTweenによるオフセットを加算する
-            chara.y = moveTween.getValue() + chara.data.values.walkOffsetY;
-
-            // moveTweenが完了したら、このupdateリスナーを解除する
-            if (!moveTween.isPlaying()) {
-                manager.scene.events.off('update', onUpdate);
-                // データも削除
-                chara.removeData('walkOffsetY');
-            }
+            // ★★★ 修正: moveTweenが操作するy座標に、walkOffsetYを合成 ★★★
+            // moveTween.getValue('y') で、moveTweenが計算した現在のy座標を正確に取得
+            chara.y = moveTween.getValue('y') + chara.data.values.walkOffsetY;
         };
         
+        // シーンのupdateイベントにリスナーを登録
         manager.scene.events.on('update', onUpdate);
     });
 }
