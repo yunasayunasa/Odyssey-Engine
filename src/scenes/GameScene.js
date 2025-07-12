@@ -210,8 +210,9 @@ displayChoiceButtons() {
    
         this.children.bringToTop(button);
         button.on('pointerdown', () => {
-            this.clearChoiceButtons();
+           
             this.scenarioManager.jumpTo(choice.target);
+             this.clearChoiceButtons();
         });
 
         this.choiceButtons.push(button);
