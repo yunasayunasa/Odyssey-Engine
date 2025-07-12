@@ -219,7 +219,7 @@ displayChoiceButtons() {
         this.choiceButtons.push(button);
     });
 
-    this.pendingChoices = []; // 溜めていた情報はクリア
+    //this.pendingChoices = []; // 溜めていた情報はクリア
 }
  
 // ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
