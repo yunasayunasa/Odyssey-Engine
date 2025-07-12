@@ -15,7 +15,7 @@
 [wait time=1000]
 
 [delay speed=80]
-yuna:「ようこそ、&f.player_name！これは、あなたと一緒に作ったゲームエンジンのチュートリアルです。」
+yuna:「ようこそ！これは、あなたと一緒に作ったゲームエンジンのチュートリアルです。」
 [delay speed=50]
 yuna:「このゲームを起動するのは、&sf.boot_count 回目ですね。」
 
