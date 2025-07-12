@@ -1,81 +1,47 @@
-export default class ConfigScene extends Phaser.Scene {
-    constructor() {
-        super('ConfigScene');
-        // constructorでは、キーの定義と、プロパティの存在宣言だけを行う
-        this.configManager = null;
-        this.uiElements = [];
+/**
+ * [video] タグの処理
+ * 指定したレイヤーで動画を再生する
+ * @param {Object} params - {storage, layer, loop, mute, nowait}
+ */
+export function handleVideo(manager, params) {
+    const storage = params.storage;
+    if (!storage) { console.warn('[video] storageは必須です。'); manager.finishTagExecution(); return; }
+
+    const layerName = params.layer || 'background'; // デフォルトは背景レイヤー
+    const targetLayer = manager.layers[layerName];
+    if (!targetLayer) { console.warn(`[video] レイヤー[${layerName}]が見つかりません。`); manager.finishTagExecution(); return; }
+    
+    const gameWidth = 1280;
+    const gameHeight = 720;
+    
+    // --- 動画オブジェクトの作成と設定 ---
+    const video = manager.scene.add.video(gameWidth / 2, gameHeight / 2, storage);
+    video.play(params.loop === 'true');
+    video.setMute(params.mute === 'true'); // mute属性
+    
+    // 背景として使う場合、画面いっぱいに表示
+    if (layerName === 'background') {
+        video.setDisplaySize(gameWidth, gameHeight);
     }
+    
+    targetLayer.add(video);
 
-    create() {
-        console.log("ConfigScene: create 開始");
-
-        // ★★★ 1. createの冒頭で、プロパティを確実に初期化する ★★★
-        this.configManager = this.sys.registry.get('configManager');
-        // 前回作られたUI要素があれば、すべて破棄して配列を空にする
-        this.uiElements.forEach(el => el.destroy());
-        this.uiElements = [];
-
-        // --- 2. UIのセットアップ (背景、タイトル、戻るボタン) ---
-        const bg = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000, 0.9).setOrigin(0, 0);
-        const title = this.add.text(this.scale.width / 2, 100, 'コンフィグ', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
-        const backButton = this.add.text(this.scale.width - 100, 50, '戻る', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-        
-        // 生成したUI要素を、管理リストに追加
-        this.uiElements.push(bg, title, backButton);
-
-        backButton.on('pointerdown', () => {
-            this.scene.stop();
-            this.scene.resume('GameScene');
-            this.scene.resume('UIScene');
+    // ★★★ nowait属性の処理 ★★★
+    if (params.nowait === 'true') {
+        manager.finishTagExecution();
+        return; // 即座に次の行へ
+    }
+    
+    // ★★★ 完了待ちの処理 (Promiseを返す) ★★★
+    // ループ再生の場合は完了しないので、waitタグと併用する必要がある
+    if (params.loop !== 'true') {
+        return new Promise(resolve => {
+            video.once('complete', () => {
+                console.log(`動画[${storage}]の再生が完了しました。`);
+                video.destroy();
+                resolve();
+            });
         });
-
-        // --- 3. 設定項目を定義から自動生成 ---
-        const configDefs = this.configManager.getDefs();
-        let y = 250;
-
-        for (const key in configDefs) {
-            const def = configDefs[key];
-            
-            const label = this.add.text(100, y, def.label, { fontSize: '32px', fill: '#fff' }).setOrigin(0, 0.5);
-            this.uiElements.push(label);
-
-            if (def.type === 'slider') {
-                const valueText = this.add.text(1280 - 400, y, this.configManager.getValue(key), { fontSize: '32px', fill: '#fff' }).setOrigin(1, 0.5);
-                const minusButton = this.add.text(1280 - 300, y, '-', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-                const plusButton = this.add.text(1280 - 200, y, '+', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-                this.uiElements.push(valueText, minusButton, plusButton);
-
-                const updateValue = (newValue) => {
-                    newValue = Phaser.Math.Clamp(newValue, def.min, def.max);
-                    newValue = parseFloat((Math.round(newValue / def.step) * def.step).toFixed(2));
-                    this.configManager.setValue(key, newValue);
-                    valueText.setText(this.configManager.getValue(key));
-                };
-                minusButton.on('pointerdown', () => updateValue(this.configManager.getValue(key) - def.step));
-                plusButton.on('pointerdown', () => updateValue(this.configManager.getValue(key) + def.step));
-
-            } else if (def.type === 'option') {
-                const options = def.options;
-                const currentValue = this.configManager.getValue(key);
-                let buttonX = 1280 - 150;
-
-                Object.keys(options).reverse().forEach(optionKey => {
-                    const optionLabel = options[optionKey];
-                    const button = this.add.text(buttonX, y, optionLabel, { fontSize: '32px' }).setOrigin(1, 0.5).setInteractive().setPadding(10);
-                    this.uiElements.push(button);
-                    
-                    if (optionKey === currentValue) {
-                        button.setBackgroundColor('#555');
-                    }
-                    
-                    button.on('pointerdown', () => {
-                        this.configManager.setValue(key, optionKey);
-                        this.scene.restart(); 
-                    });
-                    buttonX -= button.width + 20;
-                });
-            }
-            y += 100;
-        }
     }
+    // ループ再生でnowaitでない場合、シナリオはここで止まる。[stopvideo]で進める。
 }
