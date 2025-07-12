@@ -1,17 +1,16 @@
 /**
  * [flip] タグの処理
  * 指定されたキャラクターを表情差分付きで反転させる
+ * (Timelineの代わりにchainを使用)
  * @param {ScenarioManager} manager
  * @param {Object} params - { name, face, time }
  * @returns {Promise<void>}
  */
 export function handleFlip(manager, params) {
-      console.log(`            [Handler:flip] >> 開始。Promiseを返します。`);
     return new Promise(resolve => {
         const name = params.name;
         if (!name) {
             console.warn('[flip] nameは必須です。');
-            
             resolve();
             return;
         }
@@ -25,59 +24,61 @@ export function handleFlip(manager, params) {
 
         const time = Number(params.time) || 500;
         const halfTime = time / 2;
+        const originalScaleX = chara.scaleX; // 元のスケールを保持
 
-        // ★★★ Phaserのタイムライン機能で連続したアニメーションを作成 ★★★
-        const timeline = manager.scene.tweens.createTimeline();
+        // ★★★ Tween.chain() で連続したアニメーションを作成 ★★★
+        manager.scene.tweens.chain({
+            // すべてのアニメーションが完了したときに呼ばれる
+            onComplete: () => {
+                // 念のため最終的なスケールを補正
+                chara.setScale(originalScaleX, chara.scaleY);
+                console.log(`[Handler:flip] chain完了。resolve()を呼び出します。`);
+                resolve();
+            },
+            
+            // 実行するTweenを配列で指定
+            tweens: [
+                // 1. 半分の時間かけて画像を横に潰す
+                {
+                    targets: chara,
+                    scaleX: 0,
+                    duration: halfTime,
+                    ease: 'Linear'
+                },
+                
+                // 2. 潰れた瞬間にテクスチャと向きを差し替える
+                // onStartコールバックを持つダミートゥイーンを挟む
+                {
+                    targets: chara,
+                    // 何も変化させないのでdurationは0で良い
+                    duration: 0,
+                    onStart: () => {
+                        console.log(`[Handler:flip] 中間処理: 反転とテクスチャ変更`);
+                        // 向きを反転
+                        chara.toggleFlipX();
 
-        // 1. 半分の時間かけて画像を横に潰す
-        timeline.add({
-            targets: chara,
-            scaleX: 0,
-            duration: halfTime,
-            ease: 'Linear'
-        });
-
-        // 2. 潰れた瞬間にテクスチャと向きを差し替える
-        timeline.add({
-            targets: chara,
-            duration: 0, // 時間は0
-            onStart: () => { // アニメーション開始の瞬間に実行
-                // 向きを反転
-                chara.toggleFlipX();
-
-                // face属性があれば、テクスチャを差し替える
-                const face = params.face;
-                if (face) {
-                    const def = manager.characterDefs[name];
-                    const newStorage = def ? def.face[face] : null;
-                    if (newStorage) {
-                        chara.setTexture(newStorage);
-                    } else {
-                        console.warn(`[flip] キャラクター[${name}]の表情[${face}]が見つかりません。`);
+                        // face属性があれば、テクスチャを差し替える
+                        const face = params.face;
+                        if (face) {
+                            const def = manager.characterDefs[name];
+                            const newStorage = def ? def.face[face] : null;
+                            if (newStorage) {
+                                chara.setTexture(newStorage);
+                            } else {
+                                console.warn(`[flip] キャラクター[${name}]の表情[${face}]が見つかりません。`);
+                            }
+                        }
                     }
+                },
+
+                // 3. 残り半分の時間で元の幅に戻す
+                {
+                    targets: chara,
+                    scaleX: originalScaleX, // 元のスケールに戻す
+                    duration: halfTime,
+                    ease: 'Linear'
                 }
-                // ★★★ StateManagerへの通知は一切不要 ★★★
-            }
+            ]
         });
-
-        // 3. 残り半分の時間で元の幅に戻す
-        timeline.add({
-            targets: chara,
-            scaleX: chara.scaleX, // 元のスケールに戻す（左右反転してもスケールは同じ）
-            duration: halfTime,
-            ease: 'Linear'
-        });
-
-        // ★★★ タイムライン全体の完了を待つ ★★★
-        timeline.on('complete', () => {
-             // ★★★ resolve()を呼ぶ直前にログを出す ★★★
-            console.log(`                [Handler:flip] Timeline完了。resolve()を呼び出します。`);
-            // スケールを正確な値に戻す
-            chara.setScale(chara.scaleX, chara.scaleY);
-            resolve(); // Promiseを解決して完了を通知
-        });
-   console.log(`            [Handler:flip] Timeline.play() を実行します。`);
-        // タイムラインを実行
-        timeline.play();
     });
 }
