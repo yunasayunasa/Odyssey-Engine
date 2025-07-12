@@ -40,7 +40,7 @@ import { handleStopAnim } from '../handlers/stop_anim.js';
 import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
 import { handleVideo } from '../handlers/video.js';
-
+import { handleStopVideo } from '../handlers/stopvideo.js';
 
 
 export default class GameScene extends Phaser.Scene {
@@ -61,7 +61,8 @@ export default class GameScene extends Phaser.Scene {
 
     init(data) {
         this.charaDefs = data.charaDefs;
-          this.startScenario = data.startScenario || 'scene1.ks';
+        //ここを変えてスタートシナリオを変える
+          this.startScenario = data.startScenario || 'test.ks';
         this.startLabel = data.startLabel || null;
         this.isResuming = data.resumedFrom ? true : false;
         this.returnParams = data.returnParams || null;
@@ -140,6 +141,7 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
+this.scenarioManager.registerTag('stopvideo', handleStopVideo);
          this.events.on('execute-return', (params) => {
             console.log("--- GameScene: 'execute-return' 受信！ ---");
             console.log("受信パラメータ:", params);
