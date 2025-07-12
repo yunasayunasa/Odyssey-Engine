@@ -171,6 +171,7 @@ this.scenarioManager.registerTag('stopvideo', handleStopVideo);
 // ...
 
 performSave(slot) {
+    
     // ★★★ デバッグログを追加 ★★★
     console.log("--- performSave 実行開始 ---");
     console.log("this (GameSceneインスタンス):", this);
@@ -184,7 +185,7 @@ performSave(slot) {
         this.scene.resume('GameScene');
         return;
     }
-
+  console.log("========== GameScene.performSave が呼ばれました ==========");
     try {
         // ここで this.scenarioManager が渡される
         const gameState = this.stateManager.getState(this.scenarioManager);
@@ -283,6 +284,7 @@ clearChoiceButtons() {
 
    // ★★★ performLoad を修正 ★★★
 async performLoad(slot) {
+      console.log("========== GameScene.performロードが呼ばれました ==========");
     try {
         const jsonString = localStorage.getItem(`save_data_${slot}`);
         if (!jsonString) {

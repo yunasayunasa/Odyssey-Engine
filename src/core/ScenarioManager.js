@@ -42,7 +42,9 @@ export default class ScenarioManager {
         console.log(`シナリオを解析しました: ${this.currentFile}`);
     }
 async next() {
+     console.log(`--- ScenarioManager.next 開始 (currentLine: ${this.currentLine}) ---`);
         if (this.isEnd || this.isWaitingClick || this.isWaitingTag) {
+              console.log("--- next: 待機状態のため処理を中断 ---");
             return;
         }
         if (this.currentLine >= this.scenario.length) {
@@ -56,7 +58,7 @@ async next() {
         
         const line = this.scenario[this.currentLine];
         this.currentLine++;
-        
+        console.log(`--- next: parseを呼び出します。処理対象の行: "${line}" ---`);
         await this.parse(line);
     }
     
@@ -89,6 +91,7 @@ async next() {
     }
 
       async parse(line) {
+         console.log(`...... ScenarioManager.parse 開始: "${line}"`);
         const processedLine = this.embedVariables(line);
         const trimedLine = processedLine.trim();
 
@@ -247,7 +250,10 @@ async next() {
     }
 
     embedVariables(line) {
+        console.log(`.......... ScenarioManager.embedVariables 開始: "${line}"`);
+
         return line.replace(/&((f|sf)\.[a-zA-Z0-9_.-]+)/g, (match, exp) => {
+             console.log(`.............. embedVariables: 変数展開を試みます -> ${exp}`);
             const value = this.stateManager.eval(exp);
             if (value === undefined || value === null) {
                 return `(undef: ${exp})`;
