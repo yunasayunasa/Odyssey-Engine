@@ -50,17 +50,6 @@ export default class ScenarioManager {
 
             return;
         }
-
-         // ★ スキップモードなら、ウェイト系タグを無視する
-        if (this.mode === 'skip') {
-            const line = this.scenario[this.currentLine];
-            // [p]や[wait]など、待機するタグの場合は、強制的に無視して即座に次のnextを呼ぶ
-            if (line.trim() === '[p]' || line.trim().startsWith('[wait')) {
-                this.currentLine++;
-                this.next();
-                return;
-            }
-        }
         
         this.stateManager.updateScenario(this.currentFile, this.currentLine);
         
@@ -85,15 +74,6 @@ export default class ScenarioManager {
         if (this.isWaitingClick) {
             this.isWaitingClick = false;
           await  this.next();
-        }
-        if (this.isWaitingClick) {
-            // ★ オートモード中にクリックされたら、オートを一旦停止・再開する
-            if (this.mode === 'auto' && this.autoTimer) {
-                this.autoTimer.remove();
-                this.autoTimer = null;
-            }
-            this.isWaitingClick = false;
-            this.next();
         }
     }
 
@@ -127,9 +107,7 @@ export default class ScenarioManager {
             this.isWaitingClick = true;
             this.messageWindow.setText(wrappedLine, true, () => {
                 this.messageWindow.showNextArrow();
-                if (this.mode === 'auto') {
-                    this.startAutoMode();
-                }
+                
             });
             return;
         } else if (trimedLine.startsWith('[')) {
@@ -361,7 +339,15 @@ export default class ScenarioManager {
         }
     }
 
-    
+    // ★★★ スキップ時にUIを非表示にする（推奨） ★★★
+    hideInterfaceForSkip() {
+        this.layers.character.setAlpha(0);
+        this.messageWindow.setAlpha(0);
+    }
+    showInterfaceForSkip() {
+        this.layers.character.setAlpha(1);
+        this.messageWindow.setAlpha(1);
+    }
 
     highlightSpeaker(speakerName) {
         const bright = 0xffffff;
