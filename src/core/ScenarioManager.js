@@ -14,6 +14,10 @@ export default class ScenarioManager {
         this.isWaitingClick = false;
         this.isWaitingTag = false;
         this.isEnd = false;
+
+           // ★★★ 進行モードを管理するプロパティを追加 ★★★
+        this.mode = 'normal'; // 'normal', 'skip', 'auto'
+        this.autoTimer = null; // オートモード用のタイマー
         
 
         this.tagHandlers = new Map();
@@ -48,7 +52,15 @@ export default class ScenarioManager {
 
             return;
         }
-        
+        if (this.mode === 'skip') {
+            const line = this.scenario[this.currentLine];
+            // [p]や[wait]など、待機するタグの場合は、強制的に無視して即座に次のnextを呼ぶ
+            if (line.trim() === '[p]' || line.trim().startsWith('[wait')) {
+                this.currentLine++;
+                this.next();
+                return;
+            }
+        }
         this.stateManager.updateScenario(this.currentFile, this.currentLine);
         
         const line = this.scenario[this.currentLine];
@@ -72,6 +84,15 @@ export default class ScenarioManager {
         if (this.isWaitingClick) {
             this.isWaitingClick = false;
           await  this.next();
+        }
+        if (this.isWaitingClick) {
+            // ★ オートモード中にクリックされたら、オートを一旦停止・再開する
+            if (this.mode === 'auto' && this.autoTimer) {
+                this.autoTimer.remove();
+                this.autoTimer = null;
+            }
+            this.isWaitingClick = false;
+            this.next();
         }
     }
 
@@ -103,9 +124,12 @@ export default class ScenarioManager {
             this.highlightSpeaker(speakerName);
             const wrappedLine = this.manualWrap(dialogue);
             this.isWaitingClick = true;
+            
             this.messageWindow.setText(wrappedLine, true, () => {
                 this.messageWindow.showNextArrow();
-                
+                if (this.mode === 'auto') {
+                    this.startAutoMode();
+                }
             });
             return;
         } else if (trimedLine.startsWith('[')) {
@@ -307,5 +331,60 @@ export default class ScenarioManager {
                 }
             }
         }
+    }
+
+        // ...
+
+    // ★★★ モードを切り替えるためのメソッド ★★★
+    setMode(newMode) {
+        // 同じモードなら何もしない
+        if (this.mode === newMode) return;
+
+        console.log(`モード変更: ${this.mode} -> ${newMode}`);
+        this.mode = newMode;
+
+        // 既存のオートタイマーがあれば停止
+        if (this.autoTimer) {
+            this.autoTimer.remove();
+            this.autoTimer = null;
+        }
+
+        // 新しいモードに応じた処理を開始
+        if (this.mode === 'skip') {
+            this.hideInterfaceForSkip(); // UIを隠す（推奨）
+            this.next(); // スキップを即座に開始
+        } else if (this.mode === 'auto') {
+            this.showInterfaceForSkip(); // UIを戻す
+            this.startAutoMode();
+        } else { // 'normal'モード
+            this.showInterfaceForSkip();
+        }
+    }
+
+    // ★★★ オートモードのタイマーを開始するメソッド ★★★
+    startAutoMode() {
+        if (this.isWaitingClick) {
+            // 現在クリック待ち状態なら、オートモードを開始
+            const autoDelay = 2000; // 2秒後に次に進む (コンフィグで変更できるようにすると尚良い)
+            this.autoTimer = this.scene.time.addEvent({
+                delay: autoDelay,
+                callback: () => {
+                    // isWaitingClickをfalseにして、次の行へ
+                    this.isWaitingClick = false;
+                    this.next();
+                },
+                callbackScope: this
+            });
+        }
+    }
+
+    // ★★★ スキップ時にUIを非表示にする（推奨） ★★★
+    hideInterfaceForSkip() {
+        this.layers.character.setAlpha(0);
+        this.messageWindow.setAlpha(0);
+    }
+    showInterfaceForSkip() {
+        this.layers.character.setAlpha(1);
+        this.messageWindow.setAlpha(1);
     }
 }
