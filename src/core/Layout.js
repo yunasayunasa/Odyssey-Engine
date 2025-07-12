@@ -11,11 +11,19 @@ export const Layout = {
             right:  { x: 1000, y: 450 }
         }
     },
-    ui: {
-        x: 1000,
-        y: 620,
-        
+      ui: {
+        messageWindow: {
+            x: 640,  // 画面中央 (1280 / 2)
+            y: 600,  // 画面下部
+            padding: 35
+        },
+        choiceButton: {
+            // この定義は、GameSceneのdisplayChoiceButtonsで直接計算しても良い
+            startY: 200,
+            stepY: 90
+        }
     },
+  
     // 横向き (landscape) のレイアウト
     landscape: {
         width: 1280,
