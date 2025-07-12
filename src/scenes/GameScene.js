@@ -78,52 +78,29 @@ export default class GameScene extends Phaser.Scene {
         this.cameras.main.setBackgroundColor('#000000');
         
        
-        // --- レイヤー生成とdepth設定 ---
-        this.layer.background = this.add.container(0, 0).setDepth(0);
-        this.layer.character = this.add.container(0, 0).setDepth(0);
-        this.layer.cg = this.add.container(0, 0).setDepth(0);
-
+           
+        // --- レイヤー生成 ---
+        this.layer.background = this.add.container(0, 0);
+        this.layer.character = this.add.container(0, 0);
+        this.layer.cg = this.add.container(0, 0);
         this.layer.message = this.add.container(0, 0);
-           // ★ 全画面を覆う、透明で見えない入力ブロッカーを作成
-    this.choiceInputBlocker = this.add.rectangle(640, 360, 1280, 720)
-        .setInteractive()
-        .setVisible(false);
-    
-    // ブロッカーがクリックされた時のイベント（何もしない、で入力を止める）
-    this.choiceInputBlocker.on('pointerdown', (pointer) => {
-        // 必要なら「選択してください」などのフィードバックを出す
-        console.log("選択肢を選んでください");
-    });
 
-               // --- マネージャー/UIクラスの生成 (依存関係に注意) ---
+        // --- マネージャー/UIクラスの生成 (最終・確定版) ---
         
-        // 1. 他から依存される、独立したマネージャーを先に作る
+        // 1. 独立した部品を作る
         this.configManager = this.sys.registry.get('configManager');
         this.soundManager = new SoundManager(this, this.configManager);
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
-        
-        // MessageWindowの配置とレイヤーへの追加
-        this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
+        this.messageWindow.setPosition(Layout.ui.messageWindow.x, Layout.ui.messageWindow.y);
         this.layer.message.add(this.messageWindow);
-
-        // 2. StateManagerとScenarioManagerを、相互に参照させながら生成する
         
-        // まず、ScenarioManagerのインスタンスを生成する。この時点ではstateManagerはまだ知らない。
-        this.scenarioManager = new ScenarioManager(
-            this,
-            this.layer,
-            this.charaDefs,
-            this.messageWindow,
-            this.soundManager,
-            null, // stateManagerは、まだないのでnullを渡す
-            this.configManager
-        );
+        // 2. 相互に依存する、中核マネージャーを生成
+        this.stateManager = new StateManager();
+        this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
 
-        // 次に、生成したscenarioManagerを渡して、StateManagerを生成する
-        this.stateManager = new StateManager(this.scenarioManager);
+        // 3. ★★★ 相互参照を、ここで確立する ★★★
+        this.stateManager.setScenarioManager(this.scenarioManager);
 
-        // 最後に、完成したstateManagerを、ScenarioManagerに教えてあげる
-        this.scenarioManager.setStateManager(this.stateManager);
         
       
         // --- タグハンドラの登録 ---

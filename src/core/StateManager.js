@@ -1,7 +1,7 @@
 export default class StateManager {
   constructor(scenarioManager) {
         // ★★★ 1. ScenarioManagerのインスタンスを、生成時に受け取る ★★★
-        this.manager = scenarioManager;
+        this.manager = null;
 
         // --- セーブデータとして保存する情報の「器」を定義 ---
         this.state = {
@@ -17,6 +17,11 @@ export default class StateManager {
         };
         this.systemVariables = this.loadSystemVariables() || {};
     }
+  // ★★★ このメソッドを追加 ★★★
+    setScenarioManager(manager) {
+        this.manager = manager;
+    }
+
     // ★★★ 変数を操作するメソッドを追加 ★★★
     /**
      * 文字列のJavaScript式を安全に評価・実行する
@@ -82,10 +87,14 @@ export default class StateManager {
      * @param {ScenarioManager} manager - 最新の状態を持つシナリオマネージャー
      */
    getState() {
-        // ★★★ 2. セーブの瞬間に、ScenarioManagerから最新の状態をすべてコピーする ★★★
+        // managerがセットされていることを確認
+        if (!this.manager) return JSON.parse(JSON.stringify(this.state));
+
+        // 最新の状態をコピー
+        this.state.ifStack = this.manager.ifStack;
         this.state.scenario.fileName = this.manager.currentFile;
         this.state.scenario.line = this.manager.currentLine;
-        this.state.ifStack = this.manager.ifStack;
+       
         this.state.callStack = this.manager.callStack;
         this.state.isWaitingChoice = this.manager.isWaitingChoice;
         this.state.pendingChoices = this.manager.scene.pendingChoices;

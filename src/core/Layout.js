@@ -11,6 +11,11 @@ export const Layout = {
             right:  { x: 1000, y: 450 }
         }
     },
+    ui: {
+        x: 1000,
+        y: 620,
+        
+    },
     // 横向き (landscape) のレイアウト
     landscape: {
         width: 1280,
