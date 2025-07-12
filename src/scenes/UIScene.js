@@ -30,17 +30,18 @@ export default class UIScene extends Phaser.Scene {
         
         // --- 2. パネル内の各ボタンを作成 ---
         const buttonY = 0; // パネル内のY座標
-        const saveButton = this.add.text(gameWidth / 2 - 180, buttonY, 'セーブ', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-        const loadButton = this.add.text(gameWidth / 2 - 50, buttonY, 'ロード', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-        const configButton = this.add.text(gameWidth / 2 + 180, buttonY, '設定', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+        const saveButton = this.add.text(0, 0, 'セーブ', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+        const loadButton = this.add.text(0, 0,'ロード', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+        const configButton = this.add.text(0, 0, '設定', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
         // ★★★ パネルにバックログボタンを追加 ★★★
-        const backlogButton = this.add.text(gameWidth / 2 + 50, buttonY, '履歴', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-        
-        panel.add([saveButton, loadButton, backlogButton, configButton]);
+        const backlogButton = this.add.text(0, 0, '履歴', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+        const autoButton = this.add.text(0, 0, 'オート', { fontSize: '32px', fill: '#fff' }).setInteractive();
+        const skipButton = this.add.text(0, 0, 'スキップ', { fontSize: '32px', fill: '#fff' }).setInteractive();
+        panel.add([saveButton, loadButton, backlogButton, configButton, autoButton, skipButton]);
 
           // ★★★ ボタンのレイアウトを調整 ★★★
        // ★★★ ここからレイアウト調整 ★★★
-        const buttons = [saveButton, loadButton, backlogButton, configButton];
+        const buttons = [saveButton, loadButton, backlogButton, configButton, autoButton, skipButton];
         
         // ボタンを配置する領域の「開始X座標」と「幅」を決める
         const areaStartX = 200; // 例: 画面左端から200pxの位置から配置を開始
@@ -103,6 +104,19 @@ export default class UIScene extends Phaser.Scene {
             this.scene.pause('UIScene');
             this.scene.launch('BacklogScene');
         event.stopPropagation();
+        });
+        autoButton.on('pointerdown', () => {
+            const gameScene = this.scene.get('GameScene');
+            // 'normal'と'auto'を切り替える
+            const currentMode = gameScene.scenarioManager.mode;
+            const newMode = currentMode === 'auto' ? 'normal' : 'auto';
+            gameScene.scenarioManager.setMode(newMode);
+        });
+        skipButton.on('pointerdown', () => {
+            const gameScene = this.scene.get('GameScene');
+            const currentMode = gameScene.scenarioManager.mode;
+            const newMode = currentMode === 'skip' ? 'normal' : 'skip';
+            gameScene.scenarioManager.setMode(newMode);
         });
       this.input.setGlobalTopOnly(false);
          // ★★★ 初期レイアウト適用と、リサイズイベントの監視 ★★★
