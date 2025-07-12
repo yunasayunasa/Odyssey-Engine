@@ -142,27 +142,34 @@ export default class GameScene extends Phaser.Scene {
 this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
 this.scenarioManager.registerTag('stopvideo', handleStopVideo);
-         this.events.on('execute-return', (params) => {
-            console.log("--- GameScene: 'execute-return' 受信！ ---");
-            console.log("受信パラメータ:", params);
-            this.performReturn(params);
+       // --- 4. 必要なイベントリスナーを設定 ---
+        this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
+        
+        // ★★★ サブシーンからの復帰命令を待つ、唯一のリスナー ★★★
+        this.events.on('return-from-sub-scene', (data) => {
+            console.log("GameScene: 復帰命令を受信しました。");
+            this.performReturn(data.params);
         });
-       // ★★★ ゲーム開始ロジックを、起動状態によって分岐させる ★★★
+
+        // --- 5. ゲームの開始処理 ---
         if (this.isResuming) {
-            // --- サブシーンからの復帰の場合 ---
-            console.log("GameScene: 復帰処理を実行します。");
-            this.performReturn(this.returnParams);
+            // ★ サブシーンから戻ってきた場合 (startで再起動された場合)
+            // performReturnが呼ばれるのを待つので、ここでは何もしない
+            console.log("GameScene: 復帰待機状態で起動しました。");
         } else {
-            // --- 通常の初回起動の場合 ---
+            // ★ 通常の初回起動の場合
             this.scenarioManager.load(this.startScenario);
             if (this.startLabel) {
                 this.scenarioManager.jumpTo(this.startLabel);
             }
-            this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
+            this.time.delayedCall(10, () => {
+                // サウンド有効化もここで行うのが最も安全
+                if (this.sound.context.state === 'suspended') {
+                    this.sound.context.resume();
+                }
+                this.scenarioManager.next();
+            }, [], this);
         }
-        
-        this.input.once('pointerdown', () => { if (this.sound.context.state === 'suspended') this.sound.context.resume(); }, this);
-        this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
         
         console.log("GameScene: create 完了");
     }
