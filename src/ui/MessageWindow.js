@@ -1,3 +1,4 @@
+import { Layout } from '../core/Layout.js';
 const Container = Phaser.GameObjects.Container;
 
 export default class MessageWindow extends Container {
