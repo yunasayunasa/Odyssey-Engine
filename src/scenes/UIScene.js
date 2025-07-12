@@ -74,7 +74,7 @@ export default class UIScene extends Phaser.Scene {
         let isPanelOpen = false;
 
           menuButton.on('pointerdown', (pointer, localX, localY, event) => {
-            this.togglePanel();
+        //this.togglePanel();
             isPanelOpen = !isPanelOpen; // パネルの表示/非表示を切り替え
             
             const targetY = isPanelOpen ? gameHeight - 60 : gameHeight + 100; // 表示位置 or 隠れる位置
@@ -99,31 +99,38 @@ export default class UIScene extends Phaser.Scene {
             event.stopPropagation();
         });
        
-        configButton.on('pointerdown', () => {
+         configButton.on('pointerdown', (pointer, localX, localY, event) => {
             this.scene.pause('GameScene');
             this.scene.pause('UIScene'); // Configを開くときはUIも止める
             this.scene.launch('ConfigScene');
         event.stopPropagation();
         });
          // ★★★ バックログボタンの動作を定義 ★★★
-        backlogButton.on('pointerdown', () => {
+        backlogButton.on('pointerdown', (pointer, localX, localY, event) => {
             this.scene.pause('GameScene');
             this.scene.pause('UIScene');
             this.scene.launch('BacklogScene');
         event.stopPropagation();
         });
-        autoButton.on('pointerdown', () => {
+         autoButton.on('pointerdown', (pointer, localX, localY, event) => {
             const gameScene = this.scene.get('GameScene');
-            // 'normal'と'auto'を切り替える
-            const currentMode = gameScene.scenarioManager.mode;
-            const newMode = currentMode === 'auto' ? 'normal' : 'auto';
-            gameScene.scenarioManager.setMode(newMode);
+            if (gameScene && gameScene.scenarioManager) {
+                const currentMode = gameScene.scenarioManager.mode;
+                const newMode = currentMode === 'auto' ? 'normal' : 'auto';
+                gameScene.scenarioManager.setMode(newMode);
+            }
+            event.stopPropagation();
         });
-        skipButton.on('pointerdown', () => {
+
+        // スキップボタン
+        skipButton.on('pointerdown', (pointer, localX, localY, event) => {
             const gameScene = this.scene.get('GameScene');
-            const currentMode = gameScene.scenarioManager.mode;
-            const newMode = currentMode === 'skip' ? 'normal' : 'skip';
-            gameScene.scenarioManager.setMode(newMode);
+            if (gameScene && gameScene.scenarioManager) {
+                const currentMode = gameScene.scenarioManager.mode;
+                const newMode = currentMode === 'skip' ? 'normal' : 'skip';
+                gameScene.scenarioManager.setMode(newMode);
+            }
+            event.stopPropagation();
         });
       this.input.setGlobalTopOnly(false);
          // ★★★ 初期レイアウト適用と、リサイズイベントの監視 ★★★
