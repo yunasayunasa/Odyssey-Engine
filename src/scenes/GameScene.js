@@ -387,7 +387,7 @@ function rebuildScene(manager, state) {
     
        // 6. メッセージウィンドウをリセット
     manager.messageWindow.setText('');
-
+  this.choiceButtons.forEach(button => button.destroy());
     // ★★★ 7. 話者とハイライトを復元 ★★★
    /* let speakerName = null;
     const line = manager.scenario[manager.currentLine];
