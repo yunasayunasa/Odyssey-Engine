@@ -23,7 +23,6 @@ export default class SaveLoadScene extends Phaser.Scene {
         backButton.on('pointerdown', () => {
             this.scene.stop(); // このシーンを停止
             this.scene.resume('GameScene'); // GameSceneを再開
-            this.scene.resume('UIScene'); 
         });
 
         // --- セーブスロットを表示 ---
@@ -41,23 +40,23 @@ export default class SaveLoadScene extends Phaser.Scene {
 
             // スロットがクリックされた時の処理
                   // スロットがクリックされた時の処理
-              slotBg.on('pointerdown', () => {
+            slotBg.on('pointerdown', () => {
                 const gameScene = this.scene.get('GameScene');
                 
                 if (this.mode === 'save') {
                     gameScene.performSave(i);
                     this.scene.stop();
-                    // ★★★ 両方を再開 ★★★
+                    // ★★★ セーブ後も、GameSceneを再開する ★★★
                     this.scene.resume('GameScene');
-                    this.scene.resume('UIScene');
 
                 } else { // 'load'モードの場合
                     if (saveData) {
                         gameScene.performLoad(i);
                         this.scene.stop();
-                        // ★★★ 両方を再開 ★★★
-                        this.scene.resume('GameScene');
-                        this.scene.resume('UIScene');
+                        // ★★★ ロード後も、GameSceneを再開する ★★★
+                        // performLoadはシーンを再構築し、シナリオを1行パースするだけ。
+                        // その後のクリックイベントなどを受け付けるために、シーン自体の再開が必要。
+                        this.scene.resume('GameScene'); 
                     } else {
                         console.log(`スロット${i}は空なのでロードできません。`);
                     }
