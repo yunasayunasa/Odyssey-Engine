@@ -53,7 +53,7 @@ export default class MessageWindow extends Container {
 
     // --- setText, skipTypingなどのメソッド群 ---
     // (この部分は、あなたの正常に動作していたコードのままでOKです)
-}
+
     
        // ★★★ アイコンを制御するメソッドを追加 ★★★
     /**
