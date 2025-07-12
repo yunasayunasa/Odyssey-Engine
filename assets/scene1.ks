@@ -99,8 +99,8 @@ yuna:「サブルーチンから戻ってきました。次はアクションシ
 [call storage="ActionScene"]
 [fadein time=500]
 
-[chara_show name="yuna" pos="left"]
-[chara_show name="kaito" pos="right"]
+[chara_show name="yuna" pos="left" time="500"]
+[chara_show name="kaito" pos="right" time="500"]
 
 yuna:「すべてのアクションから戻ってきました！[br]これにて、チュートリアルを終了します！」
 
