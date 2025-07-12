@@ -1,4 +1,4 @@
-[bg storage="bg_school"]
+
 yuna:この後だがテスト
 ; ★★★ 背景レイヤーで動画の再生を開始 ★★★
 [video storage="opening" layer="background" loop=true nowait=true]
