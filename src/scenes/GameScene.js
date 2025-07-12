@@ -188,40 +188,39 @@ export default class GameScene extends Phaser.Scene {
         }
     }
 
-    /**
+       /**
      * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
      */
     displayChoiceButtons() {
-        // ★ 選択肢表示時に、ブロッカーを最前面に表示
-        this.choiceInputBlocker.setVisible(true);
-        this.children.bringToTop(this.choiceInputBlocker);
-        // Y座標の計算を、全体のボタン数に基づいて行う
+        // 以前の選択肢が残っていれば、念のためクリア
+        this.clearChoiceButtons();
+
         const totalButtons = this.pendingChoices.length;
-        const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); // 全体が中央に来るように開始位置を調整
-        // ★★★ ボタンの見た目をここで定義 ★★★
-        const buttonStyle = {
-            fontSize: '40px', // 文字を少し大きく
-            fill: '#ccc',
-            backgroundColor: '#333333',
-            // 内側の余白を調整
-            padding: {
-                x: 40, // 横の余白を増やす
-                y: 10  // 縦の余白を増やす
-            },
-            align: 'center'
-        };
-        const buttonHeight = 120; // ボタン間のY座標の間隔
+        if (totalButtons === 0) return;
+
+        // ★★★ Layout.jsから、横画面用のレイアウト定義を取得 ★★★
+        const layout = Layout.ui.choiceButton;
+        const gameWidth = 1280;
+
+        // ボタン群全体が画面中央に来るように、開始Y座標を計算
+        const startY = (720 / 2) - ((totalButtons - 1) * layout.stepY / 2);
+
         this.pendingChoices.forEach((choice, index) => {
-            const y = startY + (index * 120); // ボタン間のスペース
-
-            const button = this.add.text(this.scale.width / 2, y, choice.text, { fontSize: '40px', fill: '#fff', backgroundColor: '#555', padding: { x: 20, y: 10 } })
-                .setOrigin(0.5)
-                .setInteractive();
-
-            this.children.bringToTop(button);
+            const y = startY + (index * layout.stepY);
+            
+            const button = this.add.text(gameWidth / 2, y, choice.text, {
+                fontSize: '40px',
+                fill: '#fff',
+                backgroundColor: '#333333',
+                padding: { x: 40, y: 20 },
+                align: 'center',
+                fixedWidth: 500 // ボタンの幅を固定すると綺麗
+            }).setOrigin(0.5).setInteractive();
+        
             button.on('pointerdown', () => {
                 this.clearChoiceButtons();
                 this.scenarioManager.jumpTo(choice.target);
+                this.scenarioManager.next();
             });
 
             this.choiceButtons.push(button);
@@ -229,24 +228,16 @@ export default class GameScene extends Phaser.Scene {
 
         this.pendingChoices = []; // 溜めていた情報はクリア
     }
-
-    // ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
-    clearChoiceButtons() {
-        // ★ 選択肢を消す時に、ブロッカーも非表示にする
-        this.choiceInputBlocker.setVisible(false);
-        this.inputBlocker.setVisible(false);
-        this.choiceButtons.forEach(button => button.destroy());
-        this.choiceButtons = []; // 配列を空にする
-        // 選択肢待ち状態を解除
-        if (this.scenarioManager) {
-            this.scenarioManager.isWaitingChoice = false;
-        }
-    }
-
+ 
+    /**
+     * 表示されている選択肢ボタンをすべて消去する
+     */
     clearChoiceButtons() {
         this.choiceButtons.forEach(button => button.destroy());
         this.choiceButtons = [];
-        this.pendingChoices = []; // 念のためこちらもクリア
+        // pendingChoicesもクリアしておくのが安全
+        this.pendingChoices = [];
+        
         if (this.scenarioManager) {
             this.scenarioManager.isWaitingChoice = false;
         }
