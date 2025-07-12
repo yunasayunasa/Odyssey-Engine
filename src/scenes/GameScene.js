@@ -213,6 +213,7 @@ displayChoiceButtons() {
            
             this.scenarioManager.jumpTo(choice.target);
              this.clearChoiceButtons();
+              this.scenarioManager.next(); 
         });
 
         this.choiceButtons.push(button);
@@ -222,16 +223,19 @@ displayChoiceButtons() {
 }
  
 // ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
+// GameScene.js の clearChoiceButtons() メソッド
+
 clearChoiceButtons() {
-     // ★ 選択肢を消す時に、ブロッカーも非表示にする
     this.choiceInputBlocker.setVisible(false);
-  //  this.inputBlocker.setVisible(false);
     this.choiceButtons.forEach(button => button.destroy());
-    this.choiceButtons = []; // 配列を空にする
-    // 選択肢待ち状態を解除
+    this.choiceButtons = [];
+    this.pendingChoices = []; // 念のためこちらもクリア
+    
+    // ★★★ 修正箇所: isWaitingChoice はここで解除するが、next()は呼ばない ★★★
     if (this.scenarioManager) {
         this.scenarioManager.isWaitingChoice = false;
     }
+    // next() の呼び出しは選択肢ボタンの onPointerDown イベントハンドラ内で行われるべき
 }
 
 
