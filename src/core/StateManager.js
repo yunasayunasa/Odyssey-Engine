@@ -81,25 +81,33 @@ export default class StateManager {
         this.f = loadedState.variables.f || {};
     }
 
-   // core/StateManager.js の eval メソッド
-
+  
+    /**
+     * 文字列のJavaScript式を安全に評価・実行する。
+     * このメソッドは、ゲーム内変数fとシステム変数sfのスコープで実行される。
+     * @param {string} exp - 実行する式 (例: "f.hoge = 10")
+     * @returns {*} 評価結果
+     */
     eval(exp) {
         try {
             const f = this.f;
-            const sf = this.sf; // sfもスコープに入れる
+            const sf = this.sf;
 
+            // new Function のスコープ内で、式を安全に評価・実行する
+            // fとsfを引数として渡し、スコープ内で利用可能にする
             const result = (function(f, sf) {
-                'use strict';
+                'use strict'; // より安全な実行モード
                 return eval(exp); 
-            })(f, sf); // sfも引数として渡す
+            })(f, sf); // fとsfを引数として渡す
 
-            // ★★★ 修正箇所: ここでsfが変更された可能性があるので保存する ★★★
+            // sf変数が変更された場合は、自動で保存 (evalタグでsfを操作した場合など)
             this.saveSystemVariables(); 
+
             return result;
 
         } catch (e) {
             console.error(`[eval] 式の評価中にエラーが発生しました: "${exp}"`, e);
-            return undefined;
+            return undefined; // エラー時はundefinedを返す
         }
     }
 
