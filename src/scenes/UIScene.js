@@ -25,8 +25,15 @@ export default class UIScene extends Phaser.Scene {
         const panel = this.add.container(0, panelY);
 
         // パネルの背景（半透明の黒）
-        const panelBg = this.add.rectangle(gameWidth / 2, 0, gameWidth, 120, 0x000000, 0.8);
-        panel.add(panelBg);
+          // --- 1. メニューパネルの背景 ---
+        const panelBg = this.add.rectangle(gameWidth / 2, 0, gameWidth, 120, 0x000000, 0.8)
+            .setInteractive(); // ★ パネル背景もクリック可能にする
+        
+        // ★ パネル背景がクリックされたら、何もせずイベントだけを止める
+        panelBg.on('pointerdown', (pointer, localX, localY, event) => {
+            event.stopPropagation();
+        });
+
         
         // --- 2. パネル内の各ボタンを作成 ---
         const buttonY = 0; // パネル内のY座標
@@ -66,7 +73,8 @@ export default class UIScene extends Phaser.Scene {
         // --- 4. ボタンの動作を定義 ---
         let isPanelOpen = false;
 
-        menuButton.on('pointerdown', () => {
+          menuButton.on('pointerdown', (pointer, localX, localY, event) => {
+            this.togglePanel();
             isPanelOpen = !isPanelOpen; // パネルの表示/非表示を切り替え
             
             const targetY = isPanelOpen ? gameHeight - 60 : gameHeight + 100; // 表示位置 or 隠れる位置
@@ -82,16 +90,15 @@ export default class UIScene extends Phaser.Scene {
         });
 
         // パネル内の各ボタンの動作
-        saveButton.on('pointerdown', () => {
-            this.scene.pause('GameScene');
-            this.scene.launch('SaveLoadScene', { mode: 'save' });
-        event.stopPropagation();
+         saveButton.on('pointerdown', (pointer, localX, localY, event) => {
+            this.openScene('SaveLoadScene', { mode: 'save' });
+            event.stopPropagation();
         });
-        loadButton.on('pointerdown', () => {
-            this.scene.pause('GameScene');
-            this.scene.launch('SaveLoadScene', { mode: 'load' });
-       event.stopPropagation();
+        loadButton.on('pointerdown', (pointer, localX, localY, event) => {
+            this.openScene('SaveLoadScene', { mode: 'load' });
+            event.stopPropagation();
         });
+       
         configButton.on('pointerdown', () => {
             this.scene.pause('GameScene');
             this.scene.pause('UIScene'); // Configを開くときはUIも止める
