@@ -92,83 +92,95 @@ async next() {
 
      // ScenarioManager.js の parse メソッド
 
+  // ScenarioManager.js の parse メソッド (最終版)
+
     async parse(line) {
+        // デバッグログは、安定したら削除してOK
         console.log(`...... ScenarioManager.parse 開始: "${line}"`);
+
+        // ★★★ このフラグが、ループを制御する鍵 ★★★
+        let shouldStopAndWaitForInput = false;
+
         const processedLine = this.embedVariables(line);
         const trimedLine = processedLine.trim();
 
-        // スキップ判定
         const ifState = this.ifStack.length > 0 ? this.ifStack[this.ifStack.length - 1] : null;
+
+        // --- 1. スキップ処理 ---
         if (ifState && ifState.skipping) {
             const { tagName } = this.parseTag(trimedLine);
             if (['if', 'elsif', 'else', 'endif'].includes(tagName)) {
                 const handler = this.tagHandlers.get(tagName);
-                if (handler) handler(this, this.parseTag(trimedLine).params);
+                if (handler) handler(this, params);
             }
-            // ★ スキップ中でもnext()はメインループに任せる
-            // this.next(); // ← この呼び出しも不要な場合が多い
-            return; // ★ メインループの最後にnext()が呼ばれるので、ここではreturnするだけ
-        }
+            // スキップ中は待たずに必ず次に進む -> shouldStopAndWaitForInput は false のまま
         
-        // 通常実行
-        if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
-            // コメント行、ラベル行、アセット行は何もせずに次に進む
-            // this.next(); // ← ここも不要
+        // --- 2. 通常実行 ---
+        } else if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
+            // コメント行、ラベル行、アセット行 -> 何もせず次に進む
+        
         } else if (trimedLine.match(/^([a-zA-Z0-9_]+):/)) {
             // --- 話者指定行 ---
             const speakerMatch = trimedLine.match(/^([a-zA-Z0-9_]+):/);
             const speakerName = speakerMatch[1];
             const dialogue = trimedLine.substring(speakerName.length + 1).trim();
+            
             this.stateManager.addHistory(speakerName, dialogue);
             this.highlightSpeaker(speakerName);
             const wrappedLine = this.manualWrap(dialogue);
-            this.isWaitingClick = true;
             
-            // ★★★ 修正箇所: 第4引数に speakerName を渡す ★★★
             this.messageWindow.setText(wrappedLine, true, () => {
                 this.messageWindow.showNextArrow();
-                if (this.mode === 'auto') {
-                    this.startAutoMode();
-                }
+                if (this.mode === 'auto') this.startAutoMode();
             }, speakerName);
-            return; // ★ 待機状態に入るので、ここで必ずreturn
 
+            this.isWaitingClick = true;
+            shouldStopAndWaitForInput = true; // ★ 入力待ちフラグを立てる
+        
         } else if (trimedLine.startsWith('[')) {
             // --- タグ行 ---
             const { tagName, params } = this.parseTag(trimedLine);
             const handler = this.tagHandlers.get(tagName);
+
             if (handler) {
                 const promise = handler(this, params);
                 if (promise instanceof Promise) {
                     await promise;
                 }
+                
+                // [p]タグや[button]タグなどは、ハンドラ内で isWaitingClick/Choice を true にする
+                // その結果をここでチェックする
+                if (this.isWaitingClick || this.isWaitingChoice) {
+                    shouldStopAndWaitForInput = true; // ★ 入力待ちフラグを立てる
+                }
             } else {
                 console.warn(`未定義のタグです: [${tagName}]`);
             }
-            // this.next(); // ← ここも不要
         
-        }  else if (trimedLine.length > 0) {
+        } else if (trimedLine.length > 0) {
             // --- 地の文 ---
             this.stateManager.addHistory(null, trimedLine);
             this.highlightSpeaker(null);
-            this.isWaitingClick = true; 
             const wrappedLine = this.manualWrap(trimedLine);
-            
-            // ★★★ 修正箇所: 第4引数に null を渡す ★★★
+
             this.messageWindow.setText(wrappedLine, true, () => {
                 this.messageWindow.showNextArrow();
             }, null);
-            return; // ★ 待機状態に入るので、ここで必ずreturn
 
+            this.isWaitingClick = true;
+            shouldStopAndWaitForInput = true; // ★ 入力待ちフラグを立てる
+        
         } else {
             // --- 空行 ---
-            // this.next(); // ← ここも不要
+            // 何もせず次に進む
         }
 
-        // ★★★ メインループの最後に、次の行に進む処理を一本化 ★★★
-        this.next();
+        // --- 3. 最後に一度だけ、進行するか停止するかを判断する ---
+        if (!shouldStopAndWaitForInput) {
+            this.next(); // 待つ必要がなければ、次の行へ
+        }
+        // 待つ必要がある場合は、何もしない。ここで処理が止まる。
     }
-    
     finishTagExecution() {
         this.isWaitingTag = false;
         this.next();
