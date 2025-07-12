@@ -13,7 +13,7 @@
 [chara_show name="yuna" pos="left" y=800 visible=false]
 [move name="yuna" y=450 alpha=1 time=1000]
 [wait time=1000]
-
+[p]
 [delay speed=80]
 yuna:「ようこそ！これは、あなたと一緒に作ったゲームエンジンのチュートリアルです。」
 [delay speed=50]
