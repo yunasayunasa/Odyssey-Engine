@@ -361,15 +361,7 @@ export default class ScenarioManager {
         }
     }
 
-    // ★★★ スキップ時にUIを非表示にする（推奨） ★★★
-    hideInterfaceForSkip() {
-        this.layers.character.setAlpha(0);
-        this.messageWindow.setAlpha(0);
-    }
-    showInterfaceForSkip() {
-        this.layers.character.setAlpha(1);
-        this.messageWindow.setAlpha(1);
-    }
+    
 
     highlightSpeaker(speakerName) {
         const bright = 0xffffff;
