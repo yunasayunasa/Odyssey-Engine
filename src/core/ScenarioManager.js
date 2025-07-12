@@ -25,8 +25,6 @@ export default class ScenarioManager {
         this.callStack = [];
     }
 
-   
-
     registerTag(tagName, handler) {
         this.tagHandlers.set(tagName, handler);
     }

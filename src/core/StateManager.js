@@ -1,25 +1,14 @@
 export default class StateManager {
-  constructor(scenarioManager) {
-        // ★★★ 1. ScenarioManagerのインスタンスを、生成時に受け取る ★★★
-        this.manager = null;
-
-        // --- セーブデータとして保存する情報の「器」を定義 ---
+    constructor() {
         this.state = {
             scenario: { fileName: null, line: 0 },
             layers: { background: null, characters: {} },
             sound: { bgm: null },
             variables: {},
-            history: [],
-            ifStack: [],
-            callStack: [],
-            isWaitingChoice: false,
-            pendingChoices: []
+            history: [], // ★★★ 履歴を保存する配列を追加 ★★★
+           
         };
-        this.systemVariables = this.loadSystemVariables() || {};
-    }
-  // ★★★ このメソッドを追加 ★★★
-    setScenarioManager(manager) {
-        this.manager = manager;
+        this.systemVariables = this.loadSystemVariables(); 
     }
 
     // ★★★ 変数を操作するメソッドを追加 ★★★
@@ -82,32 +71,10 @@ export default class StateManager {
         }
         console.log('History Updated:', this.state.history);
     }
-    /**
-     * 現在のゲームの完全なスナップショットを取得する
-     * @param {ScenarioManager} manager - 最新の状態を持つシナリオマネージャー
-     */
-   getState() {
-        // managerがセットされていることを確認
-        if (!this.manager) return JSON.parse(JSON.stringify(this.state));
 
-        // 最新の状態をコピー
-        this.state.ifStack = this.manager.ifStack;
-        this.state.scenario.fileName = this.manager.currentFile;
-        this.state.scenario.line = this.manager.currentLine;
-       
-        this.state.callStack = this.manager.callStack;
-        this.state.isWaitingChoice = this.manager.isWaitingChoice;
-        this.state.pendingChoices = this.manager.scene.pendingChoices;
-        
-        return JSON.parse(JSON.stringify(this.state));
-    }
-
-    /**
-     * ロードしたデータで、内部状態を完全に上書きする
-     */
-    setState(newState) {
-        this.state = newState;
-    }updateScenario(fileName, line) { this.state.scenario.fileName = fileName; this.state.scenario.line = line; console.log('State Updated (Scenario):', this.state.scenario); }
+    getState() { return JSON.parse(JSON.stringify(this.state)); }
+    setState(newState) { this.state = newState; }
+    updateScenario(fileName, line) { this.state.scenario.fileName = fileName; this.state.scenario.line = line; console.log('State Updated (Scenario):', this.state.scenario); }
     updateBg(storage) { this.state.layers.background = storage; console.log('State Updated (Background):', this.state.layers.background); }
     updateChara(name, charaData) { if (charaData) { this.state.layers.characters[name] = charaData; } else { delete this.state.layers.characters[name]; } console.log('State Updated (Characters):', this.state.layers.characters); }
     updateBgm(key) { this.state.sound.bgm = key; console.log('State Updated (BGM):', this.state.sound.bgm); }
