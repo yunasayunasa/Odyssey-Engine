@@ -1,9 +1,7 @@
 export default class ScenarioManager {
     constructor(scene, layers, charaDefs, messageWindow, soundManager, stateManager, configManager) {
         this.scene = scene;
-        this.lay // ★★★ 進行モードを管理するプロパティを追加 ★★★
-        this.mode = 'normal'; // 'normal', 'skip', 'auto'
-        this.autoTimer = null; // オートモード用のタイマーers = layers;
+        this.layers = layers;
         this.characterDefs = charaDefs || {};
         this.messageWindow = messageWindow;
         this.soundManager = soundManager;
@@ -16,7 +14,7 @@ export default class ScenarioManager {
         this.isWaitingClick = false;
         this.isWaitingTag = false;
         this.isEnd = false;
-
+        
 
         this.tagHandlers = new Map();
         this.ifStack = [];
@@ -294,59 +292,6 @@ export default class ScenarioManager {
         
         // 最後に余分な改行が残ることがあるので、削除する
         return wrappedText.trimEnd();
-    }
-
-      // ★★★ モードを切り替えるためのメソッド ★★★
-    setMode(newMode) {
-        // 同じモードなら何もしない
-        if (this.mode === newMode) return;
-
-        console.log(`モード変更: ${this.mode} -> ${newMode}`);
-        this.mode = newMode;
-
-        // 既存のオートタイマーがあれば停止
-        if (this.autoTimer) {
-            this.autoTimer.remove();
-            this.autoTimer = null;
-        }
-
-        // 新しいモードに応じた処理を開始
-        if (this.mode === 'skip') {
-            this.hideInterfaceForSkip(); // UIを隠す（推奨）
-            this.next(); // スキップを即座に開始
-        } else if (this.mode === 'auto') {
-            this.showInterfaceForSkip(); // UIを戻す
-            this.startAutoMode();
-        } else { // 'normal'モード
-            this.showInterfaceForSkip();
-        }
-    }
-
-    // ★★★ オートモードのタイマーを開始するメソッド ★★★
-    startAutoMode() {
-        if (this.isWaitingClick) {
-            // 現在クリック待ち状態なら、オートモードを開始
-            const autoDelay = 2000; // 2秒後に次に進む (コンフィグで変更できるようにすると尚良い)
-            this.autoTimer = this.scene.time.addEvent({
-                delay: autoDelay,
-                callback: () => {
-                    // isWaitingClickをfalseにして、次の行へ
-                    this.isWaitingClick = false;
-                    this.next();
-                },
-                callbackScope: this
-            });
-        }
-    }
-
-    // ★★★ スキップ時にUIを非表示にする（推奨） ★★★
-    hideInterfaceForSkip() {
-        this.layers.character.setAlpha(0);
-        this.messageWindow.setAlpha(0);
-    }
-    showInterfaceForSkip() {
-        this.layers.character.setAlpha(1);
-        this.messageWindow.setAlpha(1);
     }
 
     highlightSpeaker(speakerName) {
