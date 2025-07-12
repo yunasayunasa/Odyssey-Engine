@@ -168,7 +168,7 @@ this.scenarioManager.registerTag('stopvideo', handleStopVideo);
     }
 
     // GameSceneクラスの中に追加
-performSave(slot) {
+    performSave(slot) {
         try {
             // ★★★ StateManagerに、ScenarioManagerのインスタンスを渡す ★★★
             const gameState = this.stateManager.getState(this.scenarioManager);
@@ -269,7 +269,7 @@ clearChoiceButtons() {
 
     // GameSceneクラスの中に追加
 async performLoad(slot) { // asyncに戻しておくと後々安全
-    try {
+    
         const jsonString = localStorage.getItem(`save_data_${slot}`);
         if (!jsonString) {
             console.warn(`スロット[${slot}]にセーブデータがありません。`);
@@ -281,42 +281,13 @@ async performLoad(slot) { // asyncに戻しておくと後々安全
 
         rebuildScene(this.scenarioManager, loadedState);
         
-        // ★★★ ここからデバッグログ ★★★
-        console.log("--- performLoad: シナリオ再開処理 ---");
-
-        // ScenarioManagerが持つシナリオ配列は正しいか？
-        if (!this.scenarioManager.scenario) {
-            console.error("エラー: scenarioManager.scenarioが存在しません！");
-            return;
+       // ★★★ 復元された状態から、シナリオを再開する ★★★
+        // もし選択肢待ちなら、onClickが呼ばれるのを待つ。
+        // そうでなければ、次の行から進める。
+        if (!this.scenarioManager.isWaitingChoice) {
+            this.scenarioManager.next();
         }
-        console.log(`シナリオ配列の長さ: ${this.scenarioManager.scenario.length}`);
-        
-        // currentLineは正しいか？
-        console.log(`再開行番号: ${this.scenarioManager.currentLine}`);
-
-        if (this.scenarioManager.currentLine >= this.scenarioManager.scenario.length) {
-            console.error("エラー: 再開行番号がシナリオの範囲外です！");
-            return;
-        }
-        
-        // 行テキストの取得
-        const line = this.scenarioManager.scenario[this.scenarioManager.currentLine];
-        console.log(`再開する行テキスト: "${line}"`);
-
-        // 行番号を進める
-        this.scenarioManager.currentLine++;
-
-        // パース実行
-        console.log("parseを実行します...");
-        this.scenarioManager.parse(line);
-        console.log("performLoad 正常終了");
-        
-    } catch (e) {
-        // ★★★ エラーオブジェクトも出力する ★★★
-        console.error(`ロード処理でエラーが発生しました。`, e);
-    }
-}
-}
+}}
 /**
  * ロードした状態に基づいて、シーンの表示を再構築するヘルパー関数
  * @param {ScenarioManager} manager - 操作対象のシナリオマネージャー
@@ -338,8 +309,15 @@ function rebuildScene(manager, state) {
 
     // 2. シナリオを復元
     console.log("2. シナリオ情報を復元します...");
+    // ★★★ 2. StateManagerとScenarioManagerの状態を、ロードしたデータで完全に復元 ★★★
+    manager.stateManager.setState(state);
     manager.currentFile = state.scenario.fileName;
     manager.currentLine = state.scenario.line;
+    manager.ifStack = state.ifStack || [];
+    manager.callStack = state.callStack || [];
+    manager.isWaitingChoice = state.isWaitingChoice || false;
+    scene.pendingChoices = state.pendingChoices || [];
+
     console.log(`...シナリオ情報: file=${manager.currentFile}, line=${manager.currentLine}`);
 
     if (!scene.cache.text.has(manager.currentFile)) {
@@ -387,15 +365,9 @@ function rebuildScene(manager, state) {
     
        // 6. メッセージウィンドウをリセット
     manager.messageWindow.setText('');
-  this.choiceButtons.forEach(button => button.destroy());
-    // ★★★ 7. 話者とハイライトを復元 ★★★
-   /* let speakerName = null;
-    const line = manager.scenario[manager.currentLine];
-    const speakerMatch = line.trim().match(/^([a-zA-Z0-9_]+):/);
-    if (speakerMatch) {
-        speakerName = speakerMatch[1];
+   // ★★★ 7. もし選択肢表示中にセーブされていたなら、選択肢を再表示する ★★★
+    if (manager.isWaitingChoice) {
+        scene.displayChoiceButtons();
     }
-    manager.highlightSpeaker(speakerName);*/
-    
     console.log("--- rebuildScene 正常終了 ---");
 }

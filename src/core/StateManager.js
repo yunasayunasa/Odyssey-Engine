@@ -5,12 +5,15 @@ export default class StateManager {
             layers: { background: null, characters: {} },
             sound: { bgm: null },
             variables: {},
-            history: [], // ★★★ 履歴を保存する配列を追加 ★★★
-           
-        };
-        this.systemVariables = this.loadSystemVariables(); 
-    }
+            systemVariables:{},
 
+            history: [], // ★★★ 履歴を保存する配列を追加 ★★★
+            ifStack: [],        // if文のネスト状態
+            callStack: [],      // call/returnの履歴
+            isWaitingChoice: false // 選択肢表示中だったかどうか
+        };
+        this.systemVariables = this.loadSystemVariables();
+    }
     // ★★★ 変数を操作するメソッドを追加 ★★★
     /**
      * 文字列のJavaScript式を安全に評価・実行する
@@ -71,8 +74,23 @@ export default class StateManager {
         }
         console.log('History Updated:', this.state.history);
     }
-
-    getState() { return JSON.parse(JSON.stringify(this.state)); }
+    /**
+     * 現在のゲームの完全なスナップショットを取得する
+     * @param {ScenarioManager} manager - 最新の状態を持つシナリオマネージャー
+     */
+    getState(manager) {
+        // ScenarioManagerから、セーブすべき最新の状態をコピーする
+        this.state.ifStack = manager.ifStack;
+        this.state.callStack = manager.callStack;
+        this.state.isWaitingChoice = manager.isWaitingChoice;
+        this.state.pendingChoices = manager.scene.pendingChoices; // 選択肢情報
+        
+        // シナリオの位置も最新に
+        this.state.scenario.fileName = manager.currentFile;
+        this.state.scenario.line = manager.currentLine;
+        
+        return JSON.parse(JSON.stringify(this.state));
+    }
     setState(newState) { this.state = newState; }
     updateScenario(fileName, line) { this.state.scenario.fileName = fileName; this.state.scenario.line = line; console.log('State Updated (Scenario):', this.state.scenario); }
     updateBg(storage) { this.state.layers.background = storage; console.log('State Updated (Background):', this.state.layers.background); }
