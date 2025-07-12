@@ -1,106 +1,93 @@
-My Novel Engine (プロジェクト名) - ドキュメント v1.0
-My Novel Engineは、Phaser.jsをベースに構築された、柔軟で拡張性の高い、カスタムノベルゲームエンジンです。ノベルパートを中核としつつ、アクションゲームやパズルゲームなど、他のゲームジャンルとのシームレスな連携を目的として設計されています。
+# My Novel Engine (プロジェクト名) - ドキュメント v1.0
 
-1. 基本設計思想
-画面: 横画面（1280x720）固定。Phaser.Scale.FITモードにより、あらゆるデバイスでアスペクト比を維持して表示されます。
-アセット管理: assets/asset_define.jsonによる一元管理。キャラクター画像はキーの命名規則により自動で定義されます。
-シナリオ記述: ティラノスクリプト風のタグを使った、可読性の高いシナリオファイル（.ks）方式を採用。
-モジュール設計: 機能ごとにクラスやファイルが分離されており、高いメンテナンス性と拡張性を持ちます。
-2. プロジェクトの始め方（未来の自分のための覚書）
-アセットの準備:
-assets/ フォルダ内に、画像や音声ファイルを配置します。キャラクター画像はassets/chara/キャラ名/表情名.pngのように整理することを推奨します。
-asset_define.jsonの編集:
-assets/asset_define.jsonを開き、使用するすべてのアセットを登録します。（詳細は次項）
-シナリオの記述:
-assets/scene1.ksなどのシナリオファイルに、タグを使って物語を記述します。
-ブラウザで確認:
-ローカルサーバー（Live Serverなど）を起動し、index.htmlにアクセスして動作を確認します。
-3. アセットの登録方法 (asset_define.json)
-このエンジンでは、使用するすべてのアセットをasset_define.jsonに登録する必要があります。
+`My Novel Engine`は、Phaser.jsをベースに構築された、柔軟で拡張性の高い、カスタムノベルゲームエンジンです。ノベルパートを中核としつつ、アクションゲームやパズルゲームなど、他のゲームジャンルとのシームレスな連携を目的として設計されています。
 
-3.1. 画像 (images)
-背景、UI、イベントCGなど、キャラクター以外の画像を登録します。
+## 1. 基本設計思想
 
-キー: あなたが自由に決める、ユニークな名前。（例: "bg_school"）
-値: assets/からのファイルパス。
-Generated json
-"images": {
-  "message_window": "assets/message_window_wide.png",
-  "bg_school": "assets/bg_school.jpg",
-  "next_arrow": "assets/next_arrow.png"
-}
+- **画面:** 横画面（1280x720）固定。`Phaser.Scale.FIT`モードにより、あらゆるデバイスでアスペクト比を維持して表示されます。
+- **アセット管理:** `assets/asset_define.json`による一元管理。キャラクター画像はキーの命名規則により自動で定義されます。
+- **シナリオ記述:** ティラノスクリプト風のタグを使った、可読性の高いシナリオファイル（`.ks`）方式を採用。
+- **モジュール設計:** 機能ごとにクラスやファイルが分離されており、高いメンテナンス性と拡張性を持ちます。
+- **シーン管理:** `SystemScene`を司令塔とした、イベント駆動型の柔軟なシーン遷移アーキテクチャを採用。
+
+## 2. プロジェクトの始め方
+
+1.  **アセットの準備:**
+    -   `assets/` フォルダ内に、画像、音声、動画、シナリオ（`.ks`）ファイルを配置します。
+2.  **`asset_define.json`の編集:**
+    -   ゲーム起動時に読み込む**共通アセット**を登録します。
+3.  **シナリオの記述:**
+    -   `assets/scene1.ks`をゲームの開始点とし、各シナリオファイルにタグを使って物語を記述します。
+    -   特定のシナリオファイルでしか使わないアセットは、その`.ks`ファイルの先頭で`@asset`ディレクティブを使って**動的ロード**を宣言します。
+4.  **ブラウザで確認:**
+    -   ローカルサーバー（Live Serverなど）を起動し、`index.html`にアクセスして動作を確認します。
+
+---
+
+## 3. アセット定義
+
+### 3.1. 共通アセット (`asset_define.json`)
+
+ゲーム全体で共有する基本的なアセットを登録します。
+
+- **`images`**: UI画像、頻繁に使う背景やキャラクターなど。
+  - **キャラクターの自動定義:** キーを`"キャラクター名_表情名"`とすることで、自動的にキャラクターとしてエンジンに登録されます。（例: `"yuna_normal"`）
+- **`sounds`**: 共通のSEやBGM。
+- **`videos`**: 共通の動画素材。
+
+### 3.2. 動的ロードアセット (各`.ks`ファイル)
+
+特定のシナリオでのみ使用するアセットは、そのシナリオファイルの先頭で`@asset`ディレクティブを使って宣言します。これにより、ゲーム起動時のロード時間を短縮できます。
+
+**書式:** `@asset type=[種類] key=[キー] path=[パス]`
 Use code with caution.
-Json
-3.2. キャラクター画像 (重要)
-キャラクターの立ち絵は、**キャラクター名_表情名**という命名規則でキーを付けることで、エンジンに自動的にキャラクターとして認識されます。
+Markdown
+; scene2.ks の冒頭
+@asset type=image key=cg_secret path=assets/cg_secret.jpg
+@asset type=audio key=se_surprise path=assets/se/surprise.wav
 
-Generated json
-"images": {
-  "yuna_normal": "assets/chara/yuna_normal.png",
-  "yuna_smile": "assets/chara/yuna_smile.png",
-  "yuna_angry": "assets/chara/yuna_angry.png",
-  "kaito_normal": "assets/chara/kaito_normal.png"
-}
-Use code with caution.
-Json
-この記述だけで、yunaとkaitoというキャラクターが、それぞれの表情と共に自動でエンジンに登録されます。
-表情を省略して[chara_show name="yuna"]と書いた場合、yuna_normalが自動的に使用されます。
-3.3. サウンド (sounds)
-BGMや効果音を登録します。
+Generated code
+- `type`: `image`, `audio`, `video`などを指定。
+- `key`: このアセットを呼び出すためのユニークな名前。
+- `path`: `assets/`からのファイルパス。
 
-Generated json
-"sounds": {
-  "popopo": "assets/se/type_sound.mp3",
-  "decision": "assets/se/decision.wav",
-  "bgm_school": "assets/bgm/theme_school.ogg"
-}
-Use code with caution.
-Json
-4. 主要タグ一覧
-シナリオファイル（.ks）で使える主なタグです。
+---
 
-フロー制御
-タグ	機能	例
-[p]	プレイヤーのクリックを待つ。	[p]
-[s]	シナリオの進行を完全に停止する。	[s]
-[wait time=ms]	指定時間(ミリ秒)だけ進行を停止する。	[wait time=1000]
-[jump target="*label"]	指定したラベルにジャンプする。	[jump target="*prologue_end"]
-[call storage="..." ...]	別のシナリオファイルやPhaserシーンを呼び出す。	[call storage="scene2.ks"]
-[return]	[call]で呼び出されたサブルーチンから戻る。	[return]
-[if exp="..."]	条件分岐を開始する。	[if exp="f.flag === true"]
-[elsif exp="..."]	ifの別の条件。	[elsif exp="f.love > 5"]
-[else]	if/elsifの条件がすべて満たされない場合に実行。	[else]
-[endif]	条件分岐を終了する。	[endif]
-テキスト関連
-タグ	機能	例
-[cm]	メッセージウィンドウのテキストをクリアし、クリックを待つ。	[cm]
-[delay speed=ms]	テキストの表示速度（文字ごとの待機時間）を変更する。	[delay speed=20]
-[br]	セリフや地の文の途中で強制的に改行する。	一行目[br]二行目
-キャラクター・画像関連
-タグ	機能	例
-[chara_show name="..." ...]	キャラクターを表示する。	[chara_show name="yuna" pos="left" time=500]
-[chara_mod name="..." ...]	表示中のキャラクターの表情を変更する。	[chara_mod name="yuna" face="angry"]
-[chara_hide name="..." ...]	キャラクターを非表示にする。	[chara_hide name="yuna" time=1000]
-[image storage="key" ...]	一枚絵（CGなど）を表示する。	[image storage="cg01" layer="cg"]
-[freeimage layer="..."]	[image]で表示した画像を消去する。	[freeimage layer="cg"]
-[er layer="..."]	指定レイヤー上のオブジェクトをすべて消去する。	[er layer="character"]
-[bg storage="key" ...]	背景を表示・切り替えする。	[bg storage="bg_school" time=1500]
-動的演出
-タグ	機能	例
-[move name="..." ...]	キャラクターを移動させる。	[move name="yuna" x=800 time=1000]
-[walk name="..." ...]	キャラクターを歩行させる。	[walk name="yuna" x=300 time=2000]
-[shake name="..." ...]	キャラクターを振動させる。	[shake name="yuna" time=500 power=10]
-[flip name="..." ...]	キャラクターを左右反転させる。	[flip name="yuna"]
-[chara_jump name="..." ...]	キャラクターをジャンプさせる。	[chara_jump name="yuna" height=50]
-[vibrate time=ms ...]	画面全体を振動させる。	[vibrate time=300]
-サウンド
-タグ	機能	例
-[playbgm storage="key" ...]	BGMを再生する。	[playbgm storage="bgm_school" volume=0.7]
-[stopbgm ...]	BGMを停止する。	[stopbgm time=2000]
-[playse storage="key" ...]	効果音（SE）を再生する。	[playse storage="decision"]
-変数
-記法/タグ	機能	例
-&f.変数名	テキスト中にゲーム内変数の値を埋め込む。	&f.player_nameさんのレベルは...
-&sf.変数名	テキスト中にシステム変数の値を埋め込む。	プレイ回数: &sf.play_count
-[eval exp="..."]	変数を操作するJavaScript式を実行する。	[eval exp="f.love += 10"]
-[log exp="..."]	変数の値を開発者コンソールに出力する。（デバッグ用）	[log exp="f.love"]
+## 4. 主要タグ一覧
+
+（※このセクションには、あなたが以前確認した、フロー制御、テキスト、キャラクター、演出、サウンド、変数に関する全てのタグの詳細な説明が入ります。ここでは代表的なものを抜粋します。）
+
+| カテゴリ | タグ | 機能 |
+| :--- | :--- | :--- |
+| **フロー制御** | `[if]`, `[jump]`, `[call]`, `[return]`, `[s]` | 条件分岐、ジャンプ、別シナリオ/シーンの呼び出しと復帰、シナリオ停止。 |
+| **テキスト** | `[p]`, `[cm]`, `[br]`, `[delay]` | クリック待ち、メッセージクリア、強制改行、テキスト速度変更。 |
+| **キャラクター** | `[chara_show]`, `[chara_mod]`, `[chara_hide]` | 表示、表情変更、非表示。`pos`属性で立ち位置指定。 |
+| **動的演出** | `[move]`, `[walk]`, `[shake]`, `[flip]` | 移動、歩行、振動、反転など多彩なアニメーション。`nowait`, `loop`属性で制御可能。 |
+| **サウンド** | `[playbgm]`, `[stopbgm]`, `[playse]` | BGMとSEの再生・停止。 |
+| **システム** | `[eval]`, `[save]`, `[load]`, `[overlay_end]` | 変数操作、セーブ/ロード、オーバーレイ終了。 |
+
+---
+
+## 5. シーン連携 (最重要)
+
+このエンジンの最大の特徴は、柔軟なシーン遷移機能です。司令塔である**`SystemScene`**を介して、すべての遷移を管理します。
+
+### 5.1. 別ゲームシーンの呼び出し
+
+ノベルパートからアクションゲームなどを呼び出し、終わったら元のシナリオの続きに戻ります。
+
+**`GameScene`側 (シナリオ):**
+`[call storage="ActionScene"]`
+
+**`ActionScene`側 (終了時):**
+`this.scene.get('SystemScene').events.emit('return-to-novel', { from: 'ActionScene', params: { 'f.result': 'win' } });`
+
+### 5.2. ゲーム画面上へのオーバーレイ表示
+
+動き続けているゲーム画面の上に、ノベルパートを重ねて表示します。
+
+**`ActionScene`側 (呼び出し):**
+`this.scene.get('SystemScene').events.emit('request-overlay', { from: 'ActionScene', scenario: 'overlay_test.ks' });`
+
+**オーバーレイシナリオ側 (終了時):**
+`[overlay_end]`

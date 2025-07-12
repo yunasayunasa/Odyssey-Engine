@@ -43,6 +43,8 @@ export default class StateManager {
     saveSystemVariables() {
         try {
             localStorage.setItem('my_novel_engine_system', JSON.stringify(this.systemVariables));
+              console.lg('システム変数を保存');
+    
         } catch (e) {
             console.error("システム変数の保存に失敗しました。", e);
         }
