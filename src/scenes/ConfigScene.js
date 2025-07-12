@@ -2,9 +2,13 @@ export default class ConfigScene extends Phaser.Scene {
     constructor() {
         super('ConfigScene');
         this.configManager = null;
+        this.uiElements = []; // ★ UI要素を管理する配列を追加
     }
 
     create() {
+         // ★★★ 1. 前回作られたUIをすべて破棄する ★★★
+        this.uiElements.forEach(el => el.destroy());
+        this.uiElements = [];
         // GameSceneとUISceneからConfigManagerを受け取る
         const gameScene = this.scene.get('GameScene');
  this.configManager = this.sys.registry.get('configManager');
@@ -16,6 +20,7 @@ export default class ConfigScene extends Phaser.Scene {
 
         // 戻るボタン
         const backButton = this.add.text(this.scale.width - 100, 50, '戻る', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
+         this.uiElements.push(bg, title, backButton); // 管理リストに追加
         backButton.on('pointerdown', () => {
             this.scene.stop();
             this.scene.resume('GameScene');

@@ -16,7 +16,13 @@ export default class SoundManager {
             // SE音量が変わった時の処理もここに追加できる
             // (今回はplaySeの中で毎回値を見ているので不要だが、設計としては可能)
         });
+        this.voices = [];
+        this.loadVoices();
+        if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = this.loadVoices.bind(this);
+        }
     }
+    
     
      playSe(key, config = {}) {
         // ★★★ SE音量の設定を反映 ★★★
@@ -25,6 +31,11 @@ export default class SoundManager {
             config.volume = this.configManager.getValue('seVolume');
         }
         this.scene.sound.play(key, config);
+    }
+
+    loadVoices() {
+        this.voices = window.speechSynthesis.getVoices();
+        console.log("利用可能な音声をロードしました:", this.voices);
     }
 
     /* 指定されたテキストを音声合成で読み上げる
@@ -43,8 +54,8 @@ export default class SoundManager {
             window.speechSynthesis.cancel();
             
             // 発話オブジェクトを作成
-            const utterance = new SpeechSynthesisUtterance(text);
-            
+           const utterance = new SpeechSynthesisUtterance(text);
+            const japaneseVoice = this.voices.find(voice => voice.lang === 'ja-JP');
             // ★ 声や言語を設定（任意）★
             // 利用可能な音声リストから日本語のものを探す
             const voices = window.speechSynthesis.getVoices();
@@ -57,15 +68,12 @@ export default class SoundManager {
             utterance.pitch = 1;  // 声の高さ
 
             // ★ 読み上げが終了したら、Promiseを解決する
-            utterance.onend = () => {
-                console.log("読み上げ完了:", text);
-                resolve();
-            };
-
-            // 読み上げ開始
+             utterance.onend = resolve;
             window.speechSynthesis.speak(utterance);
         });
     }
+
+         
     
     playBgm(key, volume, fadeInTime = 0) {
         // ★★★ BGM音量の設定を反映 ★★★
