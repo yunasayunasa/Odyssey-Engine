@@ -270,124 +270,76 @@ clearChoiceButtons() {
     }
 
 
-        async performLoad(slot) {
+    
+    // ★★★ performLoadメソッドを、この内容で完全に置き換えてください ★★★
+    performLoad(slot) {
         try {
             const jsonString = localStorage.getItem(`save_data_${slot}`);
-            if (!jsonString) { /* ... */ return; }
-            const loadedState = JSON.parse(jsonString);
-            
-            // 1. rebuildSceneで、見た目と内部状態を完全に復元
-            rebuildScene(this.scenarioManager, loadedState);
-            
-            console.log("ロード完了。セーブした時点の状態が復元されました。");
-            
-            // 2. ★★★ next()やparse()は、ここでは呼ばない！ ★★★
-            // なぜなら、セーブした瞬間がクリック待ちだったかもしれないから。
-            // 復元された状態(isWaitingClickなど)に応じて、
-            // 次のonClick()が、正しい挙動（next()を呼ぶなど）を判断してくれる。
-            
-            // 3. もしオートモードでセーブされていたなら、オートを再開する
-            if (this.scenarioManager.mode === 'auto') {
-                this.scenarioManager.startAutoMode();
+            if (!jsonString) {
+                console.warn(`スロット[${slot}]にセーブデータがありません。`);
+                return;
             }
+            const loadedState = JSON.parse(jsonString);
+            console.log(`スロット[${slot}]からロードしました。`, loadedState);
+
+            // 1. rebuildSceneで、見た目と内部状態を復元する
+            rebuildScene(this, loadedState);
+            
+            // 2. 復元した行から、シナリオを再開する
+            this.scenarioManager.next();
 
         } catch (e) {
             console.error(`ロード処理でエラーが発生しました。`, e);
-        }}}
-    
-/**
- * ロードした状態に基づいて、シーンの表示を再構築するヘルパー関数
- * @param {ScenarioManager} manager - 操作対象のシナリオマネージャー
- * @param {Object} state - ロードした状態オブジェクト
- */
+        }
+    }
+}
+
+// ★★★ rebuildSceneヘルパー関数を、この内容で完全に置き換えてください ★★★
 function rebuildScene(scene, state) {
     console.log("--- rebuildScene 開始 ---");
     const manager = scene.scenarioManager;
 
     // 1. 現在の表示をすべてクリア
-    console.log("1. レイヤーをクリアします...");
-    manager.layers.background.removeAll(true);
-    manager.layers.character.removeAll(true);
-    scene.characters = {}; // キャラクター管理リストもリセット
+    scene.layer.background.removeAll(true);
+    scene.layer.character.removeAll(true);
+    scene.characters = {};
     manager.soundManager.stopBgm();
-    console.log("...レイヤークリア完了");
 
-    // 2. シナリオを復元
-    console.log("2. シナリオ情報を復元します...");
-    // 2. シナリオと内部状態を復元
+    // 2. StateManagerの状態を、ロードしたデータで完全に上書き
     manager.stateManager.setState(state);
+    
+    // 3. ScenarioManagerの内部状態を、復元したstateから設定
     manager.currentFile = state.scenario.fileName;
     manager.currentLine = state.scenario.line;
-    console.log(`...シナリオ情報: file=${manager.currentFile}, line=${manager.currentLine}`);
+    manager.ifStack = state.ifStack || [];       // セーブデータにifStackがなければ空配列
+    manager.callStack = state.callStack || []; // セーブデータにcallStackがなければ空配列
 
-    if (!scene.cache.text.has(manager.currentFile)) {
-        throw new Error(`シナリオファイル[${manager.currentFile}]がキャッシュにありません。`);
-    }
+    // 4. シナリオ配列を再構築
     const rawText = scene.cache.text.get(manager.currentFile);
+    if (!rawText) throw new Error(`シナリオ[${manager.currentFile}]のキャッシュが見つかりません。`);
     manager.scenario = rawText.split(/\r\n|\n|\r/).filter(line => line.trim() !== '');
-    console.log("...シナリオキャッシュOK、再構築完了");
 
-    // 3. 背景を復元
-    console.log("3. 背景を復元します...");
+    // 5. 見た目を再構築 (背景、キャラ、BGM)
     if (state.layers.background) {
-        if (!scene.textures.exists(state.layers.background)) {
-            throw new Error(`背景テクスチャ[${state.layers.background}]がキャッシュにありません。`);
-        }
-        const bg = scene.add.image(scene.scale.width / 2, scene.scale.height / 2, state.layers.background);
-        bg.setDisplaySize(scene.scale.width, scene.scale.height);
-        manager.layers.background.add(bg);
+        const bg = scene.add.image(640, 360, state.layers.background);
+        scene.layer.background.add(bg);
     }
-    console.log("...背景復元完了");
-    
-    // 4. キャラクターを復元
-    console.log("4. キャラクターを復元します...");
     for (const name in state.layers.characters) {
         const charaData = state.layers.characters[name];
-        console.log(`...キャラクター[${name}]を復元中...`);
-        if (!scene.textures.exists(charaData.storage)) {
-            throw new Error(`キャラクターテクスチャ[${charaData.storage}]がキャッシュにありません。`);
-        }
         const chara = scene.add.image(charaData.x, charaData.y, charaData.storage);
-        // ★★★ 必ずTintをリセットして明るい状態にする ★★★
-        chara.setTint(0xffffff);
-
-        manager.layers.character.add(chara);
-        scene.characters[name] = chara; // 管理リストに再登録
+        chara.setData('pos', charaData.pos);
+        chara.setTint(0xffffff); // 必ず明るい状態に戻す
+        chara.setFlipX(charaData.flipX || false); // 反転状態も復元
+        chara.setScale(charaData.scale || 1); // スケールも復元
+        scene.layer.character.add(chara);
+        scene.characters[name] = chara;
     }
-    console.log("...キャラクター復元完了");
-
-    // 5. BGMを復元
-   console.log("5. BGMを復元します...");
     if (state.sound.bgm) {
         manager.soundManager.playBgm(state.sound.bgm);
     }
-    console.log("...BGM復元完了");
     
-    
-    // ★★★ 7. 話者とハイライトを復元 ★★★
-   /* let speakerName = null;
-    const line = manager.scenario[manager.currentLine];
-    const speakerMatch = line.trim().match(/^([a-zA-Z0-9_]+):/);
-    if (speakerMatch) {
-        speakerName = speakerMatch[1];
-    }
-    manager.highlightSpeaker(speakerName);*/
-  manager.isWaitingClick = state.status.isWaitingClick;
-    manager.isWaitingChoice = state.status.isWaitingChoice;
-    scene.pendingChoices = state.status.pendingChoices;
-    
-    // 5. UIをリセット・再表示
-    manager.messageWindow.setText('');
-    manager.highlightSpeaker(null); // ハイライトをリセット
-    
-    // ★★★ 選択肢待ち状態でセーブされていたなら、選択肢を再表示する ★★★
-    if (manager.isWaitingChoice) {
-        console.log("選択肢を再表示します:", scene.pendingChoices);
-        scene.displayChoiceButtons();
-    } 
-    // ★★★ 通常のクリック待ち状態でセーブされていたなら、矢印を表示する ★★★
-    else if (manager.isWaitingClick) {
-        manager.messageWindow.showNextArrow();
-    }    
+    // 6. UIをリセット
+    manager.messageWindow.setText('', false);
+    manager.highlightSpeaker(null);
     console.log("--- rebuildScene 正常終了 ---");
 }
