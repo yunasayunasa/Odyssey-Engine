@@ -16,7 +16,7 @@
 
 ;[delay speed=80]
 yuna:「ようこそ！これは、あなたと一緒に作ったゲームエンジンのチュートリアルです。」
-[delay speed=50]
+
 yuna:「このゲームを起動するのは、&sf.boot_count 回目ですね。」
 
 [chara_show name="kaito" pos="right" time=1000]
