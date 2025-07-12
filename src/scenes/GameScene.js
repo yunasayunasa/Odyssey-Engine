@@ -59,7 +59,26 @@ export default class GameScene extends Phaser.Scene {
         this.choiceButtons = [];
         this.pendingChoices = []; // ★★★ 選択肢の一時保管場所 ★★★
         this.uiButtons = [];
+         this.scenario = [];
+        this.currentFile = null;
+        this.currentLine = 0;
+        
+        // ★★★ 状態管理フラグを、ここでまとめて初期化 ★★★
+        this.isWaitingClick = false;   // 通常のクリック待ち
+        this.isWaitingChoice = false;  // 選択肢のクリック待ち
+        this.isWaitingTag = false;     // 非同期タグの完了待ち
+        this.isEnd = false;            // シナリオ終了
+        
+        this.mode = 'normal';          // オート/スキップモード
+        this.autoTimer = null;         // オートモード用タイマー
+
+        this.tagHandlers = new Map();
+        
+        // ★★★ セーブ対象の状態も、ここで初期化 ★★★
+        this.ifStack = [];
+        this.callStack = [];
     }
+    
 
     init(data) {
         this.charaDefs = data.charaDefs;
