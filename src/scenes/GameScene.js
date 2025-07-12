@@ -331,12 +331,14 @@ async function rebuildScene(manager, state) {
         manager.highlightSpeaker(state.scenario.speakerName);
     }
 
-    // 7. 選択肢を復元
-    if (state.scenario.isWaitingChoice) {
-        scene.pendingChoices = state.scenario.pendingChoices || [];
-        if (scene.pendingChoices.length > 0) {
-            scene.displayChoiceButtons();
-        }
+    // ★★★ 7. 選択肢を復元 (順番を修正、条件を明確化) ★★★
+    // isWaitingChoiceがtrueの場合のみ、pendingChoicesを復元し、ボタンを表示する
+    if (state.scenario.isWaitingChoice && state.scenario.pendingChoices && state.scenario.pendingChoices.length > 0) {
+        scene.pendingChoices = state.scenario.pendingChoices;
+        scene.displayChoiceButtons(); // ★ これが呼ばれるようにする ★
+        console.log("選択肢を復元し、表示しました。");
+    } else {
+        scene.pendingChoices = []; // 選択肢がない場合は空にする
     }
     
     console.log("--- rebuildScene 正常終了 ---");
