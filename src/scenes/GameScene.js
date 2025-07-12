@@ -79,8 +79,8 @@ export default class GameScene extends Phaser.Scene {
        
         // --- レイヤー生成とdepth設定 ---
         this.layer.background = this.add.container(0, 0).setDepth(0);
-        this.layer.character = this.add.container(0, 0).setDepth(10);
-        this.layer.cg = this.add.container(0, 0).setDepth(20);
+        this.layer.character = this.add.container(0, 0).setDepth(0);
+        this.layer.cg = this.add.container(0, 0).setDepth(0);
 
         this.layer.message = this.add.container(0, 0);
            // ★ 全画面を覆う、透明で見えない入力ブロッカーを作成
