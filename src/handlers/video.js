@@ -11,30 +11,47 @@ export function handleVideo(manager, params) {
     const targetLayer = manager.layers[layerName];
     if (!targetLayer) { console.warn(`[video] レイヤー[${layerName}]が見つかりません。`); manager.finishTagExecution(); return; }
     
-    const gameWidth = 1280;
-    const gameHeight = 720;
-    
     // --- 動画オブジェクトの作成と設定 ---
-    const video = manager.scene.add.video(gameWidth / 2, gameHeight / 2, storage);
-    video.play(params.loop === 'true');
-    video.setMute(params.mute === 'true'); // mute属性
+    const video = manager.scene.add.video(0, 0, storage).setOrigin(0.5);
     
-    // 背景として使う場合、画面いっぱいに表示
-    if (layerName === 'background') {
-        video.setDisplaySize(gameWidth, gameHeight);
+    // ★★★ DOM要素に、インライン再生とミュート自動再生のための属性を設定 ★★★
+    const videoElement = video.video;
+    if (videoElement) {
+        videoElement.setAttribute('playsinline', 'true');
+        videoElement.setAttribute('muted', 'true');
+        videoElement.setAttribute('autoplay', 'true');
     }
     
-    targetLayer.add(video);
+    // --- 表示設定 ---
+    // カメラのサイズを取得して、中央に配置
+    const camera = manager.scene.cameras.main;
+    video.setPosition(camera.width / 2, camera.height / 2);
+    // 画面いっぱいに表示（ENVELOP風）
+    const camAspectRatio = camera.width / camera.height;
+    const videoAspectRatio = video.width / video.height;
+    if (videoAspectRatio > camAspectRatio) {
+        video.displayHeight = camera.height;
+        video.displayWidth = camera.height * videoAspectRatio;
+    } else {
+        video.displayWidth = camera.width;
+        video.displayHeight = camera.width / videoAspectRatio;
+    }
 
-    // ★★★ nowait属性の処理 ★★★
-    if (params.nowait === 'true') {
-        manager.finishTagExecution();
-        return; // 即座に次の行へ
+    // ★★★ レイヤーに追加し、一番後ろに配置 ★★★
+    targetLayer.add(video);
+    if (layerName === 'background') {
+        targetLayer.sendToBack(video);
     }
     
-    // ★★★ 完了待ちの処理 (Promiseを返す) ★★★
-    // ループ再生の場合は完了しないので、waitタグと併用する必要がある
-    if (params.loop !== 'true') {
+    // ★★★ 再生を開始 ★★★
+    video.play(params.loop === 'true');
+
+    // --- 完了処理 ---
+    if (params.nowait === 'true' || params.loop === 'true') {
+        // 待たずに、またはループ再生の場合はすぐに次に進む
+        manager.finishTagExecution();
+    } else {
+        // 通常再生の場合は、再生終了を待つ
         return new Promise(resolve => {
             video.once('complete', () => {
                 console.log(`動画[${storage}]の再生が完了しました。`);
@@ -43,5 +60,4 @@ export function handleVideo(manager, params) {
             });
         });
     }
-    // ループ再生でnowaitでない場合、シナリオはここで止まる。[stopvideo]で進める。
 }
