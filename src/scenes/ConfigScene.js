@@ -20,7 +20,7 @@ export default class ConfigScene extends Phaser.Scene {
 
         // 戻るボタン
         const backButton = this.add.text(this.scale.width - 100, 50, '戻る', { fontSize: '32px', fill: '#fff' }).setOrigin(0.5).setInteractive();
-         this.uiElements.push(bg, title, backButton); // 管理リストに追加
+         this.uiElements.push( title, backButton); // 管理リストに追加
         backButton.on('pointerdown', () => {
             this.scene.stop();
             this.scene.resume('GameScene');
