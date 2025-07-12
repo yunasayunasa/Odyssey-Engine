@@ -121,17 +121,20 @@ export default class ScenarioManager {
             return; // ★ 何も返さない
         }
 
+       // ScenarioManager.js の parseメソッドの[タグ行]の部分
+
         if (trimedLine.startsWith('[')) {
             const { tagName, params } = this.parseTag(trimedLine);
             const handler = this.tagHandlers.get(tagName);
             if (handler) {
-                // ハンドラがPromiseを返す場合は待つ
+                // ★★★ すべてのハンドラがPromiseを返すので、常にawaitする ★★★
                 await handler(this, params);
             } else {
                 console.warn(`未定義のタグです: [${tagName}]`);
             }
-            // ★ ハンドラ内でisWaitingClickなどがtrueに設定される
-            return; // ★ 何も返さない
+            // ★ ハンドラ内でisWaitingClickなどがtrueに設定されたかは、
+            // ★ whileループの条件式が次のループでチェックしてくれる。
+            // ★ ここでは何もreturnする必要はない。
         }
         
         if (trimedLine.length > 0) {
