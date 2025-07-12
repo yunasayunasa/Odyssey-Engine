@@ -41,25 +41,96 @@ export default class ScenarioManager {
         this.currentLine = 0;
         console.log(`シナリオを解析しました: ${this.currentFile}`);
     }
-async next() {
-     console.log(`--- ScenarioManager.next 開始 (currentLine: ${this.currentLine}) ---`);
-        if (this.isEnd || this.isWaitingClick || this.isWaitingTag) {
-              console.log("--- next: 待機状態のため処理を中断 ---");
-            return;
+ // ScenarioManager.js の next() と parse() を置き換える
+
+    async next() {
+        if (this.isEnd || this.isWaitingClick || this.isWaitingChoice) {
+            return; // 待機状態なら、何もしない
         }
         if (this.currentLine >= this.scenario.length) {
-            this.messageWindow.setText('（シナリオ終了）', false);
             this.isEnd = true;
-            return;
+            this.messageWindow.setText('（シナリオ終了）', false);
+            return; // シナリオの終端なら、終了
         }
-        
-        // ★★★ stateManager を更新する古い呼び出しは、ここにはありません。★★★
-        // ★★★ これが正しい状態です。 ★★★
-        
+
         const line = this.scenario[this.currentLine];
         this.currentLine++;
-        console.log(`--- next: parseを呼び出します。処理対象の行: "${line}" ---`);
-        await this.parse(line);
+        
+        // ★★★ parseは「次に進むべきか」という信号を返す ★★★
+        const shouldContinue = await this.parse(line);
+
+        // ★★★ 信号がtrueの場合のみ、次のnextを呼ぶ ★★★
+        if (shouldContinue) {
+            this.next();
+        }
+        // falseの場合は、ここでループが停止し、ユーザーの入力を待つ
+    }
+
+    async parse(line) {
+        console.log(`...... Parsing: "${line}"`);
+        const trimedLine = this.embedVariables(line.trim());
+
+        const ifState = this.ifStack.length > 0 ? this.ifStack[this.ifStack.length - 1] : null;
+
+        // --- スキップ処理 ---
+        if (ifState && ifState.skipping) {
+            const { tagName, params } = this.parseTag(trimedLine);
+            if (['if', 'elsif', 'else', 'endif'].includes(tagName)) {
+                const handler = this.tagHandlers.get(tagName);
+                if (handler) handler(this, params);
+            }
+            return true; // スキップ中は常に次に進む
+        }
+
+        // --- 通常実行 ---
+        if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
+            return true; // コメント・ラベル・アセット行は次に進む
+        }
+
+        if (trimedLine.startsWith('[')) {
+            // --- タグ行 ---
+            const { tagName, params } = this.parseTag(trimedLine);
+            const handler = this.tagHandlers.get(tagName);
+            if (handler) {
+                const promise = handler(this, params);
+                if (promise instanceof Promise) {
+                    await promise;
+                }
+                // [p]タグなどがisWaitingClick/Choiceをtrueに設定する
+                // その結果をチェックして、待つべきか判断
+                return !(this.isWaitingClick || this.isWaitingChoice);
+            } else {
+                console.warn(`未定義のタグです: [${tagName}]`);
+                return true; // 未定義タグは無視して次に進む
+            }
+        }
+        
+        if (trimedLine.length > 0) {
+            // --- セリフまたは地の文 ---
+            let speakerName = null;
+            let dialogue = trimedLine;
+            const speakerMatch = trimedLine.match(/^([a-zA-Z0-9_]+):/);
+            
+            if (speakerMatch) {
+                speakerName = speakerMatch[1];
+                dialogue = trimedLine.substring(speakerName.length + 1).trim();
+            }
+            
+            this.stateManager.addHistory(speakerName, dialogue);
+            this.highlightSpeaker(speakerName);
+            const wrappedLine = this.manualWrap(dialogue);
+            
+            this.messageWindow.setText(wrappedLine, true, () => {
+                this.messageWindow.showNextArrow();
+                if (this.mode === 'auto') this.startAutoMode();
+            }, speakerName);
+
+            this.isWaitingClick = true;
+            return false; // ★★★ テキストを表示したら、必ず待つ ★★★
+        }
+        
+        // --- 空行 ---
+        return true; // 空行は次に進む
     }
     
   async  onClick() {
@@ -92,95 +163,7 @@ async next() {
 
      // ScenarioManager.js の parse メソッド
 
-  // ScenarioManager.js の parse メソッド (最終版)
-
-    async parse(line) {
-        // デバッグログは、安定したら削除してOK
-        console.log(`...... ScenarioManager.parse 開始: "${line}"`);
-
-        // ★★★ このフラグが、ループを制御する鍵 ★★★
-        let shouldStopAndWaitForInput = false;
-
-        const processedLine = this.embedVariables(line);
-        const trimedLine = processedLine.trim();
-
-        const ifState = this.ifStack.length > 0 ? this.ifStack[this.ifStack.length - 1] : null;
-
-        // --- 1. スキップ処理 ---
-        if (ifState && ifState.skipping) {
-            const { tagName } = this.parseTag(trimedLine);
-            if (['if', 'elsif', 'else', 'endif'].includes(tagName)) {
-                const handler = this.tagHandlers.get(tagName);
-                if (handler) handler(this, params);
-            }
-            // スキップ中は待たずに必ず次に進む -> shouldStopAndWaitForInput は false のまま
-        
-        // --- 2. 通常実行 ---
-        } else if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
-            // コメント行、ラベル行、アセット行 -> 何もせず次に進む
-        
-        } else if (trimedLine.match(/^([a-zA-Z0-9_]+):/)) {
-            // --- 話者指定行 ---
-            const speakerMatch = trimedLine.match(/^([a-zA-Z0-9_]+):/);
-            const speakerName = speakerMatch[1];
-            const dialogue = trimedLine.substring(speakerName.length + 1).trim();
-            
-            this.stateManager.addHistory(speakerName, dialogue);
-            this.highlightSpeaker(speakerName);
-            const wrappedLine = this.manualWrap(dialogue);
-            
-            this.messageWindow.setText(wrappedLine, true, () => {
-                this.messageWindow.showNextArrow();
-                if (this.mode === 'auto') this.startAutoMode();
-            }, speakerName);
-
-            this.isWaitingClick = true;
-            shouldStopAndWaitForInput = true; // ★ 入力待ちフラグを立てる
-        
-        } else if (trimedLine.startsWith('[')) {
-            // --- タグ行 ---
-            const { tagName, params } = this.parseTag(trimedLine);
-            const handler = this.tagHandlers.get(tagName);
-
-            if (handler) {
-                const promise = handler(this, params);
-                if (promise instanceof Promise) {
-                    await promise;
-                }
-                
-                // [p]タグや[button]タグなどは、ハンドラ内で isWaitingClick/Choice を true にする
-                // その結果をここでチェックする
-                if (this.isWaitingClick || this.isWaitingChoice) {
-                    shouldStopAndWaitForInput = true; // ★ 入力待ちフラグを立てる
-                }
-            } else {
-                console.warn(`未定義のタグです: [${tagName}]`);
-            }
-        
-        } else if (trimedLine.length > 0) {
-            // --- 地の文 ---
-            this.stateManager.addHistory(null, trimedLine);
-            this.highlightSpeaker(null);
-            const wrappedLine = this.manualWrap(trimedLine);
-
-            this.messageWindow.setText(wrappedLine, true, () => {
-                this.messageWindow.showNextArrow();
-            }, null);
-
-            this.isWaitingClick = true;
-            shouldStopAndWaitForInput = true; // ★ 入力待ちフラグを立てる
-        
-        } else {
-            // --- 空行 ---
-            // 何もせず次に進む
-        }
-
-        // --- 3. 最後に一度だけ、進行するか停止するかを判断する ---
-        if (!shouldStopAndWaitForInput) {
-            this.next(); // 待つ必要がなければ、次の行へ
-        }
-        // 待つ必要がある場合は、何もしない。ここで処理が止まる。
-    }
+  
     finishTagExecution() {
         this.isWaitingTag = false;
         this.next();
