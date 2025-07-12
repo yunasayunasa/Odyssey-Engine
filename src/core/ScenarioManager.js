@@ -54,8 +54,6 @@ export default class ScenarioManager {
         }
         
         
-        this.stateManager.updateScenario(this.currentFile, this.currentLine);
-        
         const line = this.scenario[this.currentLine];
         this.currentLine++;
         

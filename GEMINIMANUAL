@@ -1,68 +1,80 @@
-このマニュアルはAI、ジェミニに食わせてこのエンジンを隅々まで理解してもらい、ゲーム開発の一助となるように教育するマニュアルです。
-以下のテキストを食わせて下さい。
-
-[GEMINI INTERNAL MANUAL] My Novel Engine - Ver 1.0 Final
-1. Core Architecture: Scene-based, Decoupled Modules
-Primary View: Landscape (1280x720), Phaser.Scale.FIT mode.
-Entry Point: main.js (Defines scenes, initializes ConfigManager via global registry).
-Scene Execution Order:
-PreloadScene: Loads asset_define.json, then auto-loads all defined assets. Generates charaDefs and registers to global registry. On complete, starts GameScene and UIScene.
-GameScene & UIScene: Run concurrently. UIScene is an overlay.
-Modal Scenes (SaveLoadScene, etc.): launch-ed by UIScene. Pauses GameScene & UIScene.
-2. Core Systems (src/core/)
-ScenarioManager.js:
-Role: Manages scenario execution flow (.ks files).
-State Flags:
-isWaitingClick: true when waiting for user input (dialogue, [p]). Pauses next() loop. Triggered by onClick.
-isWaitingTag: true when a tag handler has been invoked and has not yet called finishTagExecution(). Pauses next() and onClick.
-Execution Loop:
-next(): Checks flags. If clear, gets a line, increments currentLine, calls parse(line).
+[GEMINI INTERNAL SPECIFICATION] My Novel Engine v1.1
+1.0 Core Architecture & Data Flow
+Primary Viewport (Static): 1280x720, Phaser.Scale.FIT. All layout coordinates in Layout.js are relative to this resolution.
+Boot Sequence:
+main.js: Instantiates Phaser.Game. Scene array registration only.
+PreloadScene:
+Instantiates ConfigManager.
+Registers configManager instance to this.sys.registry.
+Loads asset_define.json.
+Loads initial scenario files (scene1.ks, etc.).
+Loads all assets defined in asset_define.json.
+On completion (load.once('complete')):
+Generates charaDefs from asset_define.json image keys (name_face convention).
+Registers charaDefs to this.sys.registry.
+Starts GameScene, UIScene, SystemScene.
+Scene-Level DI (Dependency Injection):
+GameScene: In create, gets configManager & charaDefs from this.sys.registry. Instantiates all other managers (StateManager, SoundManager, ScenarioManager) and MessageWindow.
+Other Scenes (ConfigScene, NovelOverlayScene): Get required managers/data from this.sys.registry or init(data).
+2.0 Execution Control (ScenarioManager.js)
+Master Loop: next() -> parse()
+next():
+Guarded by isEnd and isWaitingClick.
+Gets line from scenario[] at currentLine.
+Increments currentLine.
+Calls parse(line).
 parse(line):
-Priority 1 (Skip Logic): Checks ifStack. If skipping is true, it only processes if/elsif/else/endif handlers and immediately calls next().
-Priority 2 (Execution Logic):
-Dialogue/Text Line: Sets isWaitingClick = true, calls messageWindow.setText(). Does not call next() or finishTagExecution().
-Tag Line ([...]): Sets isWaitingTag = true, then calls the corresponding handler. Does not call next().
-finishTagExecution(): CRITICAL METHOD. Called by handlers to signal completion. Sets isWaitingTag = false, then calls next() to resume scenario flow.
-StateManager.js:
-Role: Centralized state management for savable data.
-state.variables: Corresponds to f. variables.
-systemVariables: Corresponds to sf. variables. Persisted separately.
-eval(exp): Safely executes/evaluates JS expressions. Key for [eval] and [if].
-ConfigManager.js:
-Role: Manages user-configurable settings.
-Design: Event-driven. Emits change:[key] event when a value is set. Persisted in localStorage.
-Layout.js:
-Role: Static data object defining fixed coordinates for a 1280x720 landscape view. Used by scenes and handlers for consistent positioning.
-3. Handler Protocol (src/handlers/)
-This is the most critical rule set.
-
-Rule 1: Handlers MUST signal completion.
-For synchronous tags (if, eval, er): The last line of the handler MUST be manager.finishTagExecution().
-For asynchronous tags (chara_show, move, wait): The final callback (onComplete, delayedCall) MUST call manager.finishTagExecution().
-Rule 2: Handlers that wait for user input do NOT signal completion.
-Applies to [p] and [link].
-These handlers set manager.isWaitingClick = true or manager.isWaitingChoice = true. The onClick method in ScenarioManager is responsible for resuming the flow.
-Rule 3: Flow-control handlers manage their own next() calls.
-Applies to jump, call, and return.
-These handlers manipulate manager.currentLine and/or manager.currentFile and then call manager.next() themselves to restart the execution loop from a new location. finishTagExecution() is not typically used.
-4. Inter-Scene Communication Protocol (SystemScene Pattern)
-Requirement: To transition from a GameScene to another gameplay scene (e.g., ActionScene) and back.
-Mediator: A dedicated, always-active scene (SystemScene.js).
+Primary responsibility: Determine if the current line requires waiting for user interaction or asynchronous tag completion.
 Flow:
-Caller (GameScene via [call] handler):
-Pushes return address to callStack.
-Emits 'request-scene-change' event to SystemScene with { from: 'GameScene', to: 'ActionScene' }.
-Handler execution ends. ScenarioManager is now in isWaitingTag state.
-Mediator (SystemScene):
-Listens for 'request-scene-change'.
-On event: this.scene.pause('GameScene'), this.scene.pause('UIScene'), this.scene.launch('ActionScene').
-Callee (ActionScene):
-On completion: Emits 'report-scene-end' event to SystemScene with { from: 'ActionScene', returnTo: 'GameScene' }.
+Skip Logic: If ifState.skipping is true, only processes control flow tags (if, else, etc.), then immediately calls this.next().
+Dialogue/Text Line: Sets this.isWaitingClick = true. Calls messageWindow.setText(). Execution STOPS here. onClick resumes flow via next().
+Tag Line ([...]):
+Retrieves handler from tagHandlers.
+Invokes handler. The handler is now responsible for resuming the scenario flow.
+Handler Execution Protocol: CRITICAL
+Synchronous Handlers (if, eval, er): Execute their logic, then MUST call manager.next() as their final action.
+Asynchronous Handlers (chara_show, move, wait): Initiate მათი async operation (e.g., Tween). The completion callback (onComplete, delayedCall) MUST call manager.next().
+Player-Wait Handlers (p, link): Set manager.isWaitingClick = true or manager.isWaitingChoice = true. MUST NOT call next().
+Flow-Control Handlers (jump, return, call): Manipulate manager.currentLine/currentFile/callStack, then MUST call manager.next() to restart the loop from the new context.
+3.0 Inter-Scene Communication Protocol (SystemScene & Events)
+Mediator: SystemScene (always active, active:true). Listens for global events.
+Flow: GameScene -> ActionScene (Full Transition)
+[jump storage="ActionScene"] is parsed.
+handleJump: Calls this.scene.start('ActionScene'). This stops GameScene and UIScene.
+Flow: ActionScene -> GameScene (Return Journey)
+ActionScene: On completion, emits 'return-to-novel' to SystemScene.
+this.scene.get('SystemScene').events.emit('return-to-novel', { from: 'ActionScene', params: {...} });
 Calls this.scene.stop().
-Mediator (SystemScene):
-Listens for 'report-scene-end'.
-On event: this.scene.stop('ActionScene'), this.scene.resume('UIScene'), this.scene.resume('GameScene').
-Emits 'execute-next-command' event to the global event bus (this.sys.events) or directly to the GameScene instance.
-Caller (GameScene):
-Listens for 'execute-next-command' in its create method.
-On event: Calls this.scenarioManager.finishTagExecution() to break the isWaitingTag lock and resume the scenario.
+SystemScene: Listens for 'return-to-novel'.
+On event, calls this.scene.start('GameScene', { ...data... }) and this.scene.launch('UIScene').
+GameScene: init(data) receives return data. create logic branches based on isResuming flag, calls performReturn to restore state and continue scenario.
+Flow: ActionScene -> NovelOverlayScene (Overlay)
+ActionScene: Emits 'request-overlay' to SystemScene.
+this.scene.get('SystemScene').events.emit('request-overlay', { from: 'ActionScene', scenario: '...' });
+ActionScene remains active.
+SystemScene: Listens for 'request-overlay'.
+On event, launches NovelOverlayScene with required data (charaDefs, scenario key).
+NovelOverlayScene:
+Runs its own ScenarioManager instance.
+[overlay_end] tag is parsed.
+handleOverlayEnd: Emits 'end-overlay' to SystemScene.
+manager.scene.scene.get('SystemScene').events.emit('end-overlay', { from: 'NovelOverlayScene', returnTo: 'ActionScene' });
+SystemScene: Listens for 'end-overlay'.
+On event, stops NovelOverlayScene and re-enables input on the returnTo scene (e.g., ActionScene).
+4.0 Save/Load Protocol
+Data Source: StateManager.js.
+performSave (GameScene):
+Calls this.stateManager.getState(this.scenarioManager).
+getState: Pulls latest dynamic state (ifStack, callStack, currentLine, etc.) from the passed ScenarioManager instance into its internal this.state object.
+Returns a deep copy of this.state.
+Saves the returned object to localStorage.
+performLoad (GameScene):
+Loads JSON from localStorage.
+Calls rebuildScene(this, loadedState).
+rebuildScene:
+Clears all layers.
+Calls manager.stateManager.setState(loadedState).
+Manually sets manager.currentLine, manager.ifStack, manager.callStack, etc., from the loaded state.
+Re-creates all visual objects (background, characters) based on the loaded state.
+Restores isWaitingChoice/isWaitingClick states and re-displays UI (choices/next arrow) if necessary.
+Calls this.scenarioManager.next() to resume flow from the restored currentLine, unless isWaitingChoice or isWaitingClick was restored to true.
