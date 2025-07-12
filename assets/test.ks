@@ -40,7 +40,7 @@ yuna:「次は、ジャンプ！」
 
 
 [flip name="yuna" time=400]
-[walk name="yuna" x=-200 time=2000]
+;[walk name="yuna" x=-200 time=2000]
 [wait time=2000]
 yuna:「じゃあ、私は向こうに歩いていくね。」
 [chara_hide name="yuna"]
