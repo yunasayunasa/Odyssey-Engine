@@ -322,7 +322,7 @@ async performLoad(slot) { // asyncに戻しておくと後々安全
  * @param {ScenarioManager} manager - 操作対象のシナリオマネージャー
  * @param {Object} state - ロードした状態オブジェクト
  */
-function rebuildScene(manager, state) {
+function rebuildScene(scene, state) {
     console.log("--- rebuildScene 開始 ---");
     const scene = manager.scene;
 
