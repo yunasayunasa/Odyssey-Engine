@@ -43,72 +43,102 @@ export default class ScenarioManager {
     }
  // ScenarioManager.js の next() と parse() を置き換える
 
-      async next() {
-        console.log(`[Next] >> 開始。currentLine=${this.currentLine}`);
-        if (this.isEnd) { console.log(`[Next] isEnd=trueのため中断`); return; }
-        if (this.isWaitingClick) { console.log(`[Next] isWaitingClick=trueのため中断`); return; }
-        if (this.isWaitingChoice) { console.log(`[Next] isWaitingChoice=trueのため中断`); return; }
-        if (this.currentLine >= this.scenario.length) { this.isEnd = true; console.log(`[Next] シナリオ終端`); return; }
-
-        const line = this.scenario[this.currentLine];
-        this.currentLine++;
+       // --- 新しいゲームループの開始点 ---
+    next() {
+        // 待機フラグを解除して、ゲームループを開始する
+        this.isWaitingClick = false;
+        this.isWaitingChoice = false;
         
-        console.log(`[Next] Parse対象: "${line}"`);
-        const shouldContinue = await this.parse(line);
-        console.log(`[Next] << Parse完了。結果: shouldContinue=${shouldContinue}`);
+        // ループが既に動いている場合は、重複して実行しないようにする
+        if (this.isLoopRunning) return;
+        
+        this.gameLoop();
+    }
 
-        if (shouldContinue) {
-            // ★ setTimeoutで、ブラウザに描画の猶予を与える
-            setTimeout(() => this.next(), 0);
+    // --- 新しいメインループ ---
+    async gameLoop() {
+        this.isLoopRunning = true;
+
+        // isEndになるか、待機状態になるまでループし続ける
+        while (!this.isEnd && !this.isWaitingClick && !this.isWaitingChoice) {
+            
+            if (this.currentLine >= this.scenario.length) {
+                this.isEnd = true;
+                this.messageWindow.setText('（シナリオ終了）', false);
+                break; // ループを抜ける
+            }
+
+            const line = this.scenario[this.currentLine];
+            this.currentLine++;
+
+            console.log(`[Loop] Processing line ${this.currentLine - 1}: "${line}"`);
+            
+            // parseは非同期の可能性がある
+            await this.parse(line);
+        }
+        
+        this.isLoopRunning = false;
+        console.log(`[Loop] << ループ停止。isEnd=${this.isEnd}, isWaitingClick=${this.isWaitingClick}, isWaitingChoice=${this.isWaitingChoice}`);
+    }
+
+    // --- クリック処理 ---
+    onClick() {
+        if (this.isEnd) return;
+        
+        // 選択肢表示中は、何もしない
+        if (this.isWaitingChoice) return;
+
+        // テキストのテロップ送り
+        if (this.messageWindow.isTyping) {
+            this.messageWindow.skipTyping();
+            return;
+        }
+
+        // クリック待ち状態なら、ループを再開
+        if (this.isWaitingClick) {
+            this.messageWindow.hideNextArrow();
+            this.next(); // isWaitingClickをfalseにして、gameLoopを開始
         }
     }
 
+ // --- parseメソッドは、状態を変更するだけ ---
     async parse(line) {
-        console.log(`...... Parsing: "${line}"`);
         const trimedLine = this.embedVariables(line.trim());
 
         const ifState = this.ifStack.length > 0 ? this.ifStack[this.ifStack.length - 1] : null;
 
-        // --- スキップ処理 ---
         if (ifState && ifState.skipping) {
+            // (スキップ処理は変更なし)
             const { tagName, params } = this.parseTag(trimedLine);
             if (['if', 'elsif', 'else', 'endif'].includes(tagName)) {
                 const handler = this.tagHandlers.get(tagName);
                 if (handler) handler(this, params);
             }
-            return true; // スキップ中は常に次に進む
+            return; // ★ 何も返さない
         }
 
-        // --- 通常実行 ---
-           if (trimedLine.startsWith('[')) {
+        if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
+            return; // ★ 何も返さない
+        }
+
+        if (trimedLine.startsWith('[')) {
             const { tagName, params } = this.parseTag(trimedLine);
-            console.log(`        [Parse] タグ検出: [${tagName}]`);
             const handler = this.tagHandlers.get(tagName);
             if (handler) {
-                console.log(`            [Parse] ハンドラ[${tagName}]を実行します...`);
-                // ★★★ ここが重要: Promiseが返ってくるかログで確認 ★★★
-                const result = handler(this, params);
-                if (result instanceof Promise) {
-                    console.log(`                [Parse] ハンドラはPromiseを返しました。awaitします...`);
-                    await result;
-                    console.log(`                [Parse] awaitが完了しました。`);
-                } else {
-                    console.log(`                [Parse] ハンドラは同期的でした。`);
-                }
-                
-                if (this.isWaitingClick || this.isWaitingChoice) {
-                    console.log(`    [Parse] << 完了。結果: false (待機)`);
-                    return false;
-                }
+                // ハンドラがPromiseを返す場合は待つ
+                await handler(this, params);
+            } else {
+                console.warn(`未定義のタグです: [${tagName}]`);
             }
-        } else if (trimedLine.length > 0) {
+            // ★ ハンドラ内でisWaitingClickなどがtrueに設定される
+            return; // ★ 何も返さない
+        }
         
-        
-            // --- セリフまたは地の文 ---
+        if (trimedLine.length > 0) {
+            // (セリフ処理は変更なし)
             let speakerName = null;
             let dialogue = trimedLine;
             const speakerMatch = trimedLine.match(/^([a-zA-Z0-9_]+):/);
-            
             if (speakerMatch) {
                 speakerName = speakerMatch[1];
                 dialogue = trimedLine.substring(speakerName.length + 1).trim();
@@ -117,48 +147,16 @@ export default class ScenarioManager {
             this.stateManager.addHistory(speakerName, dialogue);
             this.highlightSpeaker(speakerName);
             const wrappedLine = this.manualWrap(dialogue);
-            
             this.messageWindow.setText(wrappedLine, true, () => {
                 this.messageWindow.showNextArrow();
-                if (this.mode === 'auto') this.startAutoMode();
             }, speakerName);
-
-               this.isWaitingClick = true;
-            console.log(`    [Parse] << 完了。結果: false (テキスト表示で待機)`);
-            return false;
-        }
-        
-        console.log(`    [Parse] << 完了。結果: true (次に進む)`);
-        return true;
-    }
-    
-  async  onClick() {
-        if (this.isEnd || this.isWaitingTag) return;
-          // ★★★ 選択肢の表示中は、通常のクリック進行を無効化 ★★★
-        if (this.isWaitingChoice) {
-            console.log("選択肢の選択を待っています...");
-            return; // 何もせずに終了
-        }
-        this.messageWindow.hideNextArrow();
-        if (this.messageWindow.isTyping) {
-            this.messageWindow.skipTyping();
-            return;
-        }
-        if (this.isWaitingClick) {
-             // ★ オートモード中にクリックされたら、オートを一旦停止・再開する
-            if (this.mode === 'auto' && this.autoTimer) {
-                this.autoTimer.remove();
-                this.autoTimer = null;
-            }
-            this.isWaitingClick = false;
-          await  this.next();
-        }
-       // ★ スキップモード中は、クリックでスキップを解除する
-        if (this.mode === 'skip') {
-            this.setMode('normal');
-            return;
+            
+            // ★★★ 状態を変更するだけ ★★★
+            this.isWaitingClick = true; 
+            return; // ★ 何も返さない
         }
     }
+ 
 
      // ScenarioManager.js の parse メソッド
 
