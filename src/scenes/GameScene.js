@@ -322,15 +322,11 @@ async performLoad(slot) { // asyncに戻しておくと後々安全
  * @param {ScenarioManager} manager - 操作対象のシナリオマネージャー
  * @param {Object} state - ロードした状態オブジェクト
  */
-function rebuildScene(scene, state) {
+function rebuildScene(manager, state) {
     console.log("--- rebuildScene 開始 ---");
-    
+    const scene = manager.scene;
 
-     const manager = scene.scenarioManager;
-    manager.ifStack = state.ifStack || [];
-    manager.callStack = state.callStack || [];
-    manager.isWaitingChoice = state.isWaitingChoice || false;
-    scene.pendingChoices = state.pendingChoices || [];
+    
 
     // 1. 現在の表示をすべてクリア
     console.log("1. レイヤーをクリアします...");
