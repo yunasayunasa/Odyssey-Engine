@@ -10,9 +10,12 @@ export function handlePageBreak(manager, params) {
         // ★★★ 選択肢を表示したら、ここで処理を中断する ★★★
         // finishTagExecution() は呼ばない！クリックを待つ。
         manager.isWaitingClick = true;
+        console.log("pタグ選択肢表示");
+        
     } else {
         manager.isWaitingClick = true;
         manager.messageWindow.showNextArrow();
+        console.log("pタグ選択肢はありません");
         // ★★★ クリック待ちなので、こちらもfinishTagExecution()は呼ばない！ ★★★
     }
 }
