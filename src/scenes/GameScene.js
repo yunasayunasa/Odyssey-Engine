@@ -226,7 +226,7 @@ displayChoiceButtons() {
 clearChoiceButtons() {
      // ★ 選択肢を消す時に、ブロッカーも非表示にする
     this.choiceInputBlocker.setVisible(false);
-    this.inputBlocker.setVisible(false);
+  //  this.inputBlocker.setVisible(false);
     this.choiceButtons.forEach(button => button.destroy());
     this.choiceButtons = []; // 配列を空にする
     // 選択肢待ち状態を解除

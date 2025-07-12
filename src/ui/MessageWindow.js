@@ -1,64 +1,92 @@
-import { Layout } from '../core/Layout.js';
+// ★★★ 先頭の import 文を削除し、この行を代わりに追加 ★★★
 const Container = Phaser.GameObjects.Container;
 
-export default class MessageWindow extends Container {
-     constructor(scene, soundManager, configManager) {
+// MessageWindowクラスを定義し、エクスポート
+export default class MessageWindow extends Container{
+
+      /**
+     * @param {Phaser.Scene} scene
+     * @param {SoundManager} soundManager // ★★★ JSDocにも追加 ★★★
+     */
+    constructor(scene, soundManager, configManager) { // ★★★ 引数に soundManager を追加 ★★★
+        // 親クラス(Container)のコンストラクタを呼び出す
+        // コンテナ自体の位置は(0,0)でOK。中の要素の位置で調整する。
         super(scene, 0, 0);
+        
+        const gameWidth = scene.scale.width;
+        const gameHeight = scene.scale.height;
+
+        // --- ウィンドウ画像 ---
+        // ★★★ 位置を調整しましょう！ ★★★
+        // 画面下端から、ウィンドウの高さの半分だけ上に配置するイメージ
+        const windowY = gameHeight - 180; // 例：画面下から180pxの位置
+        this.windowImage = scene.add.image(gameWidth / 2, windowY, 'message_window');
+//サウンドマネージャーオブジェクト
         this.soundManager = soundManager;
         this.configManager = configManager;
-
-        // --- 1. プロパティを初期化 ---
-        this.isTyping = false;
         this.charByCharTimer = null;
-        this.arrowTween = null; // まずはnullで宣言
-
-        // --- 2. UI要素を生成 ---
-        this.windowImage = this.scene.add.image(0, 0, 'message_window').setOrigin(0.5);
+        this.isTyping = false;
         
-        const padding = Layout.ui.messageWindow.padding;
-        const textWidth = this.windowImage.width - (padding * 2);
-        const textHeight = this.windowImage.height - (padding * 1.5);
-        this.textObject = this.scene.add.text(
-            -this.windowImage.width / 2 + padding,
-            -this.windowImage.height / 2 + (padding / 2),
-            '',
-            { fontFamily: '"Noto Sans JP", sans-serif', fontSize: '36px', fill: '#ffffff' }
-        ).setWordWrapWidth(textWidth, true).setFixedSize(textWidth, textHeight);
-        
-        this.nextArrow = this.scene.add.image(
-            this.windowImage.width / 2 - padding,
-            this.windowImage.height / 2 - padding,
-            'next_arrow'
-        ).setScale(0.5).setOrigin(0.5);
-        
-        // --- 3. コンテナに要素を追加 ---
-        this.add([this.windowImage, this.textObject, this.nextArrow]);
-
-        // --- 4. アニメーションを生成し、プロパティに保存 ---
-        this.arrowTween = this.scene.tweens.add({
-            targets: this.nextArrow,
-            y: this.nextArrow.y - 10,
-            duration: 400,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-            repeat: -1,
-            paused: true // 最初から止めておく
-        });
-
-        // --- 5. 初期状態を設定 ---
-        // arrowTweenが確実に存在するようになった後で、hideNextArrowを呼ぶ
-        this.hideNextArrow(); 
-
-        // --- 6. コンフィグ関連の初期化とリスナー登録 ---
+        // ★★★ コンフィグ値から、currentTextDelayの初期値を設定 ★★★
         const textSpeedValue = this.configManager.getValue('textSpeed');
         this.currentTextDelay = 100 - textSpeedValue;
+
+        // ★★★ コンフィグが変更されたら、currentTextDelayも更新するイベントリスナー ★★★
         this.configManager.on('change:textSpeed', (newValue) => {
             this.currentTextDelay = 100 - newValue;
+            console.log(`コンフィグ変更を検知: テキスト表示速度を ${this.currentTextDelay}ms に更新`);
         });
-    }
-    // --- setText, skipTypingなどのメソッド群 ---
-    // (この部分は、あなたの正常に動作していたコードのままでOKです)
+    
 
+        // --- テキストオブジェクト ---
+        const padding = 35; // ウィンドウの内側の余白
+        const textWidth = this.windowImage.width - (padding * 2);
+        const textHeight = this.windowImage.height - (padding * 2);
+
+        this.textObject = scene.add.text(
+            this.windowImage.x - (this.windowImage.width / 2) + padding,
+            this.windowImage.y - (this.windowImage.height / 2) + padding,
+            '',
+            {
+                fontFamily: '"Noto Sans JP", sans-serif',
+                fontSize: '36px',
+                fill: '#ffffff',
+                fixedWidth: textWidth,
+                fixedHeight: textHeight
+            }
+        );
+        this.currentTextDelay = 50; // デフォルト値
+
+       // ★★★ ここからがアイコンの修正 ★★★
+
+    // 1. アイコンの基準座標を計算
+    const iconX = (gameWidth / 2) + (this.windowImage.width / 2) - 60; // ウィンドウ右端から60px内側
+    const iconY = windowY + (this.windowImage.height / 2) - 50;       // ウィンドウ下端から50px内側
+    
+    // 2. アイコンを生成し、サイズを調整
+    this.nextArrow = scene.add.image(iconX, iconY, 'next_arrow');
+    this.nextArrow.setScale(0.5); // ★★★ サイズを半分にする ★★★
+    this.nextArrow.setVisible(false);
+
+    // 3. アニメーションの定義
+    // yoyoで戻る距離も、スケールに合わせて小さくする
+    const arrowMoveDistance = 10 * this.nextArrow.scaleY; 
+    this.arrowTween = scene.tweens.add({
+        targets: this.nextArrow,
+        y: this.nextArrow.y - arrowMoveDistance, // 少しだけ上に移動
+        duration: 400,
+        ease: 'Sine.easeInOut',
+        yoyo: true,
+        repeat: -1,
+        paused: true
+    });
+
+    // 4. すべての要素をコンテナに追加
+    this.add([this.windowImage, this.textObject, this.nextArrow]);
+
+    // 5. シーンに自身を登録
+    scene.add.existing(this);
+}
     
        // ★★★ アイコンを制御するメソッドを追加 ★★★
     /**
