@@ -6,7 +6,13 @@ export default class StateManager {
             sound: { bgm: null },
             variables: {},
             history: [], // ★★★ 履歴を保存する配列を追加 ★★★
-           
+           status: {
+                mode: 'normal', // 'auto', 'skip'
+                isWaitingClick: false,
+                isWaitingChoice: false,
+                pendingChoices: [] // 表示されるべきだった選択肢の情報
+            }
+        
         };
         this.systemVariables = this.loadSystemVariables(); 
     }

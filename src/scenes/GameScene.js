@@ -267,56 +267,31 @@ clearChoiceButtons() {
     }
 
 
-    // GameSceneクラスの中に追加
-async performLoad(slot) { // asyncに戻しておくと後々安全
-    try {
-        const jsonString = localStorage.getItem(`save_data_${slot}`);
-        if (!jsonString) {
-            console.warn(`スロット[${slot}]にセーブデータがありません。`);
-            return;
-        }
-        const loadedState = JSON.parse(jsonString);
-        this.stateManager.setState(loadedState);
-        console.log(`スロット[${slot}]からロードしました。`, loadedState);
+        async performLoad(slot) {
+        try {
+            const jsonString = localStorage.getItem(`save_data_${slot}`);
+            if (!jsonString) { /* ... */ return; }
+            const loadedState = JSON.parse(jsonString);
+            
+            // 1. rebuildSceneで、見た目と内部状態を完全に復元
+            rebuildScene(this.scenarioManager, loadedState);
+            
+            console.log("ロード完了。セーブした時点の状態が復元されました。");
+            
+            // 2. ★★★ next()やparse()は、ここでは呼ばない！ ★★★
+            // なぜなら、セーブした瞬間がクリック待ちだったかもしれないから。
+            // 復元された状態(isWaitingClickなど)に応じて、
+            // 次のonClick()が、正しい挙動（next()を呼ぶなど）を判断してくれる。
+            
+            // 3. もしオートモードでセーブされていたなら、オートを再開する
+            if (this.scenarioManager.mode === 'auto') {
+                this.scenarioManager.startAutoMode();
+            }
 
-        rebuildScene(this.scenarioManager, loadedState);
-        
-        // ★★★ ここからデバッグログ ★★★
-        console.log("--- performLoad: シナリオ再開処理 ---");
-
-        // ScenarioManagerが持つシナリオ配列は正しいか？
-        if (!this.scenarioManager.scenario) {
-            console.error("エラー: scenarioManager.scenarioが存在しません！");
-            return;
-        }
-        console.log(`シナリオ配列の長さ: ${this.scenarioManager.scenario.length}`);
-        
-        // currentLineは正しいか？
-        console.log(`再開行番号: ${this.scenarioManager.currentLine}`);
-
-        if (this.scenarioManager.currentLine >= this.scenarioManager.scenario.length) {
-            console.error("エラー: 再開行番号がシナリオの範囲外です！");
-            return;
-        }
-        
-        // 行テキストの取得
-        const line = this.scenarioManager.scenario[this.scenarioManager.currentLine];
-        console.log(`再開する行テキスト: "${line}"`);
-
-        // 行番号を進める
-        this.scenarioManager.currentLine++;
-
-        // パース実行
-        console.log("parseを実行します...");
-        this.scenarioManager.parse(line);
-        console.log("performLoad 正常終了");
-        
-    } catch (e) {
-        // ★★★ エラーオブジェクトも出力する ★★★
-        console.error(`ロード処理でエラーが発生しました。`, e);
-    }
-}
-}
+        } catch (e) {
+            console.error(`ロード処理でエラーが発生しました。`, e);
+        }}}
+    
 /**
  * ロードした状態に基づいて、シーンの表示を再構築するヘルパー関数
  * @param {ScenarioManager} manager - 操作対象のシナリオマネージャー
@@ -386,6 +361,18 @@ function rebuildScene(manager, state) {
        // 6. メッセージウィンドウをリセット
     manager.messageWindow.setText('');
 
+    // ★★★ 内部状態の復元 ★★★
+    console.log("7. 内部状態を復元します...");
+    manager.mode = state.status.mode;
+    manager.isWaitingClick = state.status.isWaitingClick;
+    manager.isWaitingChoice = state.status.isWaitingChoice;
+    manager.scene.pendingChoices = state.status.pendingChoices;
+    console.log("...内部状態の復元完了");
+
+    // ★★★ もし選択肢表示中にセーブされていたなら、再表示する ★★★
+    if (manager.isWaitingChoice) {
+        manager.scene.displayChoiceButtons();
+    }
     // ★★★ 7. 話者とハイライトを復元 ★★★
    /* let speakerName = null;
     const line = manager.scenario[manager.currentLine];

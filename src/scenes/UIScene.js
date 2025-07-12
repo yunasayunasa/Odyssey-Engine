@@ -94,9 +94,9 @@ export default class UIScene extends Phaser.Scene {
     openScene(sceneKey, data = {}) {
         this.scene.pause('GameScene');
         // Config, Backlog, SaveLoadシーンを開くときは、UI自身も止める
-        if (['ConfigScene', 'BacklogScene', 'SaveLoadScene'].includes(sceneKey)) {
+      /*  if (['ConfigScene', 'BacklogScene', 'SaveLoadScene'].includes(sceneKey)) {
             this.scene.pause();
-        }
+        }*/
         this.scene.launch(sceneKey, data);
     }
     
