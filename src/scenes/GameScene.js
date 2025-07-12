@@ -171,37 +171,20 @@ this.scenarioManager.registerTag('stopvideo', handleStopVideo);
 // ...
 
 performSave(slot) {
-    
-    // ★★★ デバッグログを追加 ★★★
-    console.log("--- performSave 実行開始 ---");
-    console.log("this (GameSceneインスタンス):", this);
-    console.log("this.scenarioManager:", this.scenarioManager);
+        // ★★★★★ この行を追加 ★★★★★
+        console.trace("performSave が呼び出されました！犯人は誰だ！");
 
-    // ★★★ シナリオマネージャーが存在しない場合は、処理を中断してエラーを出す ★★★
-    if (!this.scenarioManager) {
-        console.error("致命的エラー: performSaveが呼ばれましたが、this.scenarioManagerが存在しません！");
-        // SaveLoadSceneを閉じてゲームに戻る
-        this.scene.stop('SaveLoadScene');
-        this.scene.resume('GameScene');
-        return;
+        console.log("========== GameScene.performSave が呼ばれました ==========");
+        try {
+            const gameState = this.stateManager.getState(this.scenarioManager);
+            
+            const jsonString = JSON.stringify(gameState, null, 2);
+            localStorage.setItem(`save_data_${slot}`, jsonString);
+            console.log(`スロット[${slot}]にセーブしました。`, gameState);
+        } catch (e) {
+            console.error(`セーブに失敗しました: スロット[${slot}]`, e);
+        }
     }
-  console.log("========== GameScene.performSave が呼ばれました ==========");
-    try {
-        // ここで this.scenarioManager が渡される
-        const gameState = this.stateManager.getState(this.scenarioManager);
-        
-        const jsonString = JSON.stringify(gameState, null, 2);
-        localStorage.setItem(`save_data_${slot}`, jsonString);
-        console.log(`スロット[${slot}]にセーブしました。`, gameState);
-
-        // ★★★ SaveLoadScene側でシーンを制御するように修正 ★★★
-        // this.scene.stop('SaveLoadScene');
-        // this.scene.resume('GameScene');
-
-    } catch (e) {
-        console.error(`セーブに失敗しました: スロット[${slot}]`, e);
-    }
-}
 
 /**
  * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する

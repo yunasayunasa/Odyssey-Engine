@@ -136,9 +136,11 @@ this.scenarioManager.registerTag('video', handleVideo);
 
 
     // ★★★ performSave を GameScene と同じ最新版に書き換える ★★★
-    performSave(slot) {
+     performSave(slot) {
+        // ★★★★★ この行を追加 ★★★★★
+        console.trace("performSave (Overlay) が呼び出されました！犯人は誰だ！");
+
         try {
-            // ★★★ ここが重要: this.scenarioManager を渡す ★★★
             const gameState = this.stateManager.getState(this.scenarioManager);
             
             const jsonString = JSON.stringify(gameState, null, 2);
@@ -148,7 +150,6 @@ this.scenarioManager.registerTag('video', handleVideo);
             console.error(`セーブに失敗しました: スロット[${slot}]`, e);
         }
     }
-
 
 /**
  * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
