@@ -43,27 +43,24 @@ export default class ScenarioManager {
     }
  // ScenarioManager.js の next() と parse() を置き換える
 
-    async next() {
-        if (this.isEnd || this.isWaitingClick || this.isWaitingChoice) {
-            return; // 待機状態なら、何もしない
-        }
-        if (this.currentLine >= this.scenario.length) {
-            this.isEnd = true;
-            this.messageWindow.setText('（シナリオ終了）', false);
-            return; // シナリオの終端なら、終了
-        }
+      async next() {
+        console.log(`[Next] >> 開始。currentLine=${this.currentLine}`);
+        if (this.isEnd) { console.log(`[Next] isEnd=trueのため中断`); return; }
+        if (this.isWaitingClick) { console.log(`[Next] isWaitingClick=trueのため中断`); return; }
+        if (this.isWaitingChoice) { console.log(`[Next] isWaitingChoice=trueのため中断`); return; }
+        if (this.currentLine >= this.scenario.length) { this.isEnd = true; console.log(`[Next] シナリオ終端`); return; }
 
         const line = this.scenario[this.currentLine];
         this.currentLine++;
         
-        // ★★★ parseは「次に進むべきか」という信号を返す ★★★
+        console.log(`[Next] Parse対象: "${line}"`);
         const shouldContinue = await this.parse(line);
+        console.log(`[Next] << Parse完了。結果: shouldContinue=${shouldContinue}`);
 
-        // ★★★ 信号がtrueの場合のみ、次のnextを呼ぶ ★★★
         if (shouldContinue) {
-            this.next();
+            // ★ setTimeoutで、ブラウザに描画の猶予を与える
+            setTimeout(() => this.next(), 0);
         }
-        // falseの場合は、ここでループが停止し、ユーザーの入力を待つ
     }
 
     async parse(line) {
@@ -83,29 +80,30 @@ export default class ScenarioManager {
         }
 
         // --- 通常実行 ---
-        if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
-            return true; // コメント・ラベル・アセット行は次に進む
-        }
-
-        if (trimedLine.startsWith('[')) {
-            // --- タグ行 ---
+           if (trimedLine.startsWith('[')) {
             const { tagName, params } = this.parseTag(trimedLine);
+            console.log(`        [Parse] タグ検出: [${tagName}]`);
             const handler = this.tagHandlers.get(tagName);
             if (handler) {
-                const promise = handler(this, params);
-                if (promise instanceof Promise) {
-                    await promise;
+                console.log(`            [Parse] ハンドラ[${tagName}]を実行します...`);
+                // ★★★ ここが重要: Promiseが返ってくるかログで確認 ★★★
+                const result = handler(this, params);
+                if (result instanceof Promise) {
+                    console.log(`                [Parse] ハンドラはPromiseを返しました。awaitします...`);
+                    await result;
+                    console.log(`                [Parse] awaitが完了しました。`);
+                } else {
+                    console.log(`                [Parse] ハンドラは同期的でした。`);
                 }
-                // [p]タグなどがisWaitingClick/Choiceをtrueに設定する
-                // その結果をチェックして、待つべきか判断
-                return !(this.isWaitingClick || this.isWaitingChoice);
-            } else {
-                console.warn(`未定義のタグです: [${tagName}]`);
-                return true; // 未定義タグは無視して次に進む
+                
+                if (this.isWaitingClick || this.isWaitingChoice) {
+                    console.log(`    [Parse] << 完了。結果: false (待機)`);
+                    return false;
+                }
             }
-        }
+        } else if (trimedLine.length > 0) {
         
-        if (trimedLine.length > 0) {
+        
             // --- セリフまたは地の文 ---
             let speakerName = null;
             let dialogue = trimedLine;
@@ -125,12 +123,13 @@ export default class ScenarioManager {
                 if (this.mode === 'auto') this.startAutoMode();
             }, speakerName);
 
-            this.isWaitingClick = true;
-            return false; // ★★★ テキストを表示したら、必ず待つ ★★★
+               this.isWaitingClick = true;
+            console.log(`    [Parse] << 完了。結果: false (テキスト表示で待機)`);
+            return false;
         }
         
-        // --- 空行 ---
-        return true; // 空行は次に進む
+        console.log(`    [Parse] << 完了。結果: true (次に進む)`);
+        return true;
     }
     
   async  onClick() {

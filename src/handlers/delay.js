@@ -5,6 +5,7 @@
  * @param {Object} params - { speed }
  */
 export function handleDelay(manager, params) {
+    console.log(`            [Handler:delay] >> 開始`);
     const speed = params.speed;
     if (speed === undefined) {
         console.warn('[delay] speed属性は必須です。');
@@ -19,7 +20,7 @@ export function handleDelay(manager, params) {
     } else {
         console.warn(`[delay] speed属性には数値を指定してください: ${speed}`);
     }
-
+console.log(`            [Handler:delay] << 完了`);
     // ★★★ このタグの処理は一瞬で終わるので、何も呼び出す必要はない ★★★
     // ScenarioManagerのメインループが、この関数の終了後に次の行の処理に進む
 }
