@@ -1,21 +1,25 @@
 /**
  * [delay] タグの処理
  * 文字の表示速度を変更する
- * @param {Object} params - {speed}
+ * @param {ScenarioManager} manager
+ * @param {Object} params - { speed }
  */
 export function handleDelay(manager, params) {
     const speed = params.speed;
     if (speed === undefined) {
         console.warn('[delay] speed属性は必須です。');
-       // manager.next();
-       manager.finishTagExecution();
-        return;
+        return; // 何もせず同期的に完了
     }
 
-    // ★★★ MessageWindowのプロパティを更新 ★★★
-    manager.messageWindow.currentTextDelay = Number(speed);
-    
-    console.log(`テキスト表示速度を ${speed}ms に変更しました。`);
-   // manager.next();
-   manager.finishTagExecution();
+    // MessageWindowのプロパティを直接更新
+    const newSpeed = Number(speed);
+    if (!isNaN(newSpeed)) {
+        manager.messageWindow.setTextSpeed(newSpeed); // ★ 専用メソッド経由が望ましい
+        console.log(`テキスト表示速度を ${newSpeed}ms に変更しました。`);
+    } else {
+        console.warn(`[delay] speed属性には数値を指定してください: ${speed}`);
+    }
+
+    // ★★★ このタグの処理は一瞬で終わるので、何も呼び出す必要はない ★★★
+    // ScenarioManagerのメインループが、この関数の終了後に次の行の処理に進む
 }

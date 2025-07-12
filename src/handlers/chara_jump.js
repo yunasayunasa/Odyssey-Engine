@@ -1,50 +1,103 @@
+/**
+ * [chara_jump] タグの処理
+ * キャラクターをジャンプさせる
+ * @param {ScenarioManager} manager
+ * @param {Object} params - { name, time, height, x_add, y_add, loop, nowait }
+ * @returns {Promise<void> | void}
+ */
 export function handleCharaJump(manager, params) {
     const name = params.name;
-    if (!name) { console.warn('[chara_jump] nameは必須です。'); manager.finishTagExecution(); return; }
+    if (!name) {
+        console.warn('[chara_jump] nameは必須です。');
+        return; // 同期的に完了
+    }
     const chara = manager.scene.characters[name];
-    if (!chara) { console.warn(`[chara_jump] キャラクター[${name}]が見つかりません。`); manager.finishTagExecution(); return; }
+    if (!chara) {
+        console.warn(`[chara_jump] キャラクター[${name}]が見つかりません。`);
+        return; // 同期的に完了
+    }
 
-    // --- パラメータ取得 ---
+    const noWait = params.nowait === 'true';
+    const loop = params.loop === 'true';
+
+    // ★ nowaitでない場合、Promiseを返して完了を待つ
+    if (!noWait) {
+        return new Promise(resolve => {
+            // ★ アニメーション完了時にresolveを呼ぶ共通のコールバック
+            const onCompleteCallback = () => {
+                // ループしない場合のみ完了を通知する
+                if (!loop) {
+                    resolve();
+                }
+            };
+            // アニメーションを実行
+            createJumpTween(manager, chara, params, onCompleteCallback);
+        });
+    } else {
+        // ★ nowaitの場合、Promiseを返さずにアニメーションを開始するだけ
+        createJumpTween(manager, chara, params, null);
+        // すぐに次の行に進む（同期的に完了）
+    }
+}
+
+/**
+ * ジャンプのTweenアニメーションを作成・実行するヘルパー関数
+ * @param {ScenarioManager} manager
+ * @param {Phaser.GameObjects.Image} chara - 対象キャラクター
+ * @param {Object} params - タグのパラメータ
+ * @param {Function | null} onCompleteCallback - アニメーション完了時に呼ばれるコールバック
+ */
+function createJumpTween(manager, chara, params, onCompleteCallback) {
     const time = Number(params.time) || 500;
     const height = Number(params.height) || 50;
     const x_add = Number(params.x_add) || 0;
     const y_add = Number(params.y_add) || 0;
     const loop = params.loop === 'true';
-    const noWait = params.nowait === 'true';
 
-    // --- 座標計算 ---
     const originX = chara.x;
     const originY = chara.y;
     const targetX = originX + x_add;
     const targetY = originY + y_add;
 
-    // --- Tween定義 ---
     const tweenConfig = {
         targets: chara,
-        props: {
-            x: { value: targetX, duration: time, ease: 'Linear' },
-            y: { value: originY - height, duration: time / 2, yoyo: true, ease: 'Sine.Out' }
+        // x座標は最終地点へ線形移動
+        x: targetX,
+        // y座標は放物線を描くように上下運動
+        y: {
+            getStart: () => originY,
+            getEnd: () => targetY,
+            ease: 'Linear',
         },
+        // yoyoとeaseを使ってジャンプ感を出す
+        yoyo: true,
+        ease: 'Power1.easeOut', // ジャンプ開始時に勢いよく
+        duration: time,
         onComplete: () => {
-            // ★ onCompleteは、ループしない場合 と nowaitでない場合 の両方を満たす時だけ呼ばれる
-            if (!loop && !noWait) {
-                chara.setPosition(targetX, targetY);
-                // (ここに状態更新ロジックを入れると、より正確になる)
-                manager.finishTagExecution();
+            // 最終座標を確定させる
+            chara.setPosition(targetX, targetY);
+
+            // ★ 渡されたコールバックが存在すれば実行する
+            if (onCompleteCallback) {
+                onCompleteCallback();
             }
         }
     };
-    
-    if (loop) {
-        tweenConfig.repeat = -1;
-    }
 
-    // --- Tween実行 ---
-    manager.scene.tweens.add(tweenConfig);
-
-    // ★★★ nowaitの場合だけ、即座に完了を通知する ★★★
-    if (noWait) {
-        manager.finishTagExecution();
-    }
-    // ループの場合は、ここでは何も呼ばない！[stop_anim]を待つ。
+    // y座標のジャンプ部分のTweenを別途作成して組み合わせる方がより正確な動きになる
+    // ここでは元のロジックを尊重しつつ、よりシンプルなTweenで再構成
+    manager.scene.tweens.add({
+        targets: chara,
+        props: {
+            x: { value: targetX, duration: time, ease: 'Linear' },
+            y: { value: chara.y - height, duration: time / 2, yoyo: true, ease: 'Sine.Out' },
+        },
+        loop: loop ? -1 : 0,
+        onComplete: () => {
+            if (!loop) {
+                chara.setPosition(targetX, targetY);
+                if (onCompleteCallback) onCompleteCallback();
+            }
+        }
+    });
 }

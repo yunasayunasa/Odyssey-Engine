@@ -1,22 +1,40 @@
+/**
+ * [elsif] タグの処理
+ * 前のif/elsifの条件が満たされず、かつ自身の条件式がtrueの場合に実行されるブロックを開始する
+ * @param {ScenarioManager} manager
+ * @param {Object} params - { exp }
+ */
 export function handleElsif(manager, params) {
-    const ifState = manager.ifStack[manager.ifStack.length - 1];
-    if (!ifState) { /* ... */ return; }
+    if (manager.ifStack.length === 0) {
+        console.error("[elsif] 対応する[if]が存在しません。");
+        return;
+    }
 
-    // ★★★ すでに前のif/elsifで条件が満たされているか？ ★★★
+    const ifState = manager.ifStack[manager.ifStack.length - 1];
+
+    // すでに前のif/elsifブロックで条件が成立していた場合
     if (ifState.conditionMet) {
-        // 満たされているなら、このelsifは無条件でスキップ対象
+        // この[elsif]ブロックは無条件でスキップ対象とする
         ifState.skipping = true;
     } else {
-        // まだ満たされていないなら、初めて条件を評価する
+        // まだどのブロックも実行されていない場合、この[elsif]の条件を評価する
         const exp = params.exp;
-        const result = manager.stateManager.eval(exp);
-        if (result) {
-            ifState.conditionMet = true; // 条件が満たされたことを記録
-            ifState.skipping = false;    // スキップを解除して実行
+        if (!exp) {
+            console.warn("[elsif] exp属性は必須です。");
+            ifState.skipping = true; // 式がないのでスキップ
+            return;
+        }
+
+        if (manager.stateManager.eval(exp)) {
+            // 条件が成立した場合
+            ifState.skipping = false; // このブロックのスキップを解除
+            ifState.conditionMet = true; // このif文全体が「条件を満たした」と記録
         } else {
-            ifState.skipping = true;     // 条件が合わないのでスキップ継続
+            // 条件が成立しなかった場合
+            ifState.skipping = true; // このブロックもスキップを継続
         }
     }
-    manager.finishTagExecution();
-    //manager.next();
+
+    // ★★★ このタグの処理は一瞬で終わるので、何も呼び出す必要はない ★★★
+    // ScenarioManagerのメインループが、この関数の終了後に次の行の処理に進む
 }

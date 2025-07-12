@@ -1,15 +1,30 @@
+/**
+ * [fadeout] タグの処理
+ * 指定された色へ画面をフェードアウトさせる
+ * @param {ScenarioManager} manager
+ * @param {Object} params - { time, color }
+ * @returns {Promise<void>}
+ */
 export function handleFadeout(manager, params) {
-    const time = Number(params.time) || 1000;
-    const color = params.color || '0x000000'; // デフォルトは黒
+    return new Promise(resolve => {
+        const time = Number(params.time) || 1000;
+        
+        // カラーコードのパース
+        const colorStr = params.color || '000000';
+        const colorInt = parseInt(colorStr.replace(/^0x/, ''), 16);
+        
+        const r = (colorInt >> 16) & 0xFF;
+        const g = (colorInt >> 8) & 0xFF;
+        const b = colorInt & 0xFF;
+        
+        // ★★★ カメラのフェードアウト完了イベントを一度だけリッスンする ★★★
+        manager.scene.cameras.main.once('camerafadeoutcomplete', () => {
+            resolve(); // イベントが発火したらPromiseを解決
+        });
 
-    const r = parseInt(color.slice(2, 4), 16);
-    const g = parseInt(color.slice(4, 6), 16);
-    const b = parseInt(color.slice(6, 8), 16);
-
-    manager.scene.cameras.main.fadeOut(time, r, g, b);
-    
-    // アニメーション完了を待つ
-    manager.scene.time.delayedCall(time, () => {
-        manager.finishTagExecution();
+        // カメラのフェードアウトエフェクトを開始
+        manager.scene.cameras.main.fadeOut(time, r, g, b);
+        
+        // ★★★ delayedCall や finishTagExecution は不要 ★★★
     });
 }

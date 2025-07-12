@@ -1,62 +1,79 @@
 /**
  * [walk] タグの処理
- * キャラクターを歩いているように移動させる
- * @param {Object} params - {name, x, y, time, height, speed}
+ * キャラクターを歩いているように上下動させながら移動させる
+ * @param {ScenarioManager} manager
+ * @param {Object} params - { name, x, y, time, height, speed }
+ * @returns {Promise<void>}
  */
 export function handleWalk(manager, params) {
-    const name = params.name;
-    if (!name) { console.warn('[walk] nameは必須です。');
-        manager.finishTagExecution();
-        //manager.next(); return; 
-    }
-    
-    const chara = manager.scene.characters[name];
-    if (!chara) { console.warn(`[walk] キャラクター[${name}]が見つかりません。`);
-    manager.finishTagExecution();
-    //manager.next(); return;
- }
-
-    const time = Number(params.time) || 2000; // 歩く時間
-    const x = params.x !== undefined ? Number(params.x) : chara.x;
-    const y = params.y !== undefined ? Number(params.y) : chara.y;
-
-    // ★★★ 歩行アニメーションのパラメータ ★★★
-    const walkHeight = Number(params.height) || 10; // 上下に動く幅
-    const walkSpeed = Number(params.speed) || 150; // 1回の上下動にかかる時間(ms)
-
-    // --- 1. 水平/垂直方向の移動Tween ---
-    // これは[move]とほぼ同じだが、onCompleteで状態更新だけを行う
-    const moveTween = manager.scene.tweens.add({
-        targets: chara,
-        x: x,
-        y: y,
-        duration: time,
-        ease: 'Linear',
-        onComplete: () => {
-            // ★ 移動完了後、上下動Tweenを停止し、Y座標を元に戻す
-            walkTween.stop();
-            chara.y = y; // 最終的なY座標にきっちり合わせる
-
-            // 状態更新と次のシナリオへ
-            const charaData = manager.stateManager.getState().layers.characters[name];
-            if (charaData) {
-                charaData.x = x;
-                charaData.y = y;
-                manager.stateManager.updateChara(name, charaData);
-            }
-            manager.finishTagExecution();
-           // manager.next();
+    return new Promise(resolve => {
+        const name = params.name;
+        if (!name) {
+            console.warn('[walk] nameは必須です。');
+            resolve();
+            return;
         }
-    });
 
-    // --- 2. 上下動のTween ---
-    // 元のY座標を基準に、上下にピョコピコ動かす
-    const walkTween = manager.scene.tweens.add({
-        targets: chara,
-        y: chara.y - walkHeight, // 上に移動
-        duration: walkSpeed,
-        ease: 'Sine.easeInOut',
-        yoyo: true,  // 元の高さに戻る
-        repeat: -1   // 無限ループ
+        const chara = manager.scene.characters[name];
+        if (!chara) {
+            console.warn(`[walk] キャラクター[${name}]が見つかりません。`);
+            resolve();
+            return;
+        }
+
+        const time = Number(params.time) || 2000;
+        const targetX = params.x !== undefined ? Number(params.x) : chara.x;
+        const targetY = params.y !== undefined ? Number(params.y) : chara.y;
+        const walkHeight = Number(params.height) || 10;
+        const walkSpeed = Number(params.speed) || 150;
+
+        // ★★★ StateManagerに関する処理はすべて不要 ★★★
+
+        // --- 1. メインの移動Tween ---
+        // このTweenが全体の完了を管理する
+        const moveTween = manager.scene.tweens.add({
+            targets: chara,
+            x: targetX,
+            y: targetY,
+            duration: time,
+            ease: 'Linear',
+            onComplete: () => {
+                // ★ 移動が完了したら、上下動Tweenを停止し、最終処理を行う
+                walkTween.stop();
+                // 最終座標を正確に設定
+                chara.setPosition(targetX, targetY);
+                // 完了を通知
+                resolve();
+            }
+        });
+
+        // --- 2. 上下動のTween (無限ループ) ---
+        // y座標の競合を避けるため、このTweenは直接chara.yを操作しない。
+        // 代わりに、charaオブジェクトにカスタムプロパティ(walkOffset)を追加し、それを動かす。
+        chara.setData('walkOffsetY', 0); // カスタムプロパティを初期化
+
+        const walkTween = manager.scene.tweens.add({
+            targets: chara.data.values, // カスタムプロパティをターゲットにする
+            walkOffsetY: -walkHeight,   // 上に移動
+            duration: walkSpeed,
+            ease: 'Sine.easeInOut',
+            yoyo: true,
+            repeat: -1
+        });
+
+        // --- 3. Phaserの `update` イベントで、2つのTweenの結果を合成する ---
+        const onUpdate = () => {
+            // moveTweenによって変更されたy座標に、walkTweenによるオフセットを加算する
+            chara.y = moveTween.getValue() + chara.data.values.walkOffsetY;
+
+            // moveTweenが完了したら、このupdateリスナーを解除する
+            if (!moveTween.isPlaying()) {
+                manager.scene.events.off('update', onUpdate);
+                // データも削除
+                chara.removeData('walkOffsetY');
+            }
+        };
+        
+        manager.scene.events.on('update', onUpdate);
     });
 }

@@ -1,16 +1,32 @@
+/**
+ * [playbgm] タグの処理
+ * BGMを再生、またはクロスフェードで切り替える
+ * @param {ScenarioManager} manager
+ * @param {Object} params - { storage, volume, time }
+ * @returns {Promise<void>}
+ */
 export function handlePlayBgm(manager, params) {
-    const storage = params.storage;
-    if (!storage) { console.warn('[playbgm] storageは必須です。');
-        manager.finishTagExecution();
-      //  manager.next(); 
-        return; }
+    return new Promise(resolve => {
+        const storage = params.storage;
+        if (!storage) {
+            console.warn('[playbgm] storageは必須です。');
+            resolve();
+            return;
+        }
 
-    const volume = Number(params.volume) || 0.5;
-    const time = Number(params.time) || 0; // フェードイン時間
+        // volume は SoundManager の config を参照するので、ここでは渡さないのが一般的
+        // time はフェードイン時間
+        const time = Number(params.time) || 0;
 
-    manager.soundManager.playBgm(storage, volume, time);
-     // ★★★ 状態を更新 ★★★
-    manager.stateManager.updateBgm(storage);
-manager.finishTagExecution();
-   // manager.next(); // BGMは再生しっぱなしでOK
+        // ★★★ SoundManagerに再生を依頼するだけ ★★★
+        manager.soundManager.playBgm(storage, time);
+
+        // ★★★ stateManagerの更新は不要 ★★★
+        // SoundManagerが現在のBGMを管理し、セーブ時にStateManagerがそれを取得する
+
+        // フェードイン時間分だけ待機してから完了を通知する
+        manager.scene.time.delayedCall(time, () => {
+            resolve();
+        });
+    });
 }

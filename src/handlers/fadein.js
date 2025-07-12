@@ -1,14 +1,31 @@
+/**
+ * [fadein] タグの処理
+ * 指定された色から画面をフェードインさせる
+ * @param {ScenarioManager} manager
+ * @param {Object} params - { time, color }
+ * @returns {Promise<void>}
+ */
 export function handleFadein(manager, params) {
-    const time = Number(params.time) || 1000;
-    const color = params.color || '0x000000';
+    return new Promise(resolve => {
+        const time = Number(params.time) || 1000;
+        
+        // カラーコードのパース
+        const colorStr = params.color || '000000'; // '0x'プレフィックスは不要
+        const colorInt = parseInt(colorStr.replace(/^0x/, ''), 16);
+        
+        // PhaserのカメラはRGBの数値で色を受け取る
+        const r = (colorInt >> 16) & 0xFF;
+        const g = (colorInt >> 8) & 0xFF;
+        const b = colorInt & 0xFF;
+        
+        // ★★★ カメラのフェード完了イベントを一度だけリッスンする ★★★
+        manager.scene.cameras.main.once('camerafadeincomplete', () => {
+            resolve(); // イベントが発火したらPromiseを解決
+        });
 
-    const r = parseInt(color.slice(2, 4), 16);
-    const g = parseInt(color.slice(4, 6), 16);
-    const b = parseInt(color.slice(6, 8), 16);
-
-    manager.scene.cameras.main.fadeIn(time, r, g, b);
-
-    manager.scene.time.delayedCall(time, () => {
-        manager.finishTagExecution();
+        // カメラのフェードインエフェクトを開始
+        manager.scene.cameras.main.fadeIn(time, r, g, b);
+        
+        // ★★★ delayedCall や finishTagExecution は不要 ★★★
     });
 }

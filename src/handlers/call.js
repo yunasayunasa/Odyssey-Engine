@@ -1,40 +1,51 @@
 /**
  * [call] タグの処理
- * 別のシナリオファイル、または別のPhaserシーンを呼び出す
+ * サブルーチンとして別のシナリオやPhaserシーンを呼び出す。
+ * 呼び出し元の情報はcallStackに積まれる。
+ * @param {ScenarioManager} manager
+ * @param {Object} params - { storage, target }
  */
 export async function handleCall(manager, params) {
     const storage = params.storage;
-    if (!storage) { console.warn('[call] storageは必須です。'); manager.finishTagExecution(); return; }
+    if (!storage) {
+        console.warn('[call] storageは必須です。');
+        return; // 何もせず同期的に完了
+    }
 
-    // 戻り先をコールスタックに積む
+    // ★★★ 戻り先の情報をコールスタックに積む ★★★
+    // manager.currentLine は既に次の行を指しているので、-1 するのが一般的。
+    // （ScenarioManagerの実装によるが、こうしておくと[call]の次の行に戻る）
     manager.callStack.push({
         file: manager.currentFile,
-        line: manager.currentLine // ★ 次の行ではなく、今実行した[call]の次の行の番号
+        line: manager.currentLine 
     });
+    console.log("CallStack Pushed:", manager.callStack);
 
     if (storage.endsWith('.ks')) {
         // --- .ksファイル（サブルーチン）呼び出し ---
-        
-        // ★ 1. 新しいシナリオをロードし、ジャンプ先を設定するだけ
+        console.log(`サブルーチン呼び出し: ${storage}`);
+        // [jump] と同じように、シナリオをロードしてジャンプするだけ
         await manager.loadScenario(storage, params.target);
+        // この後の next() は ScenarioManager のメインループに任せる
         
-        // ★ 2. 完了を通知するだけ。next()は呼ばない！
-        manager.finishTagExecution();
-
     } else {
         // --- 別のPhaserシーン呼び出し ---
         const sceneKey = storage;
+        console.log(`Phaserシーン呼び出し: ${sceneKey}`);
         
-        manager.scene.scene.pause('GameScene');
-        manager.scene.scene.pause('UIScene');
-        
-        manager.scene.events.once('scene-return', () => {
-            manager.scene.scene.resume('UIScene');
-            manager.scene.scene.resume('GameScene');
-            // ★ こちらも完了を通知するだけ
-            manager.finishTagExecution();
+        // ★★★ SystemSceneを介した標準的なシーン遷移に任せる ★★★
+        // jumpハンドラと全く同じロジックでOK
+        manager.scene.scene.get('SystemScene').events.emit('request-scene-transition', {
+            to: sceneKey,
+            from: 'GameScene',
+            // isCall: true のようなフラグを持たせても良い
+            params: {
+                // サブシーンに渡したいパラメータがあればここに入れる
+            }
         });
         
-        manager.scene.scene.launch(sceneKey);
+        // シーン遷移が始まるので、この後のScenarioManagerのループは止める必要がある
+        // そのため、ここでは何もせず、Promiseも解決しないでおく。
+        // returnで復帰した際に、SystemSceneがGameSceneを再開させ、next()を呼んでくれる。
     }
 }

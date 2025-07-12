@@ -108,7 +108,11 @@ export default class MessageWindow extends Container{
             this.arrowTween.pause();
         }
     }
-
+    
+// MessageWindow.js の中に...
+setTextSpeed(newSpeed) {
+    this.textDelay = newSpeed;
+}
          /**
      * テキストを設定するメソッド
      * @param {string} text - 表示する全文

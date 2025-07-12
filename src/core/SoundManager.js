@@ -20,14 +20,20 @@ export default class SoundManager {
     }
     
     
-     playSe(key, config = {}) {
-        // ★★★ SE音量の設定を反映 ★★★
-        // configでvolumeが指定されていなければ、設定値を使う
-        if (config.volume === undefined) {
-            config.volume = this.configManager.getValue('seVolume');
-        }
-        this.scene.sound.play(key, config);
+    playSe(key, options = {}) {
+    if (!key) return;
+
+    const se = this.scene.sound.add(key);
+    
+    // configから基本ボリュームを取得し、タグのvolumeで上書き
+    let volume = this.configManager.getValue('seVolume');
+    if (options.volume !== undefined) {
+        volume = Number(options.volume);
     }
+    se.setVolume(volume);
+
+    se.play();
+}
 
     
 
@@ -35,26 +41,70 @@ export default class SoundManager {
 
          
     
-    playBgm(key, volume, fadeInTime = 0) {
-        // ★★★ BGM音量の設定を反映 ★★★
-        // volumeが引数で指定されていなければ、設定値を使う
-        const targetVolume = volume !== undefined ? volume : this.configManager.getValue('bgmVolume');
-        if (this.currentBgm && this.currentBgm.key === key) return;
-        if (this.currentBgm) { this.stopBgm(); }
-        this.currentBgm = this.scene.sound.add(key, { loop: true, volume: fadeInTime > 0 ? 0 : volume });
-        this.currentBgm.play();
-        if (fadeInTime > 0) {
-            this.scene.tweens.add({ targets: this.currentBgm, volume: targetVolume, duration: fadeInTime, ease: 'Linear' }); }
+   // SoundManager.js の中
+
+playBgm(key, fadeInTime = 0) {
+    if (!key) return;
+    
+    // 現在のBGMがあれば、フェードアウトさせる
+    if (this.currentBgm && this.currentBgm.isPlaying) {
+        this.scene.tweens.add({
+            targets: this.currentBgm,
+            volume: 0,
+            duration: fadeInTime,
+            onComplete: () => {
+                this.currentBgm.stop();
+            }
+        });
     }
-    stopBgm(fadeOutTime = 0) {
-        if (!this.currentBgm) return;
+
+    // 新しいBGMを再生
+    const newBgm = this.scene.sound.add(key, { loop: true, volume: 0 });
+    newBgm.play();
+    
+    // ★★★ 現在のBGMとして保持 ★★★
+    this.currentBgm = newBgm;
+    this.currentBgmKey = key; // ← セーブ用にキーも保持
+
+    // フェードイン
+    this.scene.tweens.add({
+        targets: newBgm,
+        volume: this.configManager.getValue('bgmVolume'),
+        duration: fadeInTime
+    });
+}
+
+// そして、セーブ時に現在のBGMキーを渡せるようにする
+getCurrentBgmKey() {
+    if (this.currentBgm && this.currentBgm.isPlaying) {
+        return this.currentBgmKey;
+    }
+    return null;
+}
+   // SoundManager.js の中に...
+
+stopBgm(fadeOutTime = 0) {
+    if (this.currentBgm && this.currentBgm.isPlaying) {
         if (fadeOutTime > 0) {
-            this.scene.tweens.add({ targets: this.currentBgm, volume: 0, duration: fadeOutTime, ease: 'Linear', onComplete: () => { this.currentBgm.stop(); this.currentBgm = null; } });
+            this.scene.tweens.add({
+                targets: this.currentBgm,
+                volume: 0,
+                duration: fadeOutTime,
+                onComplete: () => {
+                    this.currentBgm.stop();
+                    // ★★★ BGM情報をクリア ★★★
+                    this.currentBgm = null;
+                    this.currentBgmKey = null;
+                }
+            });
         } else {
             this.currentBgm.stop();
+            // ★★★ BGM情報をクリア ★★★
             this.currentBgm = null;
+            this.currentBgmKey = null;
         }
     }
+}
     
     /**
      * 指定された波形の音を短時間だけ再生する (Web Audio APIを使用)

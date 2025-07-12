@@ -1,40 +1,57 @@
 /**
  * [er] タグの処理
  * 指定されたレイヤー上のオブジェクトをすべて消去する
- * @param {Object} params - {layer, time}
+ * @param {ScenarioManager} manager
+ * @param {Object} params - { layer, name }
  */
 export function handleErase(manager, params) {
+    // ★★★ name属性で個別削除に対応 ★★★
+    if (params.name) {
+        const targetObject = manager.scene.characters[params.name] || manager.scene.uiButtons.find(b => b.name === params.name);
+        if (targetObject) {
+            targetObject.destroy();
+            // 管理リストからも削除
+            if (manager.scene.characters[params.name]) {
+                delete manager.scene.characters[params.name];
+            }
+            if (manager.scene.uiButtons) {
+                manager.scene.uiButtons = manager.scene.uiButtons.filter(b => b !== targetObject);
+            }
+        } else {
+            console.warn(`[er] 消去対象のオブジェクト[${params.name}]が見つかりません。`);
+        }
+        return; // 個別削除の場合はここで終了
+    }
+
+    // ★★★ layer属性で一括削除 ★★★
     const layerName = params.layer;
     if (!layerName) {
-        console.warn('[er] layer属性は必須です。(例: character)');
-      //  manager.next();
-      manager.finishTagExecution();
+        console.warn('[er] layer属性またはname属性は必須です。');
         return;
     }
 
-    // ★★★ 消去対象のレイヤー（コンテナ）を取得 ★★★
     const targetLayer = manager.layers[layerName];
     if (!targetLayer) {
         console.warn(`[er] 指定されたレイヤー[${layerName}]が見つかりません。`);
-      //  manager.next();
-      manager.finishTagExecution();
         return;
     }
     
-    // アニメーション時間は未実装なので、即時消去
-    // 将来的にはtime属性でフェードアウトなども可能
-    
-    // ★★★ レイヤー内のすべてのオブジェクトを破棄 ★★★
-    targetLayer.removeAll(true); // trueを渡すと、オブジェクトもdestroyされる
+    // レイヤー内のすべてのオブジェクトを破棄
+    targetLayer.removeAll(true);
 
-    // ★★★ StateManagerの状態も更新する ★★★
+    // ★★★ StateManagerへの更新は一切不要 ★★★
+
+    // 関連する管理リストも空にする
     if (layerName === 'character') {
-        // キャラクターレイヤーを消去した場合
-        manager.stateManager.state.layers.characters = {}; // 管理オブジェクトを空にする
-        manager.scene.characters = {}; // GameSceneの管理リストも空にする
-        console.log('State Updated: キャラクターを全員消去しました。');
+        manager.scene.characters = {};
+        console.log('キャラクターレイヤーを消去しました。');
     }
-    // 他のレイヤー（背景など）を消去した場合のstate更新も、必要ならここに追加
-manager.finishTagExecution();
-   // manager.next();
+    if (layerName === 'message') {
+        // [button]で作成したボタンも消去する場合
+        if (manager.scene.uiButtons) {
+            manager.scene.uiButtons = [];
+        }
+    }
+
+    // ★★★ このタグの処理は一瞬で終わるので、何も呼び出す必要はない ★★★
 }

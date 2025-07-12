@@ -1,21 +1,34 @@
 /**
- * [p] タグの処理 (クリック待ち)
+ * [p] タグの処理
+ * 通常のクリック待ち、または選択肢の表示を行う。
+ * このタグは常にプレイヤーの入力を待つため、シナリオの進行を停止させる。
+ * @param {ScenarioManager} manager
+ * @param {Object} params - パラメータ（未使用）
  */
 export function handlePageBreak(manager, params) {
-    // もし[link]タグで溜まっている選択肢があれば、それを表示する
-    if (manager.scene.pendingChoices.length > 0) {
+    // [link]タグによって選択肢が溜まっている場合
+    if (manager.scene.pendingChoices && manager.scene.pendingChoices.length > 0) {
+        console.log("選択肢を表示して、プレイヤーの選択を待機します。");
+        
+        // 1. 状態を「選択肢待ち」に設定する
         manager.isWaitingChoice = true;
+        
+        // 2. 溜まっていた選択肢をボタンとして表示する
         manager.scene.displayChoiceButtons();
-        // 選択肢を表示して待つので、ここで処理は終わり
-        // ★★★ 選択肢を表示したら、ここで処理を中断する ★★★
-        // finishTagExecution() は呼ばない！クリックを待つ。
-        manager.isWaitingClick = true;
-        console.log("pタグ選択肢表示");
+        
+        // ★ isWaitingClick は true にしない
         
     } else {
+        // 通常のクリック待ちの場合
+        console.log("通常のクリック待機状態に入ります。");
+        
+        // 1. 状態を「クリック待ち」に設定する
         manager.isWaitingClick = true;
+        
+        // 2. 次のクリックを促す矢印などを表示する
         manager.messageWindow.showNextArrow();
-        console.log("pタグ選択肢はありません");
-        // ★★★ クリック待ちなので、こちらもfinishTagExecution()は呼ばない！ ★★★
     }
+    
+    // ★★★ このハンドラは常にプレイヤーの入力を待つので、 ★★★
+    // ★★★ manager.next() や finishTagExecution() は絶対に呼ばない ★★★
 }
