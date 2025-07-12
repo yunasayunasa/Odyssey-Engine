@@ -10,7 +10,8 @@ export function handleJump(manager, params) {
     if (storage) {
         // --- 別シーンへのジャンプ ---
         console.log(`別シーン[${storage}]へジャンプします。`);
-        
+           manager.scene.performSave(0); 
+ manager.scene.performSave(0); 
         // ★★★ SystemSceneにシーン遷移をリクエストする ★★★
         manager.scene.scene.get('SystemScene').events.emit('request-scene-transition', {
             to: storage,

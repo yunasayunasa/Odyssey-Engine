@@ -32,7 +32,7 @@ export async function handleCall(manager, params) {
         // --- 別のPhaserシーン呼び出し ---
         const sceneKey = storage;
         console.log(`Phaserシーン呼び出し: ${sceneKey}`);
-        
+         manager.scene.performSave(0); 
         // ★★★ SystemSceneを介した標準的なシーン遷移に任せる ★★★
         // jumpハンドラと全く同じロジックでOK
         manager.scene.scene.get('SystemScene').events.emit('request-scene-transition', {

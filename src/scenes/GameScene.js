@@ -136,48 +136,48 @@ this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
 this.scenarioManager.registerTag('stopvideo', handleStopVideo);
       
-        // --- イベントリスナー ---
-        // ★ SystemSceneからの復帰処理は、より汎用的なイベント名にすると良い
-        this.events.on('resume-from-subscene', (data) => {
-            console.log("--- GameScene: サブシーンから復帰 ---", data);
-            // サブシーンから返された変数をゲーム内変数に反映
-            if (data.returnParams) {
-                for (const key in data.returnParams) {
-                    this.stateManager.eval(`f.${key} = "${data.returnParams[key]}"`);
-                }
-            }
-            // 止まっていたシナリオを再開
-            this.scenarioManager.next();
-        });
+     
 
         // --- ゲーム開始ロジック ---
+          // --- ★★★ ゲーム開始ロジック (最終版) ★★★ ---
         if (this.isResuming) {
-            // isResumingはSystemSceneとの連携用。ここでは何もしないか、特定の復帰処理を行う。
-            // 今回のセーブ＆ロードとは直接関係しない。
+            // --- サブシーンからの復帰の場合 ---
+            console.log("GameScene: 復帰処理を開始します。");
+            
+            // ★ 最後にセーブした「スロット0」をオートセーブとしてロードする
+            this.performLoad(0, this.returnParams); 
+
         } else {
-            // 通常の初回起動
+            // --- 通常の初回起動の場合 ---
+            console.log("GameScene: 通常起動します。");
+            // [jump]の前にオートセーブを実行しておく
+            this.performSave(0); 
+            
             this.scenarioManager.loadScenario(this.startScenario, this.startLabel);
             this.time.delayedCall(10, () => this.scenarioManager.next());
         }
         
-        // グローバルクリックイベント
         this.input.on('pointerdown', () => this.scenarioManager.onClick());
-        
         console.log("GameScene: create 完了");
     }
+
  // ★★★ セーブ処理 ★★★
+     // ★★★ セーブ処理 (スロット0をオートセーブスロットとして使う) ★★★
     performSave(slot) {
-        // デバッグ用のtraceは不要なら削除
-        // console.trace("performSave が呼び出されました！");
+        // [jump]や[call]の直前に、現在の状態をオートセーブする
+        if (slot === 0) {
+            console.log("オートセーブを実行します...");
+        }
         try {
             const gameState = this.stateManager.getState(this.scenarioManager);
             const jsonString = JSON.stringify(gameState, null, 2);
             localStorage.setItem(`save_data_${slot}`, jsonString);
-            console.log(`スロット[${slot}]にセーブしました。`, gameState);
+            console.log(`スロット[${slot}]にセーブしました。`);
         } catch (e) {
             console.error(`セーブに失敗しました: スロット[${slot}]`, e);
         }
     }
+
 /**
  * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
  */
@@ -242,29 +242,37 @@ clearChoiceButtons() {
 
    // ★★★ performLoad を修正 ★★★
  // ★★★ ロード処理 ★★★
-    async performLoad(slot) {
+    // ★★★ ロード処理 (復帰時のパラメータを受け取れるように修正) ★★★
+    async performLoad(slot, returnParams = null) {
         try {
             const jsonString = localStorage.getItem(`save_data_${slot}`);
             if (!jsonString) {
-                console.warn(`スロット[${slot}]にセーブデータがありません。`);
+                console.error(`スロット[${slot}]のセーブデータが見つかりません。復帰できません。`);
                 return;
             }
             const loadedState = JSON.parse(jsonString);
+            
+            // ★ サブシーンから返されたパラメータを変数に反映
+            if (returnParams) {
+                console.log("復帰パラメータを反映します:", returnParams);
+                for (const key in returnParams) {
+                    // loadedState内の変数を上書きしてからsetStateする
+                    const varName = key.split('.')[1];
+                    if (loadedState.variables.f[varName] !== undefined) {
+                        loadedState.variables.f[varName] = returnParams[key];
+                    }
+                }
+            }
 
-            // StateManagerに変数を復元させる
             this.stateManager.setState(loadedState);
             console.log(`スロット[${slot}]からロードしました。`, loadedState);
 
-            // 画面とシナリオの内部状態を完全に再構築
             await rebuildScene(this.scenarioManager, loadedState);
             
-            // ロード後のシナリオ再開処理
-            if (loadedState.scenario.isWaitingClick || loadedState.scenario.isWaitingChoice) {
-                console.log("ロード完了: ユーザーの入力を待機します。");
-            } else {
-                console.log("ロード完了: 次の行からシナリオを再開します。");
-                this.time.delayedCall(10, () => this.scenarioManager.next());
-            }
+            // ロード後は、必ず次の行からシナリオを再開する
+            console.log("ロード完了: 次の行からシナリオを再開します。");
+            this.time.delayedCall(10, () => this.scenarioManager.next());
+            
         } catch (e) {
             console.error(`ロード処理でエラーが発生しました。`, e);
         }
