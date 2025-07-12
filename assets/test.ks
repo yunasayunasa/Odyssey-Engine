@@ -14,7 +14,7 @@
 [move name="yuna" y=450 alpha=1 time=1000]
 [wait time=1000]
 
-;[delay speed=80]
+[delay speed=80]
 yuna:「ようこそ！これは、あなたと一緒に作ったゲームエンジンのチュートリアルです。」
 
 yuna:「このゲームを起動するのは、&sf.boot_count 回目ですね。」
