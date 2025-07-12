@@ -46,6 +46,7 @@ import { handleStopVideo } from '../handlers/stopvideo.js';
 export default class GameScene extends Phaser.Scene {
     constructor() {
         super('GameScene');
+        // プロパティの初期化
         this.scenarioManager = null;
         this.soundManager = null;
         this.stateManager = null;
@@ -54,50 +55,42 @@ export default class GameScene extends Phaser.Scene {
         this.charaDefs = null;
         this.characters = {};
         this.configManager = null;
-        this.choiceButtons = []; 
-        this.pendingChoices = []; // ★★★ 選択肢の一時保管場所 ★★★
+        this.choiceButtons = [];
+        this.pendingChoices = [];
         this.uiButtons = [];
     }
 
     init(data) {
         this.charaDefs = data.charaDefs;
-      
-          this.startScenario = data.startScenario || 'scene1.ks';
+        this.startScenario = data.startScenario || 'scene1.ks';
         this.startLabel = data.startLabel || null;
+
+        // ★ isResumingとreturnParamsはSystemSceneとの連携で使うので残しておく
         this.isResuming = data.resumedFrom ? true : false;
         this.returnParams = data.returnParams || null;
     }
 
-    
-
     preload() {
+        // PreloadSceneでロード済みのはずだが、念のため
         this.load.text('scene1', 'assets/scene1.ks');
     }
 
     create() {
         this.cameras.main.setBackgroundColor('#000000');
         
-       
-        // --- レイヤー生成とdepth設定 ---
+        // --- レイヤー生成 ---
         this.layer.background = this.add.container(0, 0).setDepth(0);
-        this.layer.character = this.add.container(0, 0).setDepth(0);
-        this.layer.cg = this.add.container(0, 0).setDepth(0);
+        this.layer.character = this.add.container(0, 0).setDepth(10); // キャラを少し手前に
+        this.layer.cg = this.add.container(0, 0).setDepth(5);
+        this.layer.message = this.add.container(0, 0).setDepth(20);
 
-        this.layer.message = this.add.container(0, 0);
-           // ★ 全画面を覆う、透明で見えない入力ブロッカーを作成
-    this.choiceInputBlocker = this.add.rectangle(640, 360, 1280, 720)
-        .setInteractive()
-        .setVisible(false);
-    
-    // ブロッカーがクリックされた時のイベント（何もしない、で入力を止める）
-    this.choiceInputBlocker.on('pointerdown', (pointer) => {
-        // 必要なら「選択してください」などのフィードバックを出す
-        console.log("選択肢を選んでください");
-    });
+        // --- 入力ブロッカー ---
+        this.choiceInputBlocker = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height)
+            .setInteractive().setVisible(false);
+        this.choiceInputBlocker.on('pointerdown', () => console.log("選択肢を選んでください"));
 
-        // --- マネージャー/UIクラスの生成 (依存関係に注意) ---
+        // --- マネージャー/UIクラスの生成 ---
         this.configManager = this.sys.registry.get('configManager');
-        
         this.stateManager = new StateManager();
         this.soundManager = new SoundManager(this, this.configManager);
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
@@ -142,42 +135,42 @@ export default class GameScene extends Phaser.Scene {
 this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
 this.scenarioManager.registerTag('stopvideo', handleStopVideo);
-         this.events.on('execute-return', (params) => {
-            console.log("--- GameScene: 'execute-return' 受信！ ---");
-            console.log("受信パラメータ:", params);
-            this.performReturn(params);
-        });
-       // ★★★ ゲーム開始ロジックを、起動状態によって分岐させる ★★★
-        if (this.isResuming) {
-            // --- サブシーンからの復帰の場合 ---
-            console.log("GameScene: 復帰処理を実行します。");
-            this.performReturn(this.returnParams);
-        } else {
-            // --- 通常の初回起動の場合 ---
-            this.scenarioManager.load(this.startScenario);
-            if (this.startLabel) {
-                this.scenarioManager.jumpTo(this.startLabel);
+      
+        // --- イベントリスナー ---
+        // ★ SystemSceneからの復帰処理は、より汎用的なイベント名にすると良い
+        this.events.on('resume-from-subscene', (data) => {
+            console.log("--- GameScene: サブシーンから復帰 ---", data);
+            // サブシーンから返された変数をゲーム内変数に反映
+            if (data.returnParams) {
+                for (const key in data.returnParams) {
+                    this.stateManager.eval(`f.${key} = "${data.returnParams[key]}"`);
+                }
             }
-            this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
+            // 止まっていたシナリオを再開
+            this.scenarioManager.next();
+        });
+
+        // --- ゲーム開始ロジック ---
+        if (this.isResuming) {
+            // isResumingはSystemSceneとの連携用。ここでは何もしないか、特定の復帰処理を行う。
+            // 今回のセーブ＆ロードとは直接関係しない。
+        } else {
+            // 通常の初回起動
+            this.scenarioManager.loadScenario(this.startScenario, this.startLabel);
+            this.time.delayedCall(10, () => this.scenarioManager.next());
         }
         
-        this.input.once('pointerdown', () => { if (this.sound.context.state === 'suspended') this.sound.context.resume(); }, this);
-        this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
+        // グローバルクリックイベント
+        this.input.on('pointerdown', () => this.scenarioManager.onClick());
         
         console.log("GameScene: create 完了");
     }
-// GameScene.js
-
-// ...
-
-performSave(slot) {
-        // ★★★★★ この行を追加 ★★★★★
-        console.trace("performSave が呼び出されました！犯人は誰だ！");
-
-        console.log("========== GameScene.performSave が呼ばれました ==========");
+ // ★★★ セーブ処理 ★★★
+    performSave(slot) {
+        // デバッグ用のtraceは不要なら削除
+        // console.trace("performSave が呼び出されました！");
         try {
             const gameState = this.stateManager.getState(this.scenarioManager);
-            
             const jsonString = JSON.stringify(gameState, null, 2);
             localStorage.setItem(`save_data_${slot}`, jsonString);
             console.log(`スロット[${slot}]にセーブしました。`, gameState);
@@ -185,7 +178,6 @@ performSave(slot) {
             console.error(`セーブに失敗しました: スロット[${slot}]`, e);
         }
     }
-
 /**
  * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
  */
@@ -241,73 +233,38 @@ clearChoiceButtons() {
     }
 }
 
-// GameScene.js
-    async performReturn(params, returnInfo) {
-        console.log("GameScene: performReturn実行", params, returnInfo);
-        
-        // 1. 変数更新
-        for (const key in params) {
-            this.scenarioManager.stateManager.eval(`${key}="${params[key]}"`);
-        }
-        
-        // 2. シナリオコンテキストを復元
-        // (loadScenarioは使わない)
-        const rawText = this.cache.text.get(returnInfo.file);
-        this.scenarioManager.scenario = rawText.split(/\r\n|\n|\r/).filter(line => line.trim() !== '');
-        this.scenarioManager.currentFile = returnInfo.file;
-        this.scenarioManager.currentLine = returnInfo.line;
-
-        // 3. 画面の再構築
-        // rebuildSceneのロジックをここに展開しても良いが、
-        // 戻るだけなら、現在の画面を維持した方が自然な場合も多い。
-        // ここでは、単純に次の行から再開する。
-        this.scenarioManager.next();
-    }
 
 
    // ★★★ performLoad を修正 ★★★
-async performLoad(slot) {
-      console.log("========== GameScene.performロードが呼ばれました ==========");
-    try {
-        const jsonString = localStorage.getItem(`save_data_${slot}`);
-        if (!jsonString) {
-            console.warn(`スロット[${slot}]にセーブデータがありません。`);
-            this.scene.stop('SaveLoadScene');
-            this.scene.resume('GameScene');
-            return;
+ // ★★★ ロード処理 ★★★
+    async performLoad(slot) {
+        try {
+            const jsonString = localStorage.getItem(`save_data_${slot}`);
+            if (!jsonString) {
+                console.warn(`スロット[${slot}]にセーブデータがありません。`);
+                return;
+            }
+            const loadedState = JSON.parse(jsonString);
+
+            // StateManagerに変数を復元させる
+            this.stateManager.setState(loadedState);
+            console.log(`スロット[${slot}]からロードしました。`, loadedState);
+
+            // 画面とシナリオの内部状態を完全に再構築
+            await rebuildScene(this.scenarioManager, loadedState);
+            
+            // ロード後のシナリオ再開処理
+            if (loadedState.scenario.isWaitingClick || loadedState.scenario.isWaitingChoice) {
+                console.log("ロード完了: ユーザーの入力を待機します。");
+            } else {
+                console.log("ロード完了: 次の行からシナリオを再開します。");
+                this.time.delayedCall(10, () => this.scenarioManager.next());
+            }
+        } catch (e) {
+            console.error(`ロード処理でエラーが発生しました。`, e);
         }
-        const loadedState = JSON.parse(jsonString);
-
-        // ★ まずSaveLoadSceneを閉じる
-        this.scene.stop('SaveLoadScene');
-
-        // ★ StateManagerに変数を復元させる
-        this.stateManager.setState(loadedState);
-        console.log(`スロット[${slot}]からロードしました。`, loadedState);
-
-        // ★ 画面とシナリオの内部状態を完全に再構築
-        await rebuildScene(this.scenarioManager, loadedState);
-        
-        // ★ ロード後の再開処理 ★
-        // isWaitingChoice/isWaitingClickの状態はrebuildSceneで復元済み。
-        // それに応じてUIも再表示されているはず。
-        // それらでない場合(タグ実行直後など)のみ、next()を呼んで再開する。
-        if (!this.scenarioManager.isWaitingChoice && !this.scenarioManager.isWaitingClick) {
-            console.log("ロード完了: 次の行からシナリオを再開します。");
-            // 少し遅延させて呼び出すのが安全
-            this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
-        } else {
-            console.log("ロード完了: ユーザーの入力を待機します。");
-        }
-
-    } catch (e) {
-        console.error(`ロード処理でエラーが発生しました。`, e);
-    }
-}
-}
-// ★★★ rebuildScene ヘルパー関数を全面的に修正 ★★★
-// (GameScene.jsの末尾に配置)
-
+    }}
+// ★★★ rebuildScene ヘルパー関数 (最終版) ★★★
 async function rebuildScene(manager, state) {
     console.log("--- rebuildScene 開始 ---", state);
     const scene = manager.scene;
@@ -317,21 +274,19 @@ async function rebuildScene(manager, state) {
     manager.layers.background.removeAll(true);
     manager.layers.character.removeAll(true);
     scene.characters = {};
-    manager.soundManager.stopBgm();
-    manager.messageWindow.reset(); // MessageWindowの状態もリセット
+    manager.soundManager.stopBgm(); // フェードなしで即時停止
+    manager.messageWindow.reset();
+    scene.cameras.main.resetFX(); // カメラエフェクトもリセット
 
-    // 2. ★ シナリオの「論理的な状態」を復元
+    // 2. シナリオの「論理的な状態」を復元
     manager.currentFile = state.scenario.fileName;
     manager.currentLine = state.scenario.line;
     manager.ifStack = state.scenario.ifStack || [];
     manager.callStack = state.scenario.callStack || [];
-    manager.isWaitingClick = state.scenario.isWaitingClick || false;
-    manager.isWaitingChoice = state.scenario.isWaitingChoice || false;
+    manager.isWaitingClick = state.scenario.isWaitingClick;
+    manager.isWaitingChoice = state.scenario.isWaitingChoice;
 
-    // ★ シナリオテキストをキャッシュから再設定
-    // 動的ロードの可能性があるため、loadScenarioを使うのが最も堅牢
     await manager.loadScenario(manager.currentFile);
-    // loadScenarioは行を0に戻すので、ロードした行番号で上書きする
     manager.currentLine = state.scenario.line; 
 
     // 3. 背景を復元
@@ -349,7 +304,7 @@ async function rebuildScene(manager, state) {
             chara.setScale(charaData.scaleX, charaData.scaleY)
                  .setAlpha(charaData.alpha)
                  .setFlipX(charaData.flipX)
-                 .setTint(charaData.tint); // ★ Tintも復元
+                 .setTint(charaData.tint);
             manager.layers.character.add(chara);
             scene.characters[name] = chara;
         }
@@ -357,18 +312,21 @@ async function rebuildScene(manager, state) {
 
     // 5. BGMを復元
     if (state.sound && state.sound.bgm) {
-        manager.soundManager.playBgm(state.sound.bgm);
+        // ★ BGMはフェードインなしで再生するのが一般的
+        manager.soundManager.playBgm(state.sound.bgm, 0); 
     }
     
-    // 6. ★ メッセージウィンドウを復元 (クリック待ちだった場合)
+    // 6. メッセージウィンドウを復元 (クリック待ちだった場合)
     if (state.scenario.isWaitingClick) {
-        manager.messageWindow.setSpeaker(state.scenario.speakerName);
-        // 第2引数trueでタイプライターなしの即時表示
-        manager.messageWindow.setText(state.scenario.currentText, true); 
-        manager.messageWindow.showClickIndicator(); // クリック待ち矢印を表示
+        // ★ 話者情報も渡して復元 ★
+        manager.messageWindow.setText(state.scenario.currentText, false, () => {
+            manager.messageWindow.showNextArrow();
+        }, state.scenario.speakerName);
+        // ハイライトも復元
+        manager.highlightSpeaker(state.scenario.speakerName);
     }
 
-    // 7. ★ 選択肢を復元
+    // 7. 選択肢を復元
     if (state.scenario.isWaitingChoice) {
         scene.pendingChoices = state.scenario.pendingChoices || [];
         if (scene.pendingChoices.length > 0) {

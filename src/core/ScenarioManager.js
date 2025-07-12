@@ -90,8 +90,10 @@ async next() {
         }
     }
 
-      async parse(line) {
-         console.log(`...... ScenarioManager.parse 開始: "${line}"`);
+     // ScenarioManager.js の parse メソッド
+
+    async parse(line) {
+        console.log(`...... ScenarioManager.parse 開始: "${line}"`);
         const processedLine = this.embedVariables(line);
         const trimedLine = processedLine.trim();
 
@@ -103,15 +105,17 @@ async next() {
                 const handler = this.tagHandlers.get(tagName);
                 if (handler) handler(this, this.parseTag(trimedLine).params);
             }
-            this.next();
-            return;
+            // ★ スキップ中でもnext()はメインループに任せる
+            // this.next(); // ← この呼び出しも不要な場合が多い
+            return; // ★ メインループの最後にnext()が呼ばれるので、ここではreturnするだけ
         }
         
         // 通常実行
-        if (trimedLine.startsWith(';') || trimedLine.startsWith('*')|| trimedLine.startsWith('@')) {
-            this.next();
+        if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
+            // コメント行、ラベル行、アセット行は何もせずに次に進む
+            // this.next(); // ← ここも不要
         } else if (trimedLine.match(/^([a-zA-Z0-9_]+):/)) {
-            // 話者指定行
+            // --- 話者指定行 ---
             const speakerMatch = trimedLine.match(/^([a-zA-Z0-9_]+):/);
             const speakerName = speakerMatch[1];
             const dialogue = trimedLine.substring(speakerName.length + 1).trim();
@@ -120,49 +124,49 @@ async next() {
             const wrappedLine = this.manualWrap(dialogue);
             this.isWaitingClick = true;
             
+            // ★★★ 修正箇所: 第4引数に speakerName を渡す ★★★
             this.messageWindow.setText(wrappedLine, true, () => {
                 this.messageWindow.showNextArrow();
                 if (this.mode === 'auto') {
                     this.startAutoMode();
                 }
-            });
-            return;
+            }, speakerName);
+            return; // ★ 待機状態に入るので、ここで必ずreturn
+
         } else if (trimedLine.startsWith('[')) {
-           // タグ行
+            // --- タグ行 ---
             const { tagName, params } = this.parseTag(trimedLine);
             const handler = this.tagHandlers.get(tagName);
             if (handler) {
-                // ★★★ isWaitingTagはもう使わない ★★★
-                // this.isWaitingTag = true;
-
-                // ★★★ ハンドラの実行結果を受け取る ★★★
                 const promise = handler(this, params);
-
-                // ★★★ もしPromiseが返ってきたら、それが終わるまで待つ ★★★
                 if (promise instanceof Promise) {
                     await promise;
                 }
             } else {
                 console.warn(`未定義のタグです: [${tagName}]`);
             }
-            // ★★★ 最後に必ずnext()を呼ぶ ★★★
-            this.next();
+            // this.next(); // ← ここも不要
         
         }  else if (trimedLine.length > 0) {
-            // 地の文
+            // --- 地の文 ---
             this.stateManager.addHistory(null, trimedLine);
             this.highlightSpeaker(null);
             this.isWaitingClick = true; 
             const wrappedLine = this.manualWrap(trimedLine);
+            
+            // ★★★ 修正箇所: 第4引数に null を渡す ★★★
             this.messageWindow.setText(wrappedLine, true, () => {
                 this.messageWindow.showNextArrow();
-                
-            });
-            return;
+            }, null);
+            return; // ★ 待機状態に入るので、ここで必ずreturn
+
         } else {
-            // 空行
-            this.next();
+            // --- 空行 ---
+            // this.next(); // ← ここも不要
         }
+
+        // ★★★ メインループの最後に、次の行に進む処理を一本化 ★★★
+        this.next();
     }
     
     finishTagExecution() {

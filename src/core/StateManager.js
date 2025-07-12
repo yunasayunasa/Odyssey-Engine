@@ -17,12 +17,14 @@ export default class StateManager {
      * @param {ScenarioManager} scenarioManager - 現在のシナリオの状態を取得するための参照
      * @returns {Object} 現在のゲーム状態のスナップショット
      */
-    getState(scenarioManager) {
-         console.log("!!!!!!!!!! StateManager.getState が呼ばれました !!!!!!!!!!");
+   // core/StateManager.js の getState メソッド
 
-       const scene = scenarioManager.scene;
+    getState(scenarioManager) {
+        // デバッグログはもう不要なら削除してOK
+        // console.log("!!!!!!!!!! StateManager.getState が呼ばれました !!!!!!!!!!");
+
+        const scene = scenarioManager.scene;
         
-        // 表示されているキャラクターの状態を収集
         const characterStates = {};
         for (const name in scene.characters) {
             const chara = scene.characters[name];
@@ -32,17 +34,15 @@ export default class StateManager {
                     x: chara.x, y: chara.y,
                     scaleX: chara.scaleX, scaleY: chara.scaleY,
                     alpha: chara.alpha, flipX: chara.flipX,
-                    tint: chara.tintTopLeft, // ★ 話者ハイライト復元用
+                    tint: chara.tintTopLeft,
                 };
             }
         }
         
-        // 背景の状態を取得
         const backgroundState = scenarioManager.layers.background.list.length > 0
             ? scenarioManager.layers.background.list[0].texture.key
             : null;
 
-        // ★★★ ここが最重要: ScenarioManagerとMessageWindowから論理的な状態を収集 ★★★
         const scenarioState = {
             fileName: scenarioManager.currentFile,
             line: scenarioManager.currentLine,
@@ -50,17 +50,15 @@ export default class StateManager {
             callStack: scenarioManager.callStack,
             isWaitingClick: scenarioManager.isWaitingClick,
             isWaitingChoice: scenarioManager.isWaitingChoice,
-            pendingChoices: scene.pendingChoices, // GameSceneが持つ選択肢データ
-            // isWaitingClickがtrueの時のテキストと話者を保存
-            // (MessageWindowにこれらのプロパティを追加する必要がある)
-            currentText: scenarioManager.isWaitingClick ? scenarioManager.messageWindow.currentText : "",
-            speakerName: scenarioManager.isWaitingClick ? scenarioManager.messageWindow.currentSpeaker : null,
+            pendingChoices: scene.pendingChoices,
+            // ★★★ MessageWindowのプロパティを参照 ★★★
+            currentText: scenarioManager.messageWindow.currentText,
+            speakerName: scenarioManager.messageWindow.currentSpeaker,
         };
         
         // すべての状態を一つのオブジェクトに統合して返す
         return {
             saveDate: new Date().toLocaleString('ja-JP'),
-            // ★ state.variables ではなく、このクラスが直接持つ f をセーブ
             variables: { f: this.f }, 
             scenario: scenarioState,
             layers: {
@@ -68,7 +66,8 @@ export default class StateManager {
                 characters: characterStates,
             },
             sound: {
-                bgm: scenarioManager.soundManager.currentBgm, // SoundManagerから取得
+                // ★★★ 修正箇所: getCurrentBgmKey() を呼び出す ★★★
+                bgm: scenarioManager.soundManager.getCurrentBgmKey(),
             }
         };
     }
