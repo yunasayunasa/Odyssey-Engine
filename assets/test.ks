@@ -96,7 +96,7 @@ yuna:「サブルーチンから戻ってきました。次はアクションシ
 
 [fadeout time=500]
 [wait time=500]
-[call storage="ActionScene"]
+[jump storage="ActionScene"]
 [fadein time=500]
 
 [chara_show name="yuna" pos="left" time="500"]
