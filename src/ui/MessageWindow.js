@@ -1,18 +1,20 @@
 const Container = Phaser.GameObjects.Container;
 
 export default class MessageWindow extends Container {
-    constructor(scene, soundManager, configManager) {
-        super(scene, 0, 0); // 自身の位置は(0,0)で初期化
+     constructor(scene, soundManager, configManager) {
+        super(scene, 0, 0);
         this.soundManager = soundManager;
         this.configManager = configManager;
 
-        // プロパティ初期化
+        // --- 1. プロパティを初期化 ---
         this.isTyping = false;
-        
-        // --- UI要素を、コンテナ内の相対座標(0,0)を中心に生成 ---
+        this.charByCharTimer = null;
+        this.arrowTween = null; // まずはnullで宣言
+
+        // --- 2. UI要素を生成 ---
         this.windowImage = this.scene.add.image(0, 0, 'message_window').setOrigin(0.5);
         
-        const padding = 35;
+        const padding = Layout.ui.messageWindow.padding;
         const textWidth = this.windowImage.width - (padding * 2);
         const textHeight = this.windowImage.height - (padding * 1.5);
         this.textObject = this.scene.add.text(
@@ -27,19 +29,11 @@ export default class MessageWindow extends Container {
             this.windowImage.height / 2 - padding,
             'next_arrow'
         ).setScale(0.5).setOrigin(0.5);
-
-        // コンテナに要素を追加
+        
+        // --- 3. コンテナに要素を追加 ---
         this.add([this.windowImage, this.textObject, this.nextArrow]);
-        this.hideNextArrow();
 
-        // コンフィグの初期値設定とリスナー登録
-        const textSpeedValue = this.configManager.getValue('textSpeed');
-        this.currentTextDelay = 100 - textSpeedValue;
-        this.configManager.on('change:textSpeed', (newValue) => {
-            this.currentTextDelay = 100 - newValue;
-        });
-
-        // 矢印アニメーションの生成
+        // --- 4. アニメーションを生成し、プロパティに保存 ---
         this.arrowTween = this.scene.tweens.add({
             targets: this.nextArrow,
             y: this.nextArrow.y - 10,
@@ -47,10 +41,20 @@ export default class MessageWindow extends Container {
             ease: 'Sine.easeInOut',
             yoyo: true,
             repeat: -1,
-            paused: true
+            paused: true // 最初から止めておく
+        });
+
+        // --- 5. 初期状態を設定 ---
+        // arrowTweenが確実に存在するようになった後で、hideNextArrowを呼ぶ
+        this.hideNextArrow(); 
+
+        // --- 6. コンフィグ関連の初期化とリスナー登録 ---
+        const textSpeedValue = this.configManager.getValue('textSpeed');
+        this.currentTextDelay = 100 - textSpeedValue;
+        this.configManager.on('change:textSpeed', (newValue) => {
+            this.currentTextDelay = 100 - newValue;
         });
     }
-
     // --- setText, skipTypingなどのメソッド群 ---
     // (この部分は、あなたの正常に動作していたコードのままでOKです)
 
