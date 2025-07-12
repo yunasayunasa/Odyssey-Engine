@@ -1,7 +1,7 @@
 export default class SoundManager {
     constructor(scene, configManager) {
         this.scene = scene;
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        //this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.currentBgm = null;
         this.configManager = configManager;
    // ★★★ 設定変更イベントを監視する ★★★
@@ -16,11 +16,7 @@ export default class SoundManager {
             // SE音量が変わった時の処理もここに追加できる
             // (今回はplaySeの中で毎回値を見ているので不要だが、設計としては可能)
         });
-        this.voices = [];
-        this.loadVoices();
-        if ('speechSynthesis' in window && window.speechSynthesis.onvoiceschanged !== undefined) {
-            window.speechSynthesis.onvoiceschanged = this.loadVoices.bind(this);
-        }
+       
     }
     
     
@@ -33,45 +29,9 @@ export default class SoundManager {
         this.scene.sound.play(key, config);
     }
 
-    loadVoices() {
-        this.voices = window.speechSynthesis.getVoices();
-        console.log("利用可能な音声をロードしました:", this.voices);
-    }
+    
 
-    /* 指定されたテキストを音声合成で読み上げる
-     * @param {string} text - 読み上げるテキスト
-     * @returns {Promise} 読み上げ完了を待つためのPromise
-     */
-    playVoice(text) {
-        // Web Speech APIが使えるかチェック
-        if (!('speechSynthesis' in window)) {
-            console.warn("このブラウザはWeb Speech APIに対応していません。");
-            return Promise.resolve(); // 即座に完了を返す
-        }
-
-        return new Promise((resolve) => {
-            // 既存の読み上げがあればキャンセル
-            window.speechSynthesis.cancel();
-            
-            // 発話オブジェクトを作成
-           const utterance = new SpeechSynthesisUtterance(text);
-            const japaneseVoice = this.voices.find(voice => voice.lang === 'ja-JP');
-            // ★ 声や言語を設定（任意）★
-            // 利用可能な音声リストから日本語のものを探す
-            const voices = window.speechSynthesis.getVoices();
-            const japaneseVoice = voices.find(voice => voice.lang === 'ja-JP');
-            if (japaneseVoice) {
-                utterance.voice = japaneseVoice;
-            }
-            utterance.lang = 'ja-JP';
-            utterance.rate = 1.2; // 読み上げ速度 (少し速め)
-            utterance.pitch = 1;  // 声の高さ
-
-            // ★ 読み上げが終了したら、Promiseを解決する
-             utterance.onend = resolve;
-            window.speechSynthesis.speak(utterance);
-        });
-    }
+    
 
          
     

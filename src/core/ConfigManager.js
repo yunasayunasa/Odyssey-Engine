@@ -10,7 +10,7 @@ const configDefs = {
         label: 'タイプ音',
         options: {
             'se': '効果音',      // 'se'という内部値に対して、UIでは'効果音'と表示
-            'voice': '読み上げ',  // 'voice' -> '読み上げ'
+           // 'voice': '読み上げ',  // 'voice' -> '読み上げ'
             'none': '無し'        // 'none' -> '無し'
         },
         defaultValue: 'se' // デフォルトは効果音

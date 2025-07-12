@@ -85,7 +85,13 @@ export default class ConfigScene extends Phaser.Scene {
                     // 次のボタンの位置を計算
                     buttonX -= button.width + 20;
                 });
-            }
+               // ★★★ オプションボタンのクリック処理 ★★★
+        button.on('pointerdown', () => {
+            this.configManager.setValue(key, optionKey);
+            // 値を更新したら、シーンを再起動して表示を更新する
+            this.scene.restart(); 
+        });
+    }
             
             y += 100; // 次のUI項目のY座標
         }
