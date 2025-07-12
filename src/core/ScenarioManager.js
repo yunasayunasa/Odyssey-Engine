@@ -41,18 +41,18 @@ export default class ScenarioManager {
         this.currentLine = 0;
         console.log(`シナリオを解析しました: ${this.currentFile}`);
     }
-
-  async  next() {
+async next() {
         if (this.isEnd || this.isWaitingClick || this.isWaitingTag) {
             return;
         }
         if (this.currentLine >= this.scenario.length) {
             this.messageWindow.setText('（シナリオ終了）', false);
             this.isEnd = true;
-
             return;
         }
         
+        // ★★★ stateManager を更新する古い呼び出しは、ここにはありません。★★★
+        // ★★★ これが正しい状態です。 ★★★
         
         const line = this.scenario[this.currentLine];
         this.currentLine++;
