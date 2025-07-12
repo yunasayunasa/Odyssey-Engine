@@ -2,7 +2,7 @@
 
 ; --- 変数の初期化 ---
 [eval exp="f.love_meter = 0"]
-[eval exp="sf.boot_count = (sf.play_count || 0) + 1"]
+[eval exp="sf.boot_count = (sf.boot_count || 0) + 1"]
 [eval exp="f.player_name = 'マスター'"]
 
 ; --- １．基本的な表示と演出 ---
