@@ -40,6 +40,7 @@ export default class ScenarioManager {
         this.currentFile = scenarioKey;
         this.currentLine = 0;
         console.log(`シナリオを解析しました: ${this.currentFile}`);
+          this.next();
     }
 
   async  next() {
