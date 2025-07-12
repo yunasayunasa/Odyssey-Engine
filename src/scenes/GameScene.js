@@ -241,6 +241,9 @@ clearChoiceButtons() {
     this.pendingChoices = []; // 念のためこちらもクリア
     if (this.scenarioManager) {
         this.scenarioManager.isWaitingChoice = false;
+       // ★★★ StateManagerの状態もリセット ★★★
+        this.scenarioManager.stateManager.state.status.isWaitingChoice = false;
+        this.scenarioManager.stateManager.state.status.pendingChoices = [];
     }
 }
 // GameScene.js
@@ -297,9 +300,9 @@ clearChoiceButtons() {
  * @param {ScenarioManager} manager - 操作対象のシナリオマネージャー
  * @param {Object} state - ロードした状態オブジェクト
  */
-function rebuildScene(manager, state) {
+function rebuildScene(scene, state) {
     console.log("--- rebuildScene 開始 ---");
-    const scene = manager.scene;
+    const manager = scene.scenarioManager;
 
     // 1. 現在の表示をすべてクリア
     console.log("1. レイヤーをクリアします...");
@@ -311,6 +314,8 @@ function rebuildScene(manager, state) {
 
     // 2. シナリオを復元
     console.log("2. シナリオ情報を復元します...");
+    // 2. シナリオと内部状態を復元
+    manager.stateManager.setState(state);
     manager.currentFile = state.scenario.fileName;
     manager.currentLine = state.scenario.line;
     console.log(`...シナリオ情報: file=${manager.currentFile}, line=${manager.currentLine}`);
@@ -358,21 +363,7 @@ function rebuildScene(manager, state) {
     }
     console.log("...BGM復元完了");
     
-       // 6. メッセージウィンドウをリセット
-    manager.messageWindow.setText('');
-
-    // ★★★ 内部状態の復元 ★★★
-    console.log("7. 内部状態を復元します...");
-    manager.mode = state.status.mode;
-    manager.isWaitingClick = state.status.isWaitingClick;
-    manager.isWaitingChoice = state.status.isWaitingChoice;
-    manager.scene.pendingChoices = state.status.pendingChoices;
-    console.log("...内部状態の復元完了");
-
-    // ★★★ もし選択肢表示中にセーブされていたなら、再表示する ★★★
-    if (manager.isWaitingChoice) {
-        manager.scene.displayChoiceButtons();
-    }
+    
     // ★★★ 7. 話者とハイライトを復元 ★★★
    /* let speakerName = null;
     const line = manager.scenario[manager.currentLine];
@@ -381,6 +372,22 @@ function rebuildScene(manager, state) {
         speakerName = speakerMatch[1];
     }
     manager.highlightSpeaker(speakerName);*/
+  manager.isWaitingClick = state.status.isWaitingClick;
+    manager.isWaitingChoice = state.status.isWaitingChoice;
+    scene.pendingChoices = state.status.pendingChoices;
     
+    // 5. UIをリセット・再表示
+    manager.messageWindow.setText('');
+    manager.highlightSpeaker(null); // ハイライトをリセット
+    
+    // ★★★ 選択肢待ち状態でセーブされていたなら、選択肢を再表示する ★★★
+    if (manager.isWaitingChoice) {
+        console.log("選択肢を再表示します:", scene.pendingChoices);
+        scene.displayChoiceButtons();
+    } 
+    // ★★★ 通常のクリック待ち状態でセーブされていたなら、矢印を表示する ★★★
+    else if (manager.isWaitingClick) {
+        manager.messageWindow.showNextArrow();
+    }    
     console.log("--- rebuildScene 正常終了 ---");
 }

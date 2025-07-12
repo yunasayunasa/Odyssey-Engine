@@ -81,6 +81,7 @@ export default class ScenarioManager {
                 this.autoTimer = null;
             }
             this.isWaitingClick = false;
+            this.stateManager.state.status.isWaitingClick = false;
           await  this.next();
         }
        // ★ スキップモード中は、クリックでスキップを解除する
@@ -118,7 +119,10 @@ export default class ScenarioManager {
             this.highlightSpeaker(speakerName);
             const wrappedLine = this.manualWrap(dialogue);
             this.isWaitingClick = true;
-            
+            // ★★★ StateManagerに状態を保存 ★★★
+    this.stateManager.state.status.isWaitingClick = true;
+    this.stateManager.state.status.isWaitingChoice = false;
+    this.stateManager.state.status.pendingChoices = [];
             this.messageWindow.setText(wrappedLine, true, () => {
                 this.messageWindow.showNextArrow();
                 if (this.mode === 'auto') {
