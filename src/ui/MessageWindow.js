@@ -1,3 +1,4 @@
+import { Layout } from '../core/Layout.js';
 // ★★★ 先頭の import 文を削除し、この行を代わりに追加 ★★★
 const Container = Phaser.GameObjects.Container;
 
