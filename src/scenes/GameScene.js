@@ -61,8 +61,8 @@ export default class GameScene extends Phaser.Scene {
 
     init(data) {
         this.charaDefs = data.charaDefs;
-        //ここを変えてスタートシナリオを変える
-          this.startScenario = data.startScenario || 'scene2.ks';
+      
+          this.startScenario = data.startScenario || 'scene1.ks';
         this.startLabel = data.startLabel || null;
         this.isResuming = data.resumedFrom ? true : false;
         this.returnParams = data.returnParams || null;

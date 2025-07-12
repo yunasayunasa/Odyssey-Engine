@@ -48,12 +48,11 @@ export default class PreloadScene extends Phaser.Scene {
     for (const key in assetDefine.videos) {
         this.load.video(key, assetDefine.videos[key], 'canplaythrough', false, true);
     }
-           // ★★★ ここに、最初のシナリオファイルのロードを追加 ★★★
+         // ★★★ ここで、ゲームで使う可能性のあるシナリオファイルをすべてロードしておく ★★★
         this.load.text('scene1.ks', 'assets/scene1.ks');
-        // ★★★ 必要であれば、他の初期シナリオもここでロード ★★★
-        // this.load.text('scene2.ks', 'assets/scene2.ks');
-        // this.load.text('overlay_test.ks', 'assets/overlay_test.ks');
-
+        this.load.text('scene2.ks', 'assets/scene2.ks');
+        this.load.text('overlay_test.ks', 'assets/overlay_test.ks');
+        this.load.text('test.ks', 'assets/test.ks');
         
         // --- 4. ロード完了後の処理を定義 ---
         this.load.once('complete', () => {
@@ -69,7 +68,12 @@ export default class PreloadScene extends Phaser.Scene {
                     charaDefs[charaName].face[faceName] = key;
                 }
             }
-            
+             // ★ GameSceneを開始する際に、開始シナリオを指定する
+            this.scene.start('GameScene', { 
+                charaDefs: autoCharaDefs,
+                // ★★★ ここでどのシナリオから始めるか決める ★★★
+                startScenario: 'test.ks'
+            });
          
             // ★★★ 全ての準備が整ったら、データを渡して次のシーンを開始 ★★★
             this.scene.start('GameScene', { 
