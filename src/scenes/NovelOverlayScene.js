@@ -81,7 +81,12 @@ this.inputBlocker = this.add.rectangle(640, 360, 1280, 720)
         this.soundManager = new SoundManager(this, this.configManager);
          // 1. MessageWindowを生成
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
-        
+         // これがオーバーレイ自身の入力を受け付け、背面の入力をブロックする
+        this.inputBlocker = this.add.rectangle(640, 360, 1280, 720)
+            .setInteractive() // これが重要。背面のクリックを防ぐ
+            .setVisible(false); // 通常は非表示だが、必要に応じて表示
+        // コンテナの最後に追加して、常に最前面になるようにする
+        this.add([this.inputBlocker]);
         
         // 3. レイヤーに追加する
         this.layer.message.add(this.messageWindow);
@@ -128,10 +133,15 @@ this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
          // --- ゲーム開始 ---
         this.scenarioManager.load(this.startScenario);
-        this.input.on('pointerdown', () => { this.scenarioManager.onClick(); });
+        this.input.on('pointerdown', () => { 
+            // ブロッカーが常に最前面に来るようにする
+            this.children.bringToTop(this.inputBlocker); 
+            this.scenarioManager.onClick(); 
+        });
         this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
         console.log("NovelOverlayScene: create 完了");
     }
+
 
 
 
@@ -155,7 +165,8 @@ this.scenarioManager.registerTag('video', handleVideo);
  * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
  */
 displayChoiceButtons() {
-    this.inputBlocker.setVisible(true);
+     this.inputBlocker.setVisible(true);
+        this.children.bringToTop(this.inputBlocker); 
 
     // Y座標の計算を、全体のボタン数に基づいて行う
     const totalButtons = this.pendingChoices.length;
@@ -178,16 +189,7 @@ displayChoiceButtons() {
 
     this.pendingChoices = []; // 溜めていた情報はクリア
 }
- 
-// ★★★ ボタンを消すためのヘルパーメソッドを追加 ★★★
-clearChoiceButtons() {
-    this.choiceButtons.forEach(button => button.destroy());
-    this.choiceButtons = []; // 配列を空にする
-    // 選択肢待ち状態を解除
-    if (this.scenarioManager) {
-        this.scenarioManager.isWaitingChoice = false;
-    }
-}
+
 
 clearChoiceButtons() {
     this.inputBlocker.setVisible(false);

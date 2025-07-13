@@ -54,20 +54,21 @@ export default class SystemScene extends Phaser.Scene {
         });
 
 
-        // --- オーバーレイ関連のイベントリスナー (変更なし) ---
+             // --- オーバーレイ関連のイベントリスナー ---
 
         this.events.on('request-overlay', (data) => {
             console.log("[SystemScene] オーバーレイ表示リクエスト", data);
             
-            const requestScene = this.scene.get(data.from);
-            if (requestScene) {
-                requestScene.input.enabled = false;
-            }
+            // ★★★ 修正箇所: ここで直接 input.enabled を操作しない ★★★
+            // リクエスト元のシーンはpauseされるので、入力は自動で止まる
+            // const requestScene = this.scene.get(data.from);
+            // if (requestScene) {
+            //     requestScene.input.enabled = false; 
+            // }
             
-            // ★★★ NovelOverlaySceneにcharaDefsを渡す ★★★
             this.scene.launch('NovelOverlayScene', { 
                 scenario: data.scenario,
-                charaDefs: this.globalCharaDefs, // グローバルなcharaDefsを渡す
+                charaDefs: this.globalCharaDefs,
                 returnTo: data.from
             });
         });
@@ -77,11 +78,16 @@ export default class SystemScene extends Phaser.Scene {
             
             this.scene.stop(data.from);
             
-            const returnScene = this.scene.get(data.returnTo);
-            if (returnScene) {
-                returnScene.input.enabled = true;
-                console.log(`シーン[${data.returnTo}]の入力を再開しました。`);
-            }
+            // ★★★ 修正箇所: ここで直接 input.enabled を操作しない ★★★
+            // 戻り先のシーンが resume された時に、そのシーン自身が入力制御する
+            // const returnScene = this.scene.get(data.returnTo);
+            // if (returnScene) {
+            //     returnScene.input.enabled = true;
+            //     console.log(`シーン[${data.returnTo}]の入力を再開しました。`);
+            // }
+
+            // ★ 戻り先のシーンを resume する
+            this.scene.resume(data.returnTo);
         });
     }
 }

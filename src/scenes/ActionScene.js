@@ -1,3 +1,5 @@
+// ActionScene.js (最終版)
+
 export default class ActionScene extends Phaser.Scene {
     constructor() {
         super('ActionScene');
@@ -9,14 +11,16 @@ export default class ActionScene extends Phaser.Scene {
         const player = this.add.text(100, 360, 'PLAYER', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
         this.tweens.add({ targets: player, x: 1180, duration: 4000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 });
         
-        // --- オーバーレイ表示リクエスト (このシーンは進行を一時停止しない) ---
+        // --- オーバーレイ表示リクエスト ---
         this.time.delayedCall(3000, () => {
             console.log("ActionScene: request-overlay を発行");
+            // ★ オーバーレイ中にこのシーンをpause状態にする
+            this.scene.pause(); 
             this.scene.get('SystemScene').events.emit('request-overlay', { 
-                from: this.scene.key, // 'ActionScene'
+                from: this.scene.key,
                 scenario: 'overlay_test.ks'
             });
-            // オーバーレイ中は、このシーンの入力を一時停止する方が良い場合が多い
+            // このシーンの入力を一時停止する（自動で止まるはずだが念のため）
             this.input.enabled = false;
         });
 
@@ -26,13 +30,17 @@ export default class ActionScene extends Phaser.Scene {
         
         returnButton.on('pointerdown', () => {
             console.log("ActionScene: return-to-novel を発行");
-            // ★★★ SystemSceneに、ノベルパートへの復帰を依頼する ★★★
+            // ★ SystemSceneがこのシーンをstopするので、ここではinput.enabled=false;は不要
             this.scene.get('SystemScene').events.emit('return-to-novel', {
-                from: this.scene.key, // 'ActionScene'
-                params: { 'f.battle_result': 'win' } // 復帰時にGameSceneに渡すパラメータ
+                from: this.scene.key,
+                params: { 'f.battle_result': 'win' }
             });
-            // このシーンはSystemSceneによって停止されるため、ここでは何もせず終了
         });
     }
-    // ★★★ bossDefeated() メソッドは不要なので削除 ★★★
+
+    // ★★★ 修正箇所: シーンが resume された時に、入力を再有効化する ★★★
+    resume() {
+        console.log("ActionScene: resume されました。入力を再有効化します。");
+        this.input.enabled = true;
+    }
 }
