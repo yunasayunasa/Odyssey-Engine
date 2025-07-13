@@ -1,35 +1,36 @@
+// src/handlers/stop_anim.js (最終版)
+
 /**
  * [stop_anim] タグの処理
  * 指定されたターゲットのループアニメーションをすべて停止する
  * @param {ScenarioManager} manager
  * @param {Object} params - { name }
+ * @returns {Promise<void>}
  */
 export function handleStopAnim(manager, params) {
     const name = params.name;
-    if (!name) {
-        console.warn('[stop_anim] name属性は必須です。');
-        return Promise.resolve();// 何もせず同期的に完了
-    }
+    if (!name) { console.warn('[stop_anim] name属性は必須です。'); return Promise.resolve(); }
     
-    // キャラクターだけでなく、name属性を持つあらゆるオブジェクトを対象にできる
     const target = manager.scene.characters[name]; 
-    if (!target) {
-        console.warn(`[stop_anim] 停止対象のオブジェクト[${name}]が見つかりません。`);
-      return Promise.resolve();
+    if (!target) { console.warn(`[stop_anim] 停止対象のオブジェクト[${name}]が見つかりません。`); return Promise.resolve(); }
+
+    // キャラクターに紐づくTweenをすべて停止・削除する
+    manager.scene.tweens.killTweensOf(target);
+
+    // ★★★ 修正箇所: walkアニメーション関連のデータとリスナーを解除 ★★★
+    if (target.getData('isWalking')) {
+        manager.scene.events.off('update', target.getData('walkUpdateListener')); // リスナーを解除
+        target.data.delete('baseX');
+        target.data.delete('currentYBase');
+        target.data.delete('walkOffsetY');
+        target.data.delete('isWalking');
+        target.data.delete('walkUpdateListener'); // リスナーの参照も削除
+        
+        // 最終的な位置に正確に設定 (揺れが止まり、walk開始時の位置か、walk目標位置で停止)
+        // target.x, target.y は killTweensOf の時点で最終位置になっているはず
+        // 必要ならここで、target.setPosition(target.x, target.y); としても良いが、重複の可能性あり
     }
 
-    // ★★★ 指定されたターゲットに紐づくTweenをすべて停止・削除する ★★★
-    manager.scene.tweens.killTweensOf(target);
-return Promise.resolve();
     console.log(`オブジェクト[${name}]のアニメーションを停止しました。`);
-
-    // ★★★ StateManagerに関する処理はすべて不要 ★★★
-    // 位置を補正する必要があるかは、ゲームの仕様次第。
-    // 一般的には、アニメーションを止めたらその位置で静止するのが自然。
-    // もし「開始前の位置」に戻したいなら、アニメーション開始時に
-    // target.setData('originPos', { x: target.x, y: target.y }) のように保存し、
-    // ここで target.getData('originPos') を使って戻すのが良い設計。
-    // 今回は、補正処理は行わないシンプルで汎用的な実装とする。
-
-    // ★★★ このタグの処理は一瞬で終わるので、何も呼び出す必要はない ★★★
+    return Promise.resolve();
 }
