@@ -5,13 +5,13 @@
 [bg storage="umi" time=1500]      
 [wait time=1500]
 
-[chara_show name="yuna" pos="left" y=900 visible=false] 
+[chara_show name="yuna" pos="left" y=600 visible=false] 
 [move name="yuna" y=450 alpha=1 time=1000 nowait="true"] 
 
 [chara_show name="roger" pos="right" x=1400 visible=false] 
 [walk name="roger" x=1000 alpha=1 time=1000] 
 [wait time=1000]
-
+[stop_anim name="roger"] 
 yuna:「次回のゲームコーナーの更新予告なんだよ！」
 
 roger:「次回はなんと！あのゲームコーナー[br]最初の作品、「演算世界とチョコレイト」が、ばばーんとリメイク！」
