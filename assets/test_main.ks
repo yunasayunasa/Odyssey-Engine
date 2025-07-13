@@ -4,7 +4,7 @@
 [playbgm storage="cafe" time=1000] 
 [bg storage="umi" time=1500]      
 [wait time=1500]
-
+[chara_show name="roger" pos="right" x=1600 visible=false] 
 [chara_show name="yuna" pos="left" y=1200 visible=false] 
 [move name="yuna" y=450 alpha=1 time=1000 nowait="true"] 
 
