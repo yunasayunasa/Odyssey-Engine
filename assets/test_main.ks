@@ -9,7 +9,12 @@
 [move name="yuna" y=450 alpha=1 time=1000 nowait="true"] 
 
 [chara_show name="roger" pos="right" x=1400 visible=false] 
-[walk name="roger" x=1000 alpha=1 time=1000] 
+
+; ★★★ [walk] の代替として、以下の2行を挿入 ★★★
+; 1. ロジャーを移動させながら、同時にループジャンプアニメーションを開始
+[chara_jump name="roger" loop="true" nowait="true"] ; ロジャーの跳ねるアニメーションを開始（シナリオは進む）
+[move name="roger" x=1000 alpha=1 time=1000] ; ロジャーをx=1000まで移動させる
+
 [wait time=1000]
 [stop_anim name="roger"] 
 yuna:「次回のゲームコーナーの更新予告なんだよ！」

@@ -104,8 +104,6 @@ export default class ScenarioManager {
  // --- parseメソッドは、状態を変更するだけ ---
     // ScenarioManager.js の parse メソッド (最終版 Ver.2)
 
-   // ScenarioManager.js の parse メソッド (最終版 Ver.3 - 最強の分岐ロジック)
-
     async parse(line) {
         const trimedLine = this.embedVariables(line.trim());
 
@@ -116,26 +114,27 @@ export default class ScenarioManager {
             const { tagName, params } = this.parseTag(trimedLine);
             if (['if', 'elsif', 'else', 'endif'].includes(tagName)) {
                 const handler = this.tagHandlers.get(tagName);
-                if (handler) await handler(this, params); // 同期ハンドラなのでawaitは不要だが、念のため付けても害はない
+                // 同期ハンドラなのでawaitは不要だが、念のため付けても害はない
+                if (handler) await handler(this, params);
             }
-            return; // ★★★ スキップ中は、ここで必ず抜ける ★★★
+            // スキップ中は、他のどの処理も行わずに関数を抜ける
+            return;
         }
 
-        // --- 2. 通常実行 (if - else if 構造で、二重処理を完全に防ぎ、必ずreturnする) ---
+        // --- 2. 通常実行 (if - else if 構造で、二重処理を完全に防ぐ) ---
         if (trimedLine.startsWith(';') || trimedLine.startsWith('*') || trimedLine.startsWith('@')) {
             // コメント行、ラベル行、アセット行は何もしない
-            return; // ★★★ 処理完了後、必ず抜ける ★★★
         
         } else if (trimedLine.startsWith('[')) {
             // --- タグ行 ---
             const { tagName, params } = this.parseTag(trimedLine);
             const handler = this.tagHandlers.get(tagName);
             if (handler) {
-                await handler(this, params); // すべてのハンドラがPromiseを返すので、常にawaitで待つ
+                // すべてのハンドラがPromiseを返すので、常にawaitで待つ
+                await handler(this, params);
             } else {
                 console.warn(`未定義のタグです: [${tagName}]`);
             }
-            return; // ★★★ タグ処理後、必ず抜ける ★★★
         
         } else if (trimedLine.length > 0) {
             // --- セリフまたは地の文 ---
@@ -157,16 +156,14 @@ export default class ScenarioManager {
                 if (this.mode === 'auto') this.startAutoMode();
             }, speakerName);
 
+            // 状態を「クリック待ち」に設定
             this.isWaitingClick = true; 
-            return; // ★★★ セリフ処理後、必ず抜ける ★★★
         
         } else {
             // --- 空行は何もしない ---
-            return; // ★★★ 空行処理後、必ず抜ける ★★★
         }
 
-        // ここには到達しないはず。もし到達したらエラー（念のため）
-        // console.error("ScenarioManager.parse: 未知の行タイプで処理が完了しました。");
+        // parseメソッドは状態を変更するだけで、何もreturnしない
     }
  
 
