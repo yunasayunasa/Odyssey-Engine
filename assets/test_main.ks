@@ -8,11 +8,7 @@
 [chara_show name="yuna" pos="left" y=1200 visible=false] 
 [move name="yuna" y=450 alpha=1 time=1000 nowait="true"] 
 
-[chara_show name="roger" pos="right" x=1400 visible=false] 
 
-; ★★★ [walk] の代替として、以下の2行を挿入 ★★★
-; 1. ロジャーを移動させながら、同時にループジャンプアニメーションを開始
-[chara_jump name="roger" loop="true" nowait="true"] 
 [move name="roger" x=1000 alpha=1 time=1000] 
 
 [wait time=1000]
@@ -62,7 +58,6 @@ yuna:「ばいばーいなんだよ！」
 [stopbgm time=500] 
 [wait time=500] 
 
-[fadein time=1500] 
-[wait time=1500]
+
 
 [s]
