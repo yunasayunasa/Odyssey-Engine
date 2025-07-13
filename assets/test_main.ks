@@ -2,20 +2,16 @@
 ; このシナリオは、セーブ＆ロード、シーン遷移、フロー制御が
 ; 正しくバックエンドの状態を保持できるかを検証します。
 ; === 合成音声テスト ===
-[playbgm storage="ronpa_bgm" time=1000]
-[bg storage="bg_school" time=1500]
+[playbgm storage="cafe" time=1000]
+[bg storage="umi" time=1500]
 [wait time=1500]
 
+
+[chara_show name="yuna" pos="center" time=500]
+
 yuna:「ようこそ、オデッセイエンジンの世界へ！」
-[voice text="ようこそ、オデッセイエンジンの世界へ！" lang="ja-JP" rate=1.0 pitch=1.0]
 
-kaito:「僕の声はどんな感じかな？」
-[voice text="僕の声はどんな感じかな？" lang="ja-JP" voice="Google 日本語" rate=0.9] ; ブラウザに依存
-[voice text="Can you hear me?" lang="en-US" rate=1.2 pitch=1.1]
 
-yuna:「発話中にクリックしてもスキップされないはずだよ。」
-[voice text="これは長いセリフなので、途中でクリックを試してください。" lang="ja-JP"]
-yuna:「どうだったかな？」
 [p]
 
 ; ... (以降のシナリオ) ...
