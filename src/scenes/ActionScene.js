@@ -14,14 +14,13 @@ export default class ActionScene extends Phaser.Scene {
         // --- オーバーレイ表示リクエスト ---
         this.time.delayedCall(3000, () => {
             console.log("ActionScene: request-overlay を発行");
-            // ★ オーバーレイ中にこのシーンをpause状態にする
-            this.scene.pause(); 
+            // ★★★ 修正箇所: シーンの一時停止と入力無効化はSystemSceneに任せる ★★★
+            // this.scene.pause(); // 削除
             this.scene.get('SystemScene').events.emit('request-overlay', { 
                 from: this.scene.key,
                 scenario: 'overlay_test.ks'
             });
-            // このシーンの入力を一時停止する（自動で止まるはずだが念のため）
-            this.input.enabled = false;
+            // this.input.enabled = false; // 削除
         });
 
         // --- ノベルパートへの戻るボタン ---
@@ -30,7 +29,7 @@ export default class ActionScene extends Phaser.Scene {
         
         returnButton.on('pointerdown', () => {
             console.log("ActionScene: return-to-novel を発行");
-            // ★ SystemSceneがこのシーンをstopするので、ここではinput.enabled=false;は不要
+            // ★★★ 修正箇所: ここでinput.enabled=false;は不要 ★★★
             this.scene.get('SystemScene').events.emit('return-to-novel', {
                 from: this.scene.key,
                 params: { 'f.battle_result': 'win' }
@@ -38,7 +37,7 @@ export default class ActionScene extends Phaser.Scene {
         });
     }
 
-    // ★★★ 修正箇所: シーンが resume された時に、入力を再有効化する ★★★
+    // ★★★ シーンが resume された時に、入力を再有効化する (これはこのままでOK) ★★★
     resume() {
         console.log("ActionScene: resume されました。入力を再有効化します。");
         this.input.enabled = true;
