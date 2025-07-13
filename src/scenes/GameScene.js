@@ -271,9 +271,14 @@ clearChoiceButtons() {
 
             await rebuildScene(this.scenarioManager, loadedState);
             
-            // ロード後は、必ず次の行からシナリオを再開する
-            console.log("ロード完了: 次の行からシナリオを再開します。");
-            this.time.delayedCall(10, () => this.scenarioManager.next());
+             // ★★★ 修正箇所: ロードされた状態に応じて next() を呼ぶかを判断 ★★★
+            if (loadedState.scenario.isWaitingClick || loadedState.scenario.isWaitingChoice) {
+                console.log("ロード完了: 待機状態のため、ユーザーの入力を待ちます。");
+                // next() は呼ばない。
+            } else {
+                console.log("ロード完了: 次の行からシナリオを再開します。");
+                this.time.delayedCall(10, () => this.scenarioManager.next());
+            }
             
         } catch (e) {
             console.error(`ロード処理でエラーが発生しました。`, e);

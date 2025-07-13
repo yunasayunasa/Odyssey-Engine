@@ -22,6 +22,7 @@ kaito:「アイテムをゲットしますか？」
 [link target="*get_item" text="ゲットする"]
 [link target="*no_item" text="しない"]
 [p] 
+[s]
 ; 選択肢の直前でセーブ＆ロードを試す
 
 *get_item
