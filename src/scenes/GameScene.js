@@ -78,16 +78,18 @@ export default class GameScene extends Phaser.Scene {
     create() {
         this.cameras.main.setBackgroundColor('#000000');
         
-        // --- レイヤー生成 ---
-        this.layer.background = this.add.container(0, 0).setDepth(0);
-        this.layer.character = this.add.container(0, 0).setDepth(10); // キャラを少し手前に
-        this.layer.cg = this.add.container(0, 0).setDepth(5);
-        this.layer.message = this.add.container(0, 0).setDepth(20);
+         // --- レイヤー生成とdepth設定 (最終版) ---
+        // 数値が大きいほど手前に描画される
+        this.layer.background = this.add.container(0, 0).setDepth(0);  // 最奥
+        this.layer.cg = this.add.container(0, 0).setDepth(5);         // 背景CGなど
+        this.layer.character = this.add.container(0, 0).setDepth(10); // キャラクター
+        this.layer.message = this.add.container(0, 0).setDepth(20);   // メッセージウィンドウ、選択肢ボタン
 
-        // --- 入力ブロッカー ---
+        // ★★★ GameSceneのコンストラクタで生成される inputBlocker も depth 設定 ★★★
         this.choiceInputBlocker = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height)
-            .setInteractive().setVisible(false);
-        this.choiceInputBlocker.on('pointerdown', () => console.log("選択肢を選んでください"));
+            .setInteractive()
+            .setVisible(false)
+            .setDepth(25); // メッセージウィンドウよりさらに手前（最前面）
 
         // --- マネージャー/UIクラスの生成 ---
         this.configManager = this.sys.registry.get('configManager');
