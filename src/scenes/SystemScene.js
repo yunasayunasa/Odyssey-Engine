@@ -64,19 +64,18 @@ export default class SystemScene extends Phaser.Scene {
         });
 
 
-        // --- オーバーレイ関連のイベントリスナー ---
+           // --- オーバーレイ関連のイベントリスナー ---
 
         this.events.on('request-overlay', (data) => {
             console.log("[SystemScene] オーバーレイ表示リクエスト", data);
             
-            // ★★★ 修正箇所: リクエスト元のシーンの入力を明示的に無効化 ★★★
             const requestScene = this.scene.get(data.from);
             if (requestScene) {
-                requestScene.input.enabled = false;
-                console.log(`SystemScene: シーン[${data.from}]の入力を無効化しました。`);
+                // リクエスト元のシーンを一時停止する
+                requestScene.scene.pause(); 
+                console.log(`SystemScene: シーン[${data.from}]を一時停止しました。`);
             }
-            // ★ NovelOverlaySceneは独自のinputBlockerを持つので、このシーンをpauseする必要はない
-
+            
             this.scene.launch('NovelOverlayScene', { 
                 scenario: data.scenario,
                 charaDefs: this.globalCharaDefs,
@@ -85,16 +84,19 @@ export default class SystemScene extends Phaser.Scene {
         });
         
         this.events.on('end-overlay', (data) => {
-            console.log(`[SystemScene] オーバーレイ終了有効メソッドを呼び出します`, data);
+            console.log(`[SystemScene] オーバーレイ終了`, data);
             
             this.scene.stop(data.from); // NovelOverlaySceneを停止
             
-            // ★★★ 修正箇所: 戻り先のシーンの入力を明示的に有効化 ★★★
-            const returnScene = this.scene.get(data.returnTo);
+            // ★★★ 修正箇所: 戻り先のシーンをresumeする ★★★
+            const returnSceneKey = data.returnTo;
+            const returnScene = this.scene.get(returnSceneKey);
             if (returnScene) {
-                returnScene.input.enabled = true;
-                console.log(`SystemScene: シーン[${data.returnTo}]の入力を再有効化しました。`);
+                returnScene.scene.resume(); // シーンをresumeする
+                console.log(`SystemScene: シーン[${returnSceneKey}]をresumeしました。`);
             }
+            // ★ resume()が呼ばれれば、各シーンのresume()ライフサイクルメソッドが呼ばれて
+            // ★ その中でinput.enabled=true;が実行されるので、ここでは明示的に呼び出す必要はない
         });
     }
 }
