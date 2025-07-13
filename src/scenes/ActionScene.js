@@ -14,32 +14,40 @@ export default class ActionScene extends Phaser.Scene {
         // --- オーバーレイ表示リクエスト ---
         this.time.delayedCall(3000, () => {
             console.log("ActionScene: request-overlay を発行");
-            // ★★★ 修正箇所: シーンの一時停止や入力無効化は行わない ★★★
-            // this.scene.pause(); // 削除
             this.scene.get('SystemScene').events.emit('request-overlay', { 
                 from: this.scene.key,
                 scenario: 'overlay_test.ks'
             });
-            // this.input.enabled = false; // 削除
         });
 
-        // --- ノベルパートへの戻るボタン ---
-        const returnButton = this.add.text(640, 600, 'ボスを倒してノベルパートに戻る', { fontSize: '32px', fill: '#fff', backgroundColor: '#c00' })
-            .setOrigin(0.5).setInteractive();
+        // --- ★★★ 勝利ボタン ★★★ ---
+        const winButton = this.add.text(320, 600, 'ボスに勝利してノベルパートに戻る', { fontSize: '32px', fill: '#0c0', backgroundColor: '#000' })
+            .setOrigin(0.5).setInteractive({ useHandCursor: true });
         
-        returnButton.on('pointerdown', () => {
-            console.log("ActionScene: return-to-novel を発行");
-            // ★★★ 修正箇所: ここでinput.enabled=false;は不要 ★★★
+        winButton.on('pointerdown', () => {
+            console.log("ActionScene: 勝利ボタンクリック -> return-to-novel を発行");
             this.scene.get('SystemScene').events.emit('return-to-novel', {
                 from: this.scene.key,
-                params: { 'f.battle_result': 'win' }
+                params: { 'f.battle_result': 'win' } // 勝利結果を渡す
+            });
+        });
+
+        // --- ★★★ 敗北ボタン ★★★ ---
+        const loseButton = this.add.text(960, 600, 'ボスに敗北してノベルパートに戻る', { fontSize: '32px', fill: '#c00', backgroundColor: '#000' })
+            .setOrigin(0.5).setInteractive({ useHandCursor: true });
+        
+        loseButton.on('pointerdown', () => {
+            console.log("ActionScene: 敗北ボタンクリック -> return-to-novel を発行");
+            this.scene.get('SystemScene').events.emit('return-to-novel', {
+                from: this.scene.key,
+                params: { 'f.battle_result': 'lose' } // 敗北結果を渡す
             });
         });
     }
 
-    // ★★★ シーンが resume された時に、入力を再有効化する (このメソッドはもう呼ばれないので削除してOK) ★★★
+    // シーンが resume された時に、入力を再有効化する (SystemSceneがやるのでこのメソッドは不要)
     // resume() {
-    //     console.log("ActionScene: resume されました。入力を再有効化します。");
-    //     this.input.enabled = true;
+    //     // console.log("ActionScene: resume されました。入力を再有効化します。");
+    //     // this.input.enabled = true;
     // }
 }

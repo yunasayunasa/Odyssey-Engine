@@ -46,6 +46,8 @@ export default class PreloadScene extends Phaser.Scene {
         this.load.text('scene2.ks', 'assets/scene2.ks');
         this.load.text('overlay_test.ks', 'assets/overlay_test.ks');
         this.load.text('test.ks', 'assets/test.ks'); // テスト用
+         this.load.text('test_main.ks', 'assets/test_main.ks'); // テスト用
+          this.load.text('test_sub.ks', 'assets/test_sub.ks'); // テスト用
 
         // --- ロード完了後の処理を定義 ---
         this.load.once('complete', () => {
@@ -66,7 +68,7 @@ export default class PreloadScene extends Phaser.Scene {
             // ★★★ 生成したcharaDefsを渡して、次のシーンを開始 ★★★
             this.scene.start('GameScene', { 
                 charaDefs: charaDefs,
-                startScenario: 'test.ks' // 開始するシナリオを指定
+                startScenario: 'test_main.ks' // ここで開始するシナリオを指定
             });
             this.scene.launch('UIScene');
             this.scene.launch('SystemScene');
