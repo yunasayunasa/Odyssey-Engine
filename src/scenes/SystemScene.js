@@ -64,18 +64,18 @@ export default class SystemScene extends Phaser.Scene {
         });
 
 
-           // --- オーバーレイ関連のイベントリスナー ---
+              // --- オーバーレイ関連のイベントリスナー ---
 
         this.events.on('request-overlay', (data) => {
             console.log("[SystemScene] オーバーレイ表示リクエスト", data);
             
-            const requestScene = this.scene.get(data.from);
-            if (requestScene) {
-                // リクエスト元のシーンを一時停止する
-                requestScene.scene.pause(); 
-                console.log(`SystemScene: シーン[${data.from}]を一時停止しました。`);
-            }
-            
+            // ★★★ 修正箇所: ここで requestScene.scene.pause() を呼び出さない ★★★
+            // ActionSceneは実行状態のままにする。入力はNovelOverlaySceneがブロックする。
+            // const requestScene = this.scene.get(data.from);
+            // if (requestScene) {
+            //     requestScene.scene.pause(); 
+            // }
+
             this.scene.launch('NovelOverlayScene', { 
                 scenario: data.scenario,
                 charaDefs: this.globalCharaDefs,
@@ -88,15 +88,13 @@ export default class SystemScene extends Phaser.Scene {
             
             this.scene.stop(data.from); // NovelOverlaySceneを停止
             
-            // ★★★ 修正箇所: 戻り先のシーンをresumeする ★★★
-            const returnSceneKey = data.returnTo;
-            const returnScene = this.scene.get(returnSceneKey);
+            // ★★★ 修正箇所: 戻り先のシーンを resume しない ★★★
+            // ActionSceneはpauseされていないのでresume不要。入力を再有効化する
+            const returnScene = this.scene.get(data.returnTo);
             if (returnScene) {
-                returnScene.scene.resume(); // シーンをresumeする
-                console.log(`SystemScene: シーン[${returnSceneKey}]をresumeしました。`);
+                // 明示的に入力を有効化する
+                returnScene.input.enabled = true; 
+                console.log(`SystemScene: シーン[${data.returnTo}]の入力を再有効化しました。`);
             }
-            // ★ resume()が呼ばれれば、各シーンのresume()ライフサイクルメソッドが呼ばれて
-            // ★ その中でinput.enabled=true;が実行されるので、ここでは明示的に呼び出す必要はない
         });
-    }
-}
+    }}

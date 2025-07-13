@@ -13,8 +13,8 @@ export default class ActionScene extends Phaser.Scene {
         
         // --- オーバーレイ表示リクエスト ---
         this.time.delayedCall(3000, () => {
-            console.log("ActionScene: request-overlay を発行、更新用ログ");
-            // ★★★ 修正箇所: シーンの一時停止と入力無効化はSystemSceneに任せる ★★★
+            console.log("ActionScene: request-overlay を発行");
+            // ★★★ 修正箇所: シーンの一時停止や入力無効化は行わない ★★★
             // this.scene.pause(); // 削除
             this.scene.get('SystemScene').events.emit('request-overlay', { 
                 from: this.scene.key,
@@ -37,9 +37,9 @@ export default class ActionScene extends Phaser.Scene {
         });
     }
 
-    // ★★★ シーンが resume された時に、入力を再有効化する (これはこのままでOK) ★★★
-    resume() {
-        console.log("ActionScene: resume されました。入力を再有効化します。");
-        this.input.enabled = true;
-    }
+    // ★★★ シーンが resume された時に、入力を再有効化する (このメソッドはもう呼ばれないので削除してOK) ★★★
+    // resume() {
+    //     console.log("ActionScene: resume されました。入力を再有効化します。");
+    //     this.input.enabled = true;
+    // }
 }
