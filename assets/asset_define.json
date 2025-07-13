@@ -7,10 +7,12 @@
     "cg01": "assets/event_cg_01.jpg" ,
      "yuna_angry": "assets/title_button.png",
      "next_arrow": "assets/next_arrow.png"
+    "roger_normal": "assets/roger_normal.png",
+     "enzan": "assets/enzan.jpg" 
   },
   "sounds": {
 "popopo": "assets/gyakuten_popopo.mp3",
-
+"cafe": "assets/cafe.mp3",
 "ronpa_bgm": "assets/ronpa_bgm.mp3"
   },
   "videos": {
