@@ -81,7 +81,7 @@ export default class GameScene extends Phaser.Scene {
          // --- レイヤー生成とdepth設定 (最終版) ---
         // 数値が大きいほど手前に描画される
         this.layer.background = this.add.container(0, 0).setDepth(0);  // 最奥
-        this.layer.cg = this.add.container(0, 0).setDepth(5);         // 背景CGなど
+        this.layer.cg = this.add.container(0, 0).setDepth(0);         // 背景CGなど
         this.layer.character = this.add.container(0, 0).setDepth(0); // キャラクター
         this.layer.message = this.add.container(0, 0).setDepth(20);   // メッセージウィンドウ、選択肢ボタン
 
