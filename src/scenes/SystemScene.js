@@ -85,7 +85,7 @@ export default class SystemScene extends Phaser.Scene {
         });
         
         this.events.on('end-overlay', (data) => {
-            console.log(`[SystemScene] オーバーレイ終了`, data);
+            console.log(`[SystemScene] オーバーレイ終了有効メソッドを呼び出します`, data);
             
             this.scene.stop(data.from); // NovelOverlaySceneを停止
             
