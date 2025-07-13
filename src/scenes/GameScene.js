@@ -242,9 +242,8 @@ clearChoiceButtons() {
 
 
 
-   // ★★★ performLoad を修正 ★★★
- // ★★★ ロード処理 ★★★
-    // ★★★ ロード処理 (復帰時のパラメータを受け取れるように修正) ★★★
+  // GameScene.js の performLoad メソッド (最終版)
+
     async performLoad(slot, returnParams = null) {
         try {
             const jsonString = localStorage.getItem(`save_data_${slot}`);
@@ -254,27 +253,26 @@ clearChoiceButtons() {
             }
             const loadedState = JSON.parse(jsonString);
             
-            // ★ サブシーンから返されたパラメータを変数に反映
+            // ★ StateManagerに変数を復元する (まずはセーブされた状態を反映)
+            this.stateManager.setState(loadedState);
+
+            // ★★★ 修正箇所: returnParams は StateManager.eval() を使って反映する ★★★
             if (returnParams) {
                 console.log("復帰パラメータを反映します:", returnParams);
                 for (const key in returnParams) {
-                    // loadedState内の変数を上書きしてからsetStateする
-                    const varName = key.split('.')[1];
-                    if (loadedState.variables.f[varName] !== undefined) {
-                        loadedState.variables.f[varName] = returnParams[key];
-                    }
+                    // key は "f.battle_result" のような形式を想定
+                    // 例: "f.battle_result='win'" のような式をevalする
+                    const evalExp = `${key} = '${returnParams[key]}'`; // 文字列はクォーテーションで囲む
+                    this.stateManager.eval(evalExp);
                 }
             }
 
-            this.stateManager.setState(loadedState);
             console.log(`スロット[${slot}]からロードしました。`, loadedState);
 
             await rebuildScene(this.scenarioManager, loadedState);
             
-             // ★★★ 修正箇所: ロードされた状態に応じて next() を呼ぶかを判断 ★★★
             if (loadedState.scenario.isWaitingClick || loadedState.scenario.isWaitingChoice) {
                 console.log("ロード完了: 待機状態のため、ユーザーの入力を待ちます。");
-                // next() は呼ばない。
             } else {
                 console.log("ロード完了: 次の行からシナリオを再開します。");
                 this.time.delayedCall(10, () => this.scenarioManager.next());
