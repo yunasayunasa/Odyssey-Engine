@@ -45,9 +45,12 @@ import { handleVideo } from '../handlers/video.js';
 export default class NovelOverlayScene extends Phaser.Scene {
     constructor() {
         super('NovelOverlayScene');
-        Object.assign(this, { scenarioManager: null, soundManager: null, stateManager: null, messageWindow: null, configManager: null, layer: {}, charaDefs: null, characters: {} });
-    }
-
+       this.scenarioManager = null; this.soundManager = null; this.stateManager = null;
+        this.messageWindow = null; this.configManager = null; this.layer = {};
+        this.charaDefs = null; this.characters = {};
+        this.inputBlocker = null; // プロパティとして初期化
+    } 
+    
 
       init(data) {
         this.startScenario = data.scenario;
@@ -65,31 +68,31 @@ export default class NovelOverlayScene extends Phaser.Scene {
             this.load.text(this.startScenario, `assets/${this.startScenario}`);
         }
     }
-    create() {
-         this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
+   create() {
+        this.cameras.main.setBackgroundColor('rgba(0,0,0,0)');
         
         // --- レイヤー生成 ---
-        
         this.layer.character = this.add.container(0, 0);
         this.layer.cg = this.add.container(0, 0);
         this.layer.message = this.add.container(0, 0);
 
-          this.configManager = this.sys.registry.get('configManager');
+        // ★★★ 全画面を覆う、透明で見えない入力ブロッカーを作成 ★★★
+        // Sceneのaddメソッドで直接Sceneに追加する
+        this.inputBlocker = this.add.rectangle(640, 360, 1280, 720)
+            .setInteractive()
+            .setVisible(false)
+            .setDepth(100); // UIより手前に来るように高いDepthを設定
+
+        this.configManager = this.sys.registry.get('configManager');
         this.stateManager = new StateManager();
         this.soundManager = new SoundManager(this, this.configManager);
-         // 1. MessageWindowを生成
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
-         // これがオーバーレイ自身の入力を受け付け、背面の入力をブロックする
-        this.inputBlocker = this.add.rectangle(640, 360, 1280, 720)
-            .setInteractive() // これが重要。背面のクリックを防ぐ
-            .setVisible(false); // 通常は非表示だが、必要に応じて表示
-        // コンテナの最後に追加して、常に最前面になるようにする
-        this.add([this.inputBlocker]);
         
-        // 3. レイヤーに追加する
-        this.layer.message.add(this.messageWindow);
-        
-        // 4. ScenarioManagerを生成
+        // ★★★ messageWindowはSceneのadd.existingで追加する ★★★
+        // MessageWindow自身がContainerを継承しているので、add.existingで追加するのが正しい
+        // this.layer.message.add(this.messageWindow); は MessageWindow自身のadd.existing で置き換わる
+        // this.add.existing(this.messageWindow); // MessageWindowコンストラクタ内で既に行われているはず
+
         this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
         // --- タグハンドラの登録 ---
         this.scenarioManager.registerTag('chara_show', handleCharaShow);
@@ -129,11 +132,11 @@ export default class NovelOverlayScene extends Phaser.Scene {
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
-         // --- ゲーム開始 ---
+           // --- ゲーム開始 ---
         this.scenarioManager.load(this.startScenario);
         this.input.on('pointerdown', () => { 
-            // ブロッカーが常に最前面に来るようにする
-            this.children.bringToTop(this.inputBlocker); 
+            // inputBlockerを常に最前面に持ってくる (depthが低い場合)
+            this.children.bringToTop(this.inputBlocker); // これはSceneのchildrenに対する操作
             this.scenarioManager.onClick(); 
         });
         this.time.delayedCall(10, () => { this.scenarioManager.next(); }, [], this);
