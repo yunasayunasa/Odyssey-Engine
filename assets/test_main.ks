@@ -12,8 +12,8 @@
 
 ; ★★★ [walk] の代替として、以下の2行を挿入 ★★★
 ; 1. ロジャーを移動させながら、同時にループジャンプアニメーションを開始
-[chara_jump name="roger" loop="true" nowait="true"] ; ロジャーの跳ねるアニメーションを開始（シナリオは進む）
-[move name="roger" x=1000 alpha=1 time=1000] ; ロジャーをx=1000まで移動させる
+[chara_jump name="roger" loop="true" nowait="true"] 
+[move name="roger" x=1000 alpha=1 time=1000] 
 
 [wait time=1000]
 [stop_anim name="roger"] 
