@@ -15,7 +15,7 @@
 yuna:「次回のゲームコーナーの更新予告なんだよ！」
 
 roger:「次回はなんと！あのゲームコーナー[br]最初の作品、「演算世界とチョコレイト」が、ばばーんとリメイク！」
-[wait time=500] ; セリフの後に少し間を取ってから画像表示
+[wait time=500] 
 
 [image storage="enzan2" layer="cg" time=500] 
 [wait time=500]
