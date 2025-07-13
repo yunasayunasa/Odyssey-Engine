@@ -5,15 +5,37 @@
 [playbgm storage="cafe" time=1000]
 [bg storage="umi" time=1500]
 [wait time=1500]
+[chara_show name="yuna" pos="left" y=900 visible=false]
+[move name="yuna" y=450 alpha=1 time=1000 nowait="ture"]
 
 
-[chara_show name="yuna" pos="center" time=500]
-
-yuna:「ようこそ、オデッセイエンジンの世界へ！」
-
-
-[p]
-
+[chara_show name="roger" pos="right" x=1400 visible=false]
+[walk name="roger" x=1000 alpha=1 time=1000 ]
+[wait time=1000]
+yuna:次回のゲームコーナーの更新予告なんだよ！
+roger:次回はなんと！あのゲームコーナー[br]最初の作品、「演算世界とチョコレイト」が、ばばーんとリメイク！
+[image storage="enzan2" time=500]
+[wait time=500]
+[chara_jump name="yuna" nowaiat="true"]
+yuna:ゲームブックの楽しさをそのままノベルゲームとして完全再現！
+roger:君は全ルート制覇出来るかな？
+yuna:追加ルートもあるんだよ！楽しみなんだよ！
+[chara_jump name="yuna" loop="true" nowaiat="true"]
+[chara_jump name="roger" loop="true" nowaiat="true"]
+[freeimage layer="cg"]
+[image storage="enzan2" ]
+「演算世界とチョコレイトRE:BIRTH」は、8月1日更新予定！お楽しみに！
+[wait time=1500]
+[stopanim name="yuna"]
+[stopanim name="roger"]
+roger:ところで、この動画とはまた違うエンジンだね？
+yuna:RE:BIRTHを作ったエンジンは使いにくかったから自作したんだよ！
+[vibrate name="roger" time=1000 nowait="true"]
+roger:ええ！作った！？
+yuna:ばいばーいなんだよ！
+[fadein time=1500]
+[wait time=1500]
+[s]
 ; ... (以降のシナリオ) ...
 ; --- 1. 変数の初期化と起動回数の確認 ---
 [eval exp="f.test_item = 0"]
