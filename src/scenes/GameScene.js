@@ -82,14 +82,14 @@ export default class GameScene extends Phaser.Scene {
         // 数値が大きいほど手前に描画される
         this.layer.background = this.add.container(0, 0).setDepth(0);  // 最奥
         this.layer.cg = this.add.container(0, 0).setDepth(5);         // 背景CGなど
-        this.layer.character = this.add.container(0, 0).setDepth(10); // キャラクター
+        this.layer.character = this.add.container(0, 0).setDepth(0); // キャラクター
         this.layer.message = this.add.container(0, 0).setDepth(20);   // メッセージウィンドウ、選択肢ボタン
 
         // ★★★ GameSceneのコンストラクタで生成される inputBlocker も depth 設定 ★★★
         this.choiceInputBlocker = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height)
             .setInteractive()
             .setVisible(false)
-            .setDepth(25); // メッセージウィンドウよりさらに手前（最前面）
+            .setDepth(2); // メッセージウィンドウよりさらに手前（最前面）
 
         // --- マネージャー/UIクラスの生成 ---
         this.configManager = this.sys.registry.get('configManager');
