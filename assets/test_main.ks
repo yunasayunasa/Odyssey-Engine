@@ -11,7 +11,8 @@ yuna:「ようこそ、&f.player_name さん！このテストゲームの起動
 
 ; --- 2. クリック待ちとセーブのテスト ---
 [chara_show name="yuna" pos="center" time=500]
-[p] ; ここでクリック待ちになる
+[p] 
+; ここでクリック待ちになる
 yuna:「この状態で、メニューからセーブしてみてください。」
 yuna:「ロードしたら、ここから再開できるはずです。」
 [p]
@@ -20,7 +21,8 @@ yuna:「ロードしたら、ここから再開できるはずです。」
 kaito:「アイテムをゲットしますか？」
 [link target="*get_item" text="ゲットする"]
 [link target="*no_item" text="しない"]
-[p] ; 選択肢の直前でセーブ＆ロードを試す
+[p] 
+; 選択肢の直前でセーブ＆ロードを試す
 
 *get_item
 [eval exp="f.test_item = 1"]
