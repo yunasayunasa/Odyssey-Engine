@@ -3,16 +3,19 @@ export default class SoundManager {
         this.scene = scene;
         this.configManager = configManager;
         this.currentBgm = null;
-        this.currentBgmKey = null; // ★ プロパティとして明示的に初期化
+        this.currentBgmKey = null;
 
-        // ★★★ AudioContextの遅延初期化 ★★★
-        this.audioContext = null; 
-        // ユーザーの最初の操作でAudioContextを有効化する
+        this.audioContext = null;
+        // ★★★ 合成音声関連のプロパティを追加 ★★★
+        this.synthEnabled = false; // 合成音声が有効か
+        this.synthEnablePromise = null; // 合成音声の有効化を待つPromise
+        this.synthWaitingButton = null; // 合成音声許可ボタン
+
+        // AudioContextの初期化
         this.scene.input.once('pointerdown', () => {
             if (this.scene.sound.context.state === 'suspended') {
                 this.scene.sound.context.resume();
             }
-            // PhaserのAudioContextを流用する
             this.audioContext = this.scene.sound.context;
             console.log("AudioContext is ready.");
         }, this);
@@ -114,5 +117,62 @@ export default class SoundManager {
 
         oscillator.start(this.audioContext.currentTime);
         oscillator.stop(this.audioContext.currentTime + duration);
+    }
+     /**
+     * 合成音声の有効化状態をチェックし、必要であればユーザーに許可を求める。
+     * @returns {Promise<void>} 合成音声が利用可能になったら解決するPromise
+     */
+    async ensureSynthEnabled() {
+        if (this.synthEnabled) {
+            return Promise.resolve();
+        }
+        if (this.synthEnablePromise) {
+            return this.synthEnablePromise; // 既に許可を待機中
+        }
+
+        this.synthEnablePromise = new Promise(resolve => {
+            // ★ 合成音声許可ボタンを表示する
+            const buttonText = "合成音声の再生を許可しますか？\n（クリックで開始）";
+            this.synthWaitingButton = this.scene.add.text(
+                this.scene.scale.width / 2,
+                this.scene.scale.height / 2,
+                buttonText,
+                {
+                    fontSize: '32px',
+                    fill: '#fff',
+                    backgroundColor: '#0055aa',
+                    padding: { x: 20, y: 10 },
+                    align: 'center'
+                }
+            )
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .setDepth(999); // 最前面に表示
+
+            this.synthWaitingButton.on('pointerdown', () => {
+                // ボタンがクリックされたら、合成音声を有効化
+                try {
+                    window.speechSynthesis.resume(); // 一応resumeを試みる
+                    // ダミーの発話を試みて、許可状態にする
+                    const dummyUtterance = new SpeechSynthesisUtterance(' ');
+                    window.speechSynthesis.speak(dummyUtterance);
+                    window.speechSynthesis.cancel(); // 即座にキャンセル
+
+                    this.synthEnabled = true;
+                    if (this.synthWaitingButton) {
+                        this.synthWaitingButton.destroy(); // ボタンを削除
+                        this.synthWaitingButton = null;
+                    }
+                    console.log("合成音声が有効になりました。");
+                    resolve(); // Promiseを解決
+                } catch (e) {
+                    console.error("合成音声の有効化に失敗しました。", e);
+                    // 失敗してもシナリオが止まらないようにresolve
+                    resolve();
+                }
+            });
+            console.log("合成音声の許可を待機しています...");
+        });
+        return this.synthEnablePromise;
     }
 }
