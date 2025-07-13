@@ -89,7 +89,7 @@ export default class GameScene extends Phaser.Scene {
         this.choiceInputBlocker = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height)
             .setInteractive()
             .setVisible(false)
-            .setDepth(2); // メッセージウィンドウよりさらに手前（最前面）
+            .setDepth(0); // メッセージウィンドウよりさらに手前（最前面）
 
         // --- マネージャー/UIクラスの生成 ---
         this.configManager = this.sys.registry.get('configManager');
