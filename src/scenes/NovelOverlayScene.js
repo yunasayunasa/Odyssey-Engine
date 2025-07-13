@@ -73,9 +73,7 @@ export default class NovelOverlayScene extends Phaser.Scene {
         this.layer.character = this.add.container(0, 0);
         this.layer.cg = this.add.container(0, 0);
         this.layer.message = this.add.container(0, 0);
-this.inputBlocker = this.add.rectangle(640, 360, 1280, 720)
-        .setInteractive()
-        .setVisible(false);
+
           this.configManager = this.sys.registry.get('configManager');
         this.stateManager = new StateManager();
         this.soundManager = new SoundManager(this, this.configManager);
