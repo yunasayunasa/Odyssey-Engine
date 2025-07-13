@@ -47,7 +47,7 @@ roger:「ところで、この動画とはまた違うエンジンだね？」
 
 yuna:「RE:BIRTHを作ったエンジンは使いにくかったから自作したんだよ！」
 [vibrate time=1000 power=0.01] 
-
+[shake name="roger" time=1000 nowait="true"]
 
 roger:「ええ！作った！？」 
 
