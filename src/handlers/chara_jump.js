@@ -7,38 +7,34 @@
  */
 export function handleCharaJump(manager, params) {
     const name = params.name;
-    if (!name) {
-        console.warn('[chara_jump] nameは必須です。');
-        return; // 同期的に完了
-    }
+    if (!name) { console.warn('[chara_jump] nameは必須です。'); return Promise.resolve(); }
     const chara = manager.scene.characters[name];
-    if (!chara) {
-        console.warn(`[chara_jump] キャラクター[${name}]が見つかりません。`);
-        return; // 同期的に完了
-    }
+    if (!chara) { console.warn(`[chara_jump] キャラクター[${name}]が見つかりません。`); return Promise.resolve(); }
 
     const noWait = params.nowait === 'true';
     const loop = params.loop === 'true';
 
-    // ★ nowaitでない場合、Promiseを返して完了を待つ
+    // ★★★ 修正箇所: loop=true の場合は、Promiseを即時解決する ★★★
+    if (loop) {
+        createJumpTween(manager, chara, params, null); // アニメーションは開始
+        return Promise.resolve(); // ★ 即座に解決し、シナリオを進める
+    }
+
+    // noWaitでない場合（かつloopでない場合）、Promiseを返して完了を待つ
     if (!noWait) {
         return new Promise(resolve => {
-            // ★ アニメーション完了時にresolveを呼ぶ共通のコールバック
             const onCompleteCallback = () => {
-                // ループしない場合のみ完了を通知する
-                if (!loop) {
-                    resolve();
-                }
+                resolve();
             };
-            // アニメーションを実行
             createJumpTween(manager, chara, params, onCompleteCallback);
         });
     } else {
-        // ★ nowaitの場合、Promiseを返さずにアニメーションを開始するだけ
+        // nowaitの場合、Promiseを返さずにアニメーションを開始するだけ
         createJumpTween(manager, chara, params, null);
-        // すぐに次の行に進む（同期的に完了）
+        return Promise.resolve(); // 即座に解決し、シナリオを進める
     }
 }
+
 
 /**
  * ジャンプのTweenアニメーションを作成・実行するヘルパー関数
