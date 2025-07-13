@@ -13,7 +13,7 @@ export default class ActionScene extends Phaser.Scene {
         
         // --- オーバーレイ表示リクエスト ---
         this.time.delayedCall(3000, () => {
-            console.log("ActionScene: request-overlay を発行");
+            console.log("ActionScene: request-overlay を発行、更新用ログ");
             // ★★★ 修正箇所: シーンの一時停止と入力無効化はSystemSceneに任せる ★★★
             // this.scene.pause(); // 削除
             this.scene.get('SystemScene').events.emit('request-overlay', { 
