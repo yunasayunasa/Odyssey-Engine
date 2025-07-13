@@ -41,7 +41,7 @@ import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
 import { handleVideo } from '../handlers/video.js';
 import { handleStopVideo } from '../handlers/stopvideo.js';
-
+import { handleVoice } from '../handlers/voice.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -137,7 +137,7 @@ export default class GameScene extends Phaser.Scene {
 this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
 this.scenarioManager.registerTag('stopvideo', handleStopVideo);
-      
+      this.scenarioManager.registerTag('voice', handleVoice);
      
 
         // --- ゲーム開始ロジック ---

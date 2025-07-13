@@ -41,7 +41,7 @@ import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
 import { Layout } from '../core/Layout.js';
 import { handleVideo } from '../handlers/video.js';
-
+import { handleVoice } from '../handlers/voice.js';
 export default class NovelOverlayScene extends Phaser.Scene {
     constructor() {
         super('NovelOverlayScene');
@@ -132,6 +132,7 @@ export default class NovelOverlayScene extends Phaser.Scene {
         this.scenarioManager.registerTag('fadeout', handleFadeout);
 this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
+this.scenarioManager.registerTag('voice', handleVoice);
            // --- ゲーム開始 ---
         this.scenarioManager.load(this.startScenario);
         this.input.on('pointerdown', () => { 
