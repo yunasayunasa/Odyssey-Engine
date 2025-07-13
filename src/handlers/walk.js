@@ -1,4 +1,4 @@
-// src/handlers/walk.js (最終版)
+// src/handlers/walk.js (最終版 - x,y省略対応)
 
 /**
  * [walk] タグの処理
@@ -16,24 +16,23 @@ export function handleWalk(manager, params) {
         if (!chara) { console.warn(`[walk] キャラクター[${name}]が見つかりません。`); resolve(); return; }
 
         const time = Number(params.time) || 2000;
+        // ★★★ 修正箇所: targetX, targetY のデフォルト値を chara.x, chara.y とする ★★★
         const targetX = params.x !== undefined ? Number(params.x) : chara.x;
-        // ★ 修正箇所: 最終Y座標を保持する
-        const finalY = params.y !== undefined ? Number(params.y) : chara.y; 
-        
+        const targetY = params.y !== undefined ? Number(params.y) : chara.y; 
+
         const walkHeight = Number(params.height) || 10;
         const walkSpeed = Number(params.speed) || 150;
 
-        // 上下動のオフセットをデータ領域に設定
-        // ★ 修正箇所: baseYもデータ領域で管理し、onUpdateで常に合成する
-        chara.setData('baseX', chara.x); // Xもデータ領域で管理するとより統一的
-        chara.setData('baseY', chara.y); 
-        chara.setData('walkOffsetY', 0);
+        // ★★★ 修正箇所: データプロパティの初期化を現在の位置で正確に行う ★★★
+        chara.setData('baseX', chara.x); // walk開始時のX座標を初期基準線とする
+        chara.setData('currentYBase', chara.y); // walk開始時のY座標を初期基準線とする
+        chara.setData('walkOffsetY', 0); // 初期揺れオフセットは0
 
-        // --- 1. メインの移動Tween（X, Y座標の基準値を操作） ---
+        // --- 1. メインの移動Tween（X, Y座標の基準線を操作） ---
         const moveTween = manager.scene.tweens.add({
-            targets: chara.data.values, // データ領域をターゲット
-            baseX: targetX,             // baseXを動かす
-            baseY: finalY,              // ★修正箇所: baseYを最終Y座標へ動かす
+            targets: chara.data.values,
+            baseX: targetX,             // baseXを最終X座標まで動かす
+            currentYBase: targetY,      // currentYBaseを最終Y座標まで動かす
             duration: time,
             ease: 'Linear'
         });
@@ -48,11 +47,10 @@ export function handleWalk(manager, params) {
             repeat: -1
         });
 
-        // --- 3. 毎フレーム、2つの結果を合成して実際の座標に反映 ---
+        // --- 3. 毎フレーム、2つのTweenの結果を合成して実際の座標に反映 ---
         const onUpdate = () => {
-            // ★修正箇所: baseXとbaseYにオフセットを合成
             chara.x = chara.getData('baseX');
-            chara.y = chara.getData('baseY') + chara.getData('walkOffsetY');
+            chara.y = chara.getData('currentYBase') + chara.getData('walkOffsetY');
         };
         manager.scene.events.on('update', onUpdate);
 
@@ -61,13 +59,13 @@ export function handleWalk(manager, params) {
             walkTween.stop();
             manager.scene.events.off('update', onUpdate);
             
-            // ★ 修正箇所: データもここで削除
+            // 使用したデータを削除
             chara.data.remove('baseX');
-            chara.data.remove('baseY');
+            chara.data.remove('currentYBase');
             chara.data.remove('walkOffsetY');
 
-            // 最終座標を正確に設定
-            chara.setPosition(targetX, finalY); // ★修正箇所: 最終Y座標を設定
+            // 最終座標を正確に設定 (揺れが止まり、指定位置に停止)
+            chara.setPosition(targetX, targetY); 
             
             resolve();
         });
