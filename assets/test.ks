@@ -94,10 +94,20 @@ yuna:「次に、`scene2.ks`をサブルーチンとして呼び出します。�
 
 yuna:「サブルーチンから戻ってきました。次はアクションシーンを呼び出します。」
 yuna:コールタグによるテストです。
+; --- 5. アクションシーン連携([jump]と[return-to-novel])のテスト ---
+kaito:「いよいよアクションシーンへ突入！戻ってきたら結果を確認しよう。」
+
+; ★★★ jumpタグにparams属性を追加 ★★★
+; params属性内はJavaScriptのオブジェクトリテラル形式で記述。
+; 変数展開は embedVariables が自動で行うので、"&f.player_name;" のままOK
 [fadeout time=500]
 [wait time=500]
-[jump storage="ActionScene"]
+[jump storage="ActionScene" params="{player_level:f.test_item, player_name:'&f.player_name;', start_area:'bridge'}"] 
 [fadein time=500]
+
+kaito:「アクションシーンから戻ってきました！戦闘結果は &f.battle_result です。」
+[log exp="f.battle_result"]
+
 
 [chara_show name="yuna" pos="left" time="500"]
 [chara_show name="kaito" pos="right" time="500"]

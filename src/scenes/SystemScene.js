@@ -15,13 +15,17 @@ export default class SystemScene extends Phaser.Scene {
         }
 
         // --- 1. [jump] や [call] によるシーン遷移リクエストを処理 ---
-        this.events.on('request-scene-transition', (data) => {
+          this.events.on('request-scene-transition', (data) => {
             console.log(`[SystemScene] シーン遷移リクエスト: ${data.from} -> ${data.to}`, data.params);
 
-            // 現在のシーンの入力を完全に無効化
-            this.scene.get('GameScene').input.enabled = false;
-            this.scene.get('UIScene').input.enabled = false;
-
+            // 現在のノベルパートのシーンの入力を完全に無効化 (もし有効であれば)
+            if (this.scene.isActive('GameScene')) {
+                this.scene.get('GameScene').input.enabled = false;
+            }
+            if (this.scene.isActive('UIScene')) {
+                this.scene.get('UIScene').input.enabled = false;
+            }
+            
             // シーンを停止
             this.scene.stop('GameScene');
             this.scene.stop('UIScene');
@@ -29,7 +33,9 @@ export default class SystemScene extends Phaser.Scene {
             // 新しいシーンを開始
             this.scene.start(data.to, {
                 charaDefs: this.globalCharaDefs,
-                startScenario: data.to === 'GameScene' ? 'test.ks' : null,
+                // ★★★ 修正箇所: data.params を 'transitionParams' というキーで渡す ★★★
+                transitionParams: data.params, 
+                startScenario: data.to === 'GameScene' ? 'test_main.ks' : null, // GameSceneに戻るならシナリオ指定
                 startLabel: null,
             });
         });

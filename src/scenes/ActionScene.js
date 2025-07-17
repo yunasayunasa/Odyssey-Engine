@@ -3,6 +3,14 @@
 export default class ActionScene extends Phaser.Scene {
     constructor() {
         super('ActionScene');
+        this.receivedParams = null; // ★ 渡されたパラメータを保持するプロパティ
+    }
+
+    init(data) {
+        // ★★★ 修正箇所: SystemSceneから渡されたパラメータを受け取る ★★★
+        // SystemSceneで渡したキー名 ('transitionParams') と一致させる
+        this.receivedParams = data.transitionParams || {}; 
+        console.log("ActionScene: init 完了。受け取ったパラメータ:", this.receivedParams);
     }
 
     create() {
@@ -11,6 +19,15 @@ export default class ActionScene extends Phaser.Scene {
         const player = this.add.text(100, 360, 'PLAYER', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
         this.tweens.add({ targets: player, x: 1180, duration: 4000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 });
         
+        // ★★★ 受け取ったパラメータを画面に表示して確認する (テスト用) ★★★
+        let displayX = 100;
+        let displayY = 100;
+        this.add.text(displayX, displayY - 40, "Received Params:", { fontSize: '28px', fill: '#fff' });
+        for (const key in this.receivedParams) {
+            this.add.text(displayX, displayY, `${key}: ${this.receivedParams[key]}`, { fontSize: '24px', fill: '#fff' });
+            displayY += 30;
+        }
+    
         // --- オーバーレイ表示リクエスト ---
         this.time.delayedCall(3000, () => {
             console.log("ActionScene: request-overlay を発行");
