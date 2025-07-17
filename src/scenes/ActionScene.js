@@ -1,5 +1,5 @@
 // ActionScene.js (最終版)
-
+import CoinHud from '../ui/CoinHud.js';
 export default class ActionScene extends Phaser.Scene {
     constructor() {
         super('ActionScene');
@@ -19,14 +19,17 @@ export default class ActionScene extends Phaser.Scene {
         const player = this.add.text(100, 360, 'PLAYER', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
         this.tweens.add({ targets: player, x: 1180, duration: 4000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 });
         
-        // ★★★ 受け取ったパラメータを画面に表示して確認する (テスト用) ★★★
-        let displayX = 100;
-        let displayY = 100;
-        this.add.text(displayX, displayY - 40, "Received Params:", { fontSize: '28px', fill: '#fff' });
-        for (const key in this.receivedParams) {
-            this.add.text(displayX, displayY, `${key}: ${this.receivedParams[key]}`, { fontSize: '24px', fill: '#fff' });
-            displayY += 30;
-        }
+       // src/scenes/ActionScene.js の create() メソッド内 (例)
+
+    // プレイヤーの名前をゲーム内で使う
+    // const playerName = this.receivedParams.player_name;
+    // const playerLevel = this.receivedParams.player_level;
+    // const startArea = this.receivedParams.start_area;
+
+    // console.log(`[ActionScene] プレイヤー名: ${playerName}, レベル: ${playerLevel}, 開始エリア: ${start_area}`);
+
+    // Three.jsの初期化ロジックに渡す
+    // initialize3DGame({ level: playerLevel, name: playerName, area: startArea });
     
         // --- オーバーレイ表示リクエスト ---
         this.time.delayedCall(3000, () => {

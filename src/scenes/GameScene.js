@@ -1,5 +1,6 @@
 import ScenarioManager from '../core/ScenarioManager.js';
 import SoundManager from '../core/SoundManager.js';
+import CoinHud from '../ui/CoinHud.js';
 import StateManager from '../core/StateManager.js';
 import MessageWindow from '../ui/MessageWindow.js';
 import { handleCharaShow } from '../handlers/chara_show.js';
@@ -98,6 +99,13 @@ export default class GameScene extends Phaser.Scene {
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
         this.layer.message.add(this.messageWindow);
         this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
+
+         // ★★★ コイン表示HUDをインスタンス化 ★★★
+    this.coinHud = new CoinHud(this, 100, 50); // 画面左上 (X=100, Y=50) に配置
+    
+    // ★★★ ゲームループの 'update' イベントで f.coin の値を監視し、HUDを更新 ★★★
+    this.events.on('update', this.updateCoinHud, this);
+    // または、StateManagerにf.coinの変更を通知する仕組みを作る（より高度）
         
         // --- タグハンドラの登録 ---
         this.scenarioManager.registerTag('chara_show', handleCharaShow);
@@ -162,6 +170,13 @@ this.scenarioManager.registerTag('stopvideo', handleStopVideo);
         this.input.on('pointerdown', () => this.scenarioManager.onClick());
         console.log("GameScene: create 完了");
     }
+
+    // ★★★ コインHUDを更新するメソッドを追加 ★★★
+updateCoinHud() {
+    const currentCoin = this.stateManager.f.coin || 0; // f.coin の現在の値を取得
+    if (this.coinHud.coinText.text !== currentCoin.toString()) { // 表示が変わった場合のみ更新
+        this.coinHud.setCoin(currentCoin);
+    }}
 
  // ★★★ セーブ処理 ★★★
      // ★★★ セーブ処理 (スロット0をオートセーブスロットとして使う) ★★★
