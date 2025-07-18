@@ -1,39 +1,36 @@
-// ActionScene.js (最終版)
-import CoinHud from '../ui/CoinHud.js';
+// src/scenes/ActionScene.js (最終版 - 全ての改善を統合)
+
+import CoinHud from '../ui/CoinHud.js'; // CoinHudは直接使用されていませんが、もし使うなら残します
 export default class ActionScene extends Phaser.Scene {
     constructor() {
         super('ActionScene');
-        this.receivedParams = null; // ★ 渡されたパラメータを保持するプロパティ
+        this.receivedParams = null; 
+        this.eventEmitted = false; // ★★★ 追加: イベント発行済みフラグ ★★★
+        
+        // ★★★ 追加: ボタンへの参照をプロパティとして初期化 (stop()で破棄するため) ★★★
+        this.winButton = null;
+        this.loseButton = null;
+        this.playerObject = null; // 例: createで作成するplayerテキストオブジェクト
     }
 
     init(data) {
-        // ★★★ 修正箇所: SystemSceneから渡されたパラメータを受け取る ★★★
-        // SystemSceneで渡したキー名 ('transitionParams') と一致させる
         this.receivedParams = data.transitionParams || {}; 
         console.log("ActionScene: init 完了。受け取ったパラメータ:", this.receivedParams);
+        
+        this.eventEmitted = false; // ★★★ init時にフラグをリセット ★★★
     }
 
     create() {
         console.log("ActionScene: create 開始");
         this.cameras.main.setBackgroundColor('#4a86e8');
-        const player = this.add.text(100, 360, 'PLAYER', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
-        this.tweens.add({ targets: player, x: 1180, duration: 4000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 });
+        // playerオブジェクトもプロパティに保持
+        this.playerObject = this.add.text(100, 360, 'PLAYER', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
+        this.tweens.add({ targets: this.playerObject, x: 1180, duration: 4000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 });
         
-       // src/scenes/ActionScene.js の create() メソッド内 (例)
-
-    // プレイヤーの名前をゲーム内で使う
-    // const playerName = this.receivedParams.player_name;
-    // const playerLevel = this.receivedParams.player_level;
-    // const startArea = this.receivedParams.start_area;
-
-    // console.log(`[ActionScene] プレイヤー名: ${playerName}, レベル: ${playerLevel}, 開始エリア: ${start_area}`);
-
-    // Three.jsの初期化ロジックに渡す
-    // initialize3DGame({ level: playerLevel, name: playerName, area: startArea });
-    
         // --- オーバーレイ表示リクエスト ---
         this.time.delayedCall(3000, () => {
             console.log("ActionScene: request-overlay を発行");
+            // オーバーレイは既存シーンを停止しないため、eventEmittedフラグは通常使わない
             this.scene.get('SystemScene').events.emit('request-overlay', { 
                 from: this.scene.key,
                 scenario: 'overlay_test.ks'
@@ -41,33 +38,78 @@ export default class ActionScene extends Phaser.Scene {
         });
 
         // --- ★★★ 勝利ボタン ★★★ ---
-        const winButton = this.add.text(320, 600, 'ボスに勝利してノベルパートに戻る', { fontSize: '32px', fill: '#0c0', backgroundColor: '#000' })
+        this.winButton = this.add.text(320, 600, 'ボスに勝利してノベルパートに戻る', { fontSize: '32px', fill: '#0c0', backgroundColor: '#000' })
             .setOrigin(0.5).setInteractive({ useHandCursor: true });
         
-        winButton.on('pointerdown', () => {
-            console.log("ActionScene: 勝利ボタンクリック -> return-to-novel を発行");
-            this.scene.get('SystemScene').events.emit('return-to-novel', {
-                from: this.scene.key,
-                params: { 'f.battle_result': 'win' } // 勝利結果を渡す
-            });
+        this.winButton.on('pointerdown', () => {
+            // ★★★ 修正箇所: クリック時にボタンの入力を即座に無効化 ★★★
+            this.winButton.disableInteractive(); 
+            if (this.loseButton) this.loseButton.disableInteractive(); 
+
+            // ★★★ 修正箇所: イベントがまだ発行されていない場合のみ発行 ★★★
+            if (!this.eventEmitted) {
+                this.eventEmitted = true; 
+                console.log("ActionScene: 勝利ボタンクリック -> return-to-novel を発行");
+                this.scene.get('SystemScene').events.emit('return-to-novel', {
+                    from: this.scene.key,
+                    params: { 'f.battle_result': 'win' } 
+                });
+            } else {
+                console.warn("ActionScene: return-to-novel イベントは既に発行されています。スキップします。");
+            }
         });
 
         // --- ★★★ 敗北ボタン ★★★ ---
-        const loseButton = this.add.text(960, 600, 'ボスに敗北してノベルパートに戻る', { fontSize: '32px', fill: '#c00', backgroundColor: '#000' })
+        this.loseButton = this.add.text(960, 600, 'ボスに敗北してノベルパートに戻る', { fontSize: '32px', fill: '#c00', backgroundColor: '#000' })
             .setOrigin(0.5).setInteractive({ useHandCursor: true });
         
-        loseButton.on('pointerdown', () => {
-            console.log("ActionScene: 敗北ボタンクリック -> return-to-novel を発行");
-            this.scene.get('SystemScene').events.emit('return-to-novel', {
-                from: this.scene.key,
-                params: { 'f.battle_result': 'lose' } // 敗北結果を渡す
-            });
+        this.loseButton.on('pointerdown', () => {
+            // ★★★ 修正箇所: クリック時にボタンの入力を即座に無効化 ★★★
+            this.loseButton.disableInteractive(); 
+            if (this.winButton) this.winButton.disableInteractive(); 
+
+            // ★★★ 修正箇所: イベントがまだ発行されていない場合のみ発行 ★★★
+            if (!this.eventEmitted) {
+                this.eventEmitted = true; 
+                console.log("ActionScene: 敗北ボタンクリック -> return-to-novel を発行");
+                this.scene.get('SystemScene').events.emit('return-to-novel', {
+                    from: this.scene.key,
+                    params: { 'f.battle_result': 'lose' } 
+                });
+            } else {
+                console.warn("ActionScene: return-to-novel イベントは既に発行されています。スキップします。");
+            }
         });
+        console.log("ActionScene: create 完了");
     }
 
-    // シーンが resume された時に、入力を再有効化する (SystemSceneがやるのでこのメソッドは不要)
-    // resume() {
-    //     // console.log("ActionScene: resume されました。入力を再有効化します。");
-    //     // this.input.enabled = true;
-    // }
+    // ★★★ stop() メソッドを追加し、リソースを破棄 ★★★
+    stop() {
+        super.stop();
+        console.log("ActionScene: stop されました。UI要素を破棄します。");
+
+        // シーン停止時にボタンがあればリスナー解除と破棄
+        if (this.winButton) { 
+            this.winButton.off('pointerdown'); 
+            this.winButton.destroy(); 
+            this.winButton = null; 
+        }
+        if (this.loseButton) { 
+            this.loseButton.off('pointerdown'); 
+            this.loseButton.destroy(); 
+            this.loseButton = null; 
+        }
+
+        // playerオブジェクトとそれに付随するTweenも破棄
+        if (this.playerObject) {
+            this.tweens.killTweensOf(this.playerObject); // Tweenがあれば停止・破棄
+            this.playerObject.destroy(); 
+            this.playerObject = null;
+        }
+    }
+
+    resume() {
+        super.resume();
+        console.log("ActionScene: resume されました。");
+    }
 }
