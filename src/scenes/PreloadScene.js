@@ -118,3 +118,4 @@ export default class PreloadScene extends Phaser.Scene {
         if (this.percentText) { this.percentText.destroy(); this.percentText = null; }
         if (this.loadingText) { this.loadingText.destroy(); this.loadingText = null; }
     }
+}
