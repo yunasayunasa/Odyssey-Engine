@@ -1,27 +1,18 @@
-// src/ui/MessageWindow.js (最終版 - 全ての改善を統合)
-
 const Container = Phaser.GameObjects.Container;
 
 export default class MessageWindow extends Container {
     constructor(scene, soundManager, configManager) {
         super(scene, 0, 0);
 
-        this.scene = scene; 
+        this.scene = scene; // ★ シーンへの参照を保持
         this.soundManager = soundManager;
         this.configManager = configManager;
         this.charByCharTimer = null;
         this.isTyping = false;
 
-        // セーブ＆ロード用の状態保持プロパティ
+        // ★★★ セーブ＆ロード用の状態保持プロパティ ★★★
         this.currentText = '';
         this.currentSpeaker = null;
-
-        // --- UI要素のプロパティを初期化 (destroy()で破棄するため) ---
-        this.windowImage = null;
-        this.textObject = null;
-        this.nextArrow = null;
-        this.arrowTween = null;
-        this.configChangeListener = null; // ConfigManagerのリスナーを保持するプロパティ
 
         // --- ウィンドウとテキストのセットアップ ---
         const gameWidth = scene.scale.width;
@@ -49,8 +40,7 @@ export default class MessageWindow extends Container {
         // --- コンフィグと連携するテキスト速度 ---
         this.textDelay = 50; // デフォルト値
         this.updateTextSpeed(); // コンフィグから初期値を取得
-        // ★★★ ConfigManagerのリスナーをプロパティに保持 ★★★
-        this.configChangeListener = this.configManager.on('change:textSpeed', this.updateTextSpeed, this);
+        this.configManager.on('change:textSpeed', this.updateTextSpeed, this);
 
         // --- クリック待ちアイコン ---
         const iconX = (gameWidth / 2) + (this.windowImage.width / 2) - 60;
@@ -72,45 +62,14 @@ export default class MessageWindow extends Container {
         scene.add.existing(this);
     }
 
-    // ★★★ MessageWindowに destroy() メソッドを追加 ★★★
-    destroy(fromScene = false) {
-        console.log("MessageWindow: destroy されました。");
-
-        // ConfigManagerのイベントリスナーを解除
-        if (this.configChangeListener) {
-            this.configManager.off('change:textSpeed', this.updateTextSpeed, this);
-            this.configChangeListener = null;
-        }
-
-        // テキスト表示タイマーを停止
-        if (this.charByCharTimer) {
-            this.charByCharTimer.remove();
-            this.charByCharTimer = null;
-        }
-
-        // アローのTweenを停止・破棄
-        if (this.arrowTween) {
-            this.arrowTween.stop();
-            this.arrowTween.remove();
-            this.arrowTween = null;
-        }
-        
-        // Phaserオブジェクトを破棄
-        if (this.windowImage) { this.windowImage.destroy(); this.windowImage = null; }
-        if (this.textObject) { this.textObject.destroy(); this.textObject = null; }
-        if (this.nextArrow) { this.nextArrow.destroy(); this.nextArrow = null; }
-
-        // 親クラス（Phaser.GameObjects.Container）のdestroyを呼び出す
-        super.destroy(fromScene);
-        console.log("MessageWindow: destroy 完了。");
-    }
-
+    // ★★★ コンフィグ値から速度を更新するヘルパーメソッド ★★★
     updateTextSpeed() {
         const textSpeedValue = this.configManager.getValue('textSpeed');
         this.textDelay = 100 - textSpeedValue;
         console.log(`テキスト表示速度を ${this.textDelay}ms に更新`);
     }
 
+    // ★★★ セッターをリネーム（より明確に） ★★★
     setTypingSpeed(newSpeed) {
         this.textDelay = newSpeed;
     }
@@ -119,48 +78,43 @@ export default class MessageWindow extends Container {
      * テキストを設定するメソッド
      * @param {string} text - 表示する全文
      * @param {boolean} useTyping - テロップ表示を使うかどうか
-     * @param {Function} [onComplete] - 表示完了時に呼ばれるコールバック関数（オプション）
-     * @param {string|null} [speaker] - 話者名（任意）
+     * @param {Function} onComplete - 表示完了時に呼ばれるコールバック関数
+     * @param {string|null} speaker - 話者名（任意）
      */
-    setText(text, useTyping = true, onComplete = null, speaker = null) { 
+    setText(text, useTyping = true, onComplete = () => {}, speaker = null) {
+        // ★★★ 現在の状態をプロパティとして保存 ★★★
         this.currentText = text;
         this.currentSpeaker = speaker;
 
-        if (this.textObject) this.textObject.setText(''); // nullチェック
+        this.textObject.setText('');
         if (this.charByCharTimer) {
             this.charByCharTimer.remove();
-            this.charByCharTimer = null; 
         }
 
         const typeSoundMode = this.configManager.getValue('typeSound');
 
         if (!useTyping || text.length === 0 || this.textDelay <= 0) {
-            if (this.textObject) this.textObject.setText(text); // nullチェック
+            this.textObject.setText(text);
             this.isTyping = false;
-            if(onComplete) onComplete(); 
+            if(onComplete) onComplete();
             return;
         }
         
         this.isTyping = true;
         let index = 0;
+        // ★ timerConfigをletに変更
         let timerConfig = {
             delay: this.textDelay,
             callback: () => {
                 if (typeSoundMode === 'se') {
                     this.soundManager.playSe('popopo');
                 }
-                if (this.textObject && timerConfig.fullText && index < timerConfig.fullText.length) { // nullチェック
-                    this.textObject.text += timerConfig.fullText[index];
-                    index++;
-                }
-                
-                if (index === (timerConfig.fullText ? timerConfig.fullText.length : 0)) { 
-                    if (this.charByCharTimer) { // nullチェック
-                        this.charByCharTimer.remove();
-                        this.charByCharTimer = null;
-                    }
+                this.textObject.text += timerConfig.fullText[index];
+                index++;
+                if (index === timerConfig.fullText.length) {
+                    this.charByCharTimer.remove();
                     this.isTyping = false;
-                    if(onComplete) onComplete();
+                    onComplete();
                 }
             },
             callbackScope: this,
@@ -173,47 +127,38 @@ export default class MessageWindow extends Container {
     
     skipTyping() {
         if (!this.isTyping) return;
-        
-        if (this.charByCharTimer && this.charByCharTimer.fullText && this.textObject) { // nullチェック
-            this.textObject.setText(this.charByCharTimer.fullText);
-        } else if (this.textObject) { // タイマーがない場合、currentTextを表示
-            this.textObject.setText(this.currentText); 
-        }
-        
-        if (this.charByCharTimer) {
-            this.charByCharTimer.remove();
-            this.charByCharTimer = null; 
-        }
+        this.textObject.setText(this.charByCharTimer.fullText);
+        this.charByCharTimer.remove();
         this.isTyping = false;
     }
 
+    // ★★★ ロード時にウィンドウの状態をリセットするためのメソッド ★★★
     reset() {
-        if (this.textObject) this.textObject.setText(''); // nullチェック
+        this.textObject.setText('');
         this.currentText = '';
         this.currentSpeaker = null;
         this.isTyping = false;
         if (this.charByCharTimer) {
             this.charByCharTimer.remove();
-            this.charByCharTimer = null; 
         }
         this.hideNextArrow();
     }
 
     showNextArrow() {
-        if (this.nextArrow) this.nextArrow.setVisible(true); // nullチェック
-        if (this.arrowTween && this.arrowTween.isPaused()) { 
+        this.nextArrow.setVisible(true);
+        if (this.arrowTween.isPaused()) {
             this.arrowTween.resume();
         }
     }
     
     hideNextArrow() {
-        if (this.nextArrow) this.nextArrow.setVisible(false); // nullチェック
-        if (this.arrowTween && this.arrowTween.isPlaying()) { 
+        this.nextArrow.setVisible(false);
+        if (this.arrowTween.isPlaying()) {
             this.arrowTween.pause();
         }
     }
 
     get textBoxWidth() {
-        return this.textObject ? this.textObject.width : 0; // nullチェック
+        return this.textObject.width;
     }
 }
