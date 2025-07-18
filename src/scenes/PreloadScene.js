@@ -1,11 +1,10 @@
-// src/scenes/PreloadScene.js (最終版)
+// src/scenes/PreloadScene.js (最終版 - 再調整)
 
 import ConfigManager from '../core/ConfigManager.js';
 
 export default class PreloadScene extends Phaser.Scene {
     constructor() {
-        super('PreloadScene'); // ★★★ 修正箇所: active:true を削除 ★★★
-        // UI要素への参照を初期化
+        super('PreloadScene'); // active:true はmain.jsで設定
         this.progressBar = null;
         this.progressBox = null;
         this.percentText = null;
@@ -15,10 +14,9 @@ export default class PreloadScene extends Phaser.Scene {
     preload() {
         console.log("PreloadScene: 起動。全アセットのロードを開始します。");
         
-        // --- 1. ロード画面UIの表示 ---
         this.progressBox = this.add.graphics();
         this.progressBox.fillStyle(0x222222, 0.8).fillRect(340, 320, 600, 50);
-        this.progressBar = this.add.graphics();
+        this.progressBar = this.add.graphics(); 
         this.percentText = this.add.text(640, 345, '0%', { fontSize: '24px', fill: '#fff' }).setOrigin(0.5);
         this.loadingText = this.add.text(640, 280, 'Now Loading...', { fontSize: '36px', fill: '#ffffff' }).setOrigin(0.5);
         
@@ -27,41 +25,29 @@ export default class PreloadScene extends Phaser.Scene {
             this.progressBar.clear().fillStyle(0xffffff, 1).fillRect(350, 330, 580 * value, 30);
         });
         
-        // --- 2. アセットのロード ---
         this.load.json('asset_define', 'assets/asset_define.json');
-        this.load.script('webfont', 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js');
+        this.load.script('webfont', 'https://ajax.googleapis.org/ajax/libs/webfont/1.6.26/webfont.js');
     }
 
     create() {
         console.log("PreloadScene: ロード完了。ゲームの初期設定を行います。");
         const assetDefine = this.cache.json.get('asset_define');
-        // ConfigManagerを初期化し、Registryにセット
         const configManager = new ConfigManager();
         this.registry.set('configManager', configManager);
         
-        // --- アセットをロードキューに追加 ---
-        for (const key in assetDefine.images) {
-            this.load.image(key, assetDefine.images[key]);
-        }
-        for (const key in assetDefine.sounds) {
-            this.load.audio(key, assetDefine.sounds[key]);
-        }
-        for (const key in assetDefine.videos) {
-            this.load.video(key, assetDefine.videos[key]);
-        }
-        // ゲームで使う可能性のあるシナリオファイルをすべてロード
+        for (const key in assetDefine.images) { this.load.image(key, assetDefine.images[key]); }
+        for (const key in assetDefine.sounds) { this.load.audio(key, assetDefine.sounds[key]); }
+        for (const key in assetDefine.videos) { this.load.video(key, assetDefine.videos[key]); }
         this.load.text('scene1.ks', 'assets/scene1.ks');
         this.load.text('scene2.ks', 'assets/scene2.ks');
         this.load.text('overlay_test.ks', 'assets/overlay_test.ks');
-        this.load.text('test.ks', 'assets/test.ks'); // テスト用
-        this.load.text('test_main.ks', 'assets/test_main.ks'); // テスト用
-        this.load.text('test_sub.ks', 'assets/test_sub.ks'); // テスト用
+        this.load.text('test.ks', 'assets/test.ks'); 
+        this.load.text('test_main.ks', 'assets/test_main.ks'); 
+        this.load.text('test_sub.ks', 'assets/test_sub.ks'); 
 
-        // --- ロード完了後の処理を定義 ---
         this.load.once('complete', () => {
             console.log("全アセットロード完了。");
             
-            // キャラクター定義の生成
             const charaDefs = {};
             for (const key in assetDefine.images) {
                 const parts = key.split('_');
@@ -72,22 +58,24 @@ export default class PreloadScene extends Phaser.Scene {
                 }
             }
             
-            // ★★★ SystemSceneを起動し、初期ゲーム開始を依頼する ★★★
-            // SystemSceneはまだ起動していないので launch する
+            // ★★★ SystemSceneを起動し、そのCREATEイベントを待つ ★★★
             this.scene.launch('SystemScene'); 
-            const systemScene = this.scene.get('SystemScene');
+            const systemScene = this.scene.get('SystemScene'); // 起動したので取得できるはず
+            
             if (systemScene) {
-                // SystemSceneの新しいメソッドを呼び出して、GameSceneとUISceneの起動を依頼
-                systemScene.startInitialGame(charaDefs, 'test.ks'); 
+                // SystemSceneが完全にcreateされたことを確認してからstartInitialGameを呼び出す
+                systemScene.events.once(Phaser.Scenes.Events.CREATE, () => {
+                    systemScene.startInitialGame(charaDefs, 'test.ks'); 
+                    console.log("PreloadScene: SystemSceneのCREATEイベント受信、初期ゲーム起動を依頼しました。");
+                });
             } else {
-                console.error("SystemSceneが見つかりません。ゲームの起動に失敗しました。");
+                console.error("PreloadScene: SystemSceneのインスタンスが取得できませんでした。ゲーム起動に失敗。");
             }
 
             // PreloadSceneは役割を終えるので停止する
             this.scene.stop(this.scene.key);
         });
         
-        // --- ロードを開始 ---
         this.load.start();
     }
 

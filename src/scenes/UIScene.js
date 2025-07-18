@@ -2,7 +2,7 @@
 
 export default class UIScene extends Phaser.Scene {
     constructor() {
-        super({ key: 'UIScene', active: false }); // ★★★ 修正箇所: active:false に変更 ★★★
+         super({ key: 'UIScene', active: false }); // ★★★ 修正箇所: active:false に変更 ★★★
 
         // UI要素と状態を、すべてプロパティとして初期化 (stop()で破棄するため)
         this.menuButton = null;

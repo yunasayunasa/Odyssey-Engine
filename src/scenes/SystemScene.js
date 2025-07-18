@@ -1,4 +1,4 @@
-// src/scenes/SystemScene.js (最終版 - 全ての改善を統合)
+// src/scenes/SystemScene.js (最終版 - 再調整)
 
 export default class SystemScene extends Phaser.Scene {
     constructor() {
@@ -11,9 +11,7 @@ export default class SystemScene extends Phaser.Scene {
     create() {
         console.log("SystemScene: 起動・イベント監視開始");
 
-        // SystemSceneのcreateはPreloadSceneによってlaunchされた後に呼ばれるので、
-        // gameSceneはここではまだアクティブではない可能性が高い。
-        // globalCharaDefsはPreloadSceneからstartInitialGameで受け取る。
+        // ★★★ 修正箇所: create時のglobalCharaDefs初期化は削除。startInitialGameで設定されるため。 ★★★
         // const gameScene = this.scene.get('GameScene');
         // if (gameScene && gameScene.charaDefs) {
         //     this.globalCharaDefs = gameScene.charaDefs;
@@ -33,25 +31,43 @@ export default class SystemScene extends Phaser.Scene {
             this.scene.start(sceneKey, params);
 
             if (waitForGameSceneLoadComplete) {
-                this.scene.get('GameScene').events.once('gameScene-load-complete', () => {
-                    this.scene.get('GameScene').input.enabled = true;
-                    // UISceneもここを通過する GameScene のロード後に有効化
-                    const uiScene = this.scene.get('UIScene');
-                    if (uiScene) { // UISceneがnullでないことを確認
-                        uiScene.input.enabled = true;
-                    }
-                    console.log("SystemScene: GameSceneとUISceneの入力を再有効化しました。");
+                // GameSceneへの遷移の場合、GameSceneからのカスタムイベント 'gameScene-load-complete' を待つ
+                const gameSceneInstance = this.scene.get('GameScene');
+                if (gameSceneInstance) { // GameSceneが起動していることを確認
+                    gameSceneInstance.events.once('gameScene-load-complete', () => {
+                        gameSceneInstance.input.enabled = true;
+                        
+                        const uiScene = this.scene.get('UIScene');
+                        if (uiScene && uiScene.scene.isActive()) { 
+                            uiScene.input.enabled = true;
+                        } else {
+                            console.warn("SystemScene: GameSceneロード完了時、UISceneがアクティブではありませんでした。");
+                        }
+                        console.log("SystemScene: GameSceneとUISceneの入力を再有効化しました。");
 
+                        this.isProcessingTransition = false;
+                        this.targetSceneKey = null; 
+                        console.log(`[SystemScene] GameSceneのロード完了イベント受信。遷移処理フラグをリセットしました。`);
+                    });
+                } else {
+                    console.error("SystemScene: GameSceneインスタンスが取得できません。gameScene-load-completeイベントを待てません。");
+                    // エラー時にはフラグをリセットするなど、リカバリー処理が必要
                     this.isProcessingTransition = false;
-                    this.targetSceneKey = null; 
-                    console.log(`[SystemScene] GameSceneのロード完了イベント受信。遷移処理フラグをリセットしました。`);
-                });
+                    this.targetSceneKey = null;
+                }
             } else {
-                this.scene.get(sceneKey).events.once(Phaser.Scenes.Events.CREATE, () => {
-                    this.isProcessingTransition = false;
-                    this.targetSceneKey = null; 
-                    console.log(`[SystemScene] シーン[${sceneKey}]のCREATEイベント受信。遷移処理フラグをリセットしました。`);
-                });
+                const targetSceneInstance = this.scene.get(sceneKey);
+                if (targetSceneInstance) { // ターゲットシーンが起動していることを確認
+                    targetSceneInstance.events.once(Phaser.Scenes.Events.CREATE, () => {
+                        this.isProcessingTransition = false;
+                        this.targetSceneKey = null; 
+                        console.log(`[SystemScene] シーン[${sceneKey}]のCREATEイベント受信。遷移処理フラグをリセットしました。`);
+                    });
+                } else {
+                     console.error(`SystemScene: シーン[${sceneKey}]インスタンスが取得できません。CREATEイベントを待てません。`);
+                     this.isProcessingTransition = false;
+                     this.targetSceneKey = null;
+                }
             }
         };
 
@@ -60,16 +76,17 @@ export default class SystemScene extends Phaser.Scene {
         this.events.on('request-scene-transition', (data) => {
             console.log(`[SystemScene] シーン遷移リクエスト: ${data.from} -> ${data.to}`, data.params);
 
-            if (this.scene.isActive('GameScene')) {
-                this.scene.get('GameScene').input.enabled = false;
-                this.scene.stop('GameScene');
+            // GameSceneの入力を無効化し、停止
+            const gameSceneInstance = this.scene.get('GameScene');
+            if (gameSceneInstance && gameSceneInstance.scene.isActive()) {
+                gameSceneInstance.input.enabled = false;
+                gameSceneInstance.scene.stop('GameScene');
             }
             
-            // ★★★ 修正箇所: UISceneは「停止しない」。入力だけ無効化。 ★★★
-            // UISceneがisActiveであるかどうかのチェックも重要
-            const uiScene = this.scene.get('UIScene');
-            if (uiScene && uiScene.scene.isActive()) { // UISceneがactiveなら入力を無効化
-                uiScene.input.enabled = false;
+            // UISceneは「停止しない」。入力だけ無効化。
+            const uiSceneInstance = this.scene.get('UIScene');
+            if (uiSceneInstance && uiSceneInstance.scene.isActive()) { 
+                uiSceneInstance.input.enabled = false;
             }
             
             startAndMonitorScene(data.to, {
@@ -96,7 +113,7 @@ export default class SystemScene extends Phaser.Scene {
                 charaDefs: this.globalCharaDefs,
                 resumedFrom: data.from,
                 returnParams: data.params,
-            }, true); // GameSceneへの復帰なので、常にgameScene-load-completeを待つ
+            }, true); 
         });
 
         /**
@@ -110,19 +127,18 @@ export default class SystemScene extends Phaser.Scene {
             console.log("SystemScene: 初期ゲーム起動リクエストを受信しました。");
 
             // UISceneを先に起動（またはアクティブ化）する
-            // config.sceneにUISceneが存在していれば get で取得できる
-            const uiScene = this.scene.get('UIScene');
-            if (!uiScene || !uiScene.scene.isActive()) { // UISceneがまだactiveでない場合
+            const uiSceneInstance = this.scene.get('UIScene');
+            if (!uiSceneInstance || !uiSceneInstance.scene.isActive()) { // UISceneがまだactiveでない場合
                 this.scene.launch('UIScene'); 
             }
-            // UISceneの入力はGameSceneのロード完了後に有効化されるので、ここでは何もしない
+            // UISceneのinputはGameSceneのロード完了後に有効化されるので、ここでは何もしない
 
             // startAndMonitorSceneを使ってGameSceneを起動
             startAndMonitorScene('GameScene', { 
                 charaDefs: this.globalCharaDefs,
                 startScenario: startScenarioKey,
                 startLabel: null,
-            }, true); // GameSceneはロード完了を待つ
+            }, true); 
             
             console.log("SystemScene: 初期ゲーム起動処理を開始しました。");
         };
@@ -141,7 +157,7 @@ export default class SystemScene extends Phaser.Scene {
             console.log(`[SystemScene] オーバーレイ終了`, data);
             this.scene.stop(data.from); 
             const returnScene = this.scene.get(data.returnTo);
-            if (returnScene) {
+            if (returnScene) { // returnToシーンが存在するか確認
                 returnScene.input.enabled = true; 
                 console.log(`SystemScene: シーン[${data.returnTo}]の入力を再有効化しました。`);
             }
