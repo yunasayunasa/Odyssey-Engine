@@ -1,9 +1,9 @@
-// src/scenes/GameScene.js (最終版 - バトルシーンからの復帰修正 & リソース管理)
+// src/scenes/GameScene.js (おおもとの状態からの修正 - バトルシーンからの復帰対応)
 
 import ScenarioManager from '../core/ScenarioManager.js';
 import SoundManager from '../core/SoundManager.js';
 import CoinHud from '../ui/CoinHud.js';
-// HpBarのimportを追加 (もしおおもとにまだなければ)
+// ★★★ 追加: HpBarをimport ★★★
 import HpBar from '../ui/HpBar.js'; 
 import StateManager from '../core/StateManager.js';
 import MessageWindow from '../ui/MessageWindow.js';
@@ -41,6 +41,7 @@ import { handleButton } from '../handlers/button.js';
 import { handleCall } from '../handlers/call.js';
 import { handleReturn } from '../handlers/return.js';
 import { handleStopAnim } from '../handlers/stop_anim.js';
+// import文に追加
 import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
 import { handleVideo } from '../handlers/video.js';
@@ -49,7 +50,7 @@ import { handleVoice } from '../handlers/voice.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
-        super('GameScene'); // main.jsでactive:falseが設定されるため、ここでは不要
+        super('GameScene');
         // プロパティの初期化
         this.scenarioManager = null;
         this.soundManager = null;
@@ -63,17 +64,18 @@ export default class GameScene extends Phaser.Scene {
         this.pendingChoices = [];
         this.uiButtons = [];
 
-        // HUD参照の初期化 (stop()で破棄するため)
+        // ★★★ 追加: HUD参照の初期化 (stop()で破棄するため) ★★★
         this.coinHud = null;
         this.playerHpBar = null;
 
-        // イベントリスナー参照の初期化 (stop()で解除するため)
+        // ★★★ 追加: イベントリスナー参照の初期化 (stop()で解除するため) ★★★
         this.updateCoinHudListener = null;
         this.updatePlayerHpBarListener = null;
         this.inputPointerDownListener = null; // this.input.on('pointerdown') のリスナー
 
         this.choiceInputBlocker = null; 
-        this.isSceneFullyReady = false; // ★★★ 追加: シーンが完全に準備完了したかのフラグ ★★★
+        // ★★★ 追加: シーンが完全に準備完了したかのフラグ ★★★
+        this.isSceneFullyReady = false; 
     }
 
     init(data) {
@@ -83,7 +85,8 @@ export default class GameScene extends Phaser.Scene {
 
         this.isResuming = data.resumedFrom ? true : false;
         this.returnParams = data.returnParams || null;
-        this.isSceneFullyReady = false; // ★init時にリセット★
+        // ★★★ 追加: init時にフラグをリセット ★★★
+        this.isSceneFullyReady = false; 
     }
 
     preload() {
@@ -93,12 +96,13 @@ export default class GameScene extends Phaser.Scene {
     create() {
         this.cameras.main.setBackgroundColor('#000000');
         
-        // --- レイヤー生成とdepth設定 ---
+        // --- レイヤー生成とdepth設定 (最終版) ---
         this.layer.background = this.add.container(0, 0).setDepth(0);  // 最奥
         this.layer.cg = this.add.container(0, 0).setDepth(0);         // 背景CGなど
         this.layer.character = this.add.container(0, 0).setDepth(0); // キャラクター
         this.layer.message = this.add.container(0, 0).setDepth(20);   // メッセージウィンドウ、選択肢ボタン
 
+        // ★★★ GameSceneのコンストラクタで生成される inputBlocker も depth 設定 ★★★
         this.choiceInputBlocker = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height)
             .setInteractive()
             .setVisible(false)
@@ -110,21 +114,19 @@ export default class GameScene extends Phaser.Scene {
         this.soundManager = new SoundManager(this, this.configManager);
         this.messageWindow = new MessageWindow(this, this.soundManager, this.configManager);
         this.layer.message.add(this.messageWindow);
-
         this.scenarioManager = new ScenarioManager(this, this.layer, this.charaDefs, this.messageWindow, this.soundManager, this.stateManager, this.configManager);
 
         // ★★★ コイン表示HUDをインスタンス化 ★★★
         this.coinHud = new CoinHud(this, 100, 50); // 画面左上 (X=100, Y=50) に配置
         // ★★★ ゲームループの 'update' イベントで f.coin の値を監視し、HUDを更新 ★★★
-        // updateリスナーはプロパティに保持し、stop() で解除できるようにする
+        // updateリスナーをプロパティに保持し、stop() で解除できるようにする
         this.updateCoinHudListener = this.events.on('update', this.updateCoinHud, this);
         
         // ★★★ プレイヤーHPバーHUDをインスタンス化 (通常は非表示) ★★★
-        // HpBarのimportがGameSceneファイルの先頭にあることを確認
         this.playerHpBar = new HpBar(this, 100, 100, 200, 25, 'player'); // プレイヤーHPバー
         this.playerHpBar.setVisible(false); // ノベルパートでは通常非表示
         // ★★★ ゲームループの 'update' イベントで f.player_hp の値を監視し、HUDを更新 ★★★
-        // updateリスナーはプロパティに保持し、stop() で解除できるようにする
+        // updateリスナーをプロパティに保持し、stop() で解除できるようにする
         this.updatePlayerHpBarListener = this.events.on('update', this.updatePlayerHpBar, this);
 
         // --- タグハンドラの登録 ---
@@ -168,7 +170,7 @@ export default class GameScene extends Phaser.Scene {
         this.scenarioManager.registerTag('voice', handleVoice);
      
         // --- ゲーム開始ロジック ---
-        // isResumingはSystemSceneのstartAndMonitorSceneによって設定される
+        // isResumingはSystemSceneのstartAndMonitorSceneによって設定される (SystemSceneが既に修正済みである前提)
         if (this.isResuming) {
             console.log("GameScene: 復帰処理を開始します。");
             this.performLoad(0, this.returnParams); 
@@ -177,9 +179,8 @@ export default class GameScene extends Phaser.Scene {
             console.log("GameScene: 通常起動します。");
             this.performSave(0); 
             this.scenarioManager.loadScenario(this.startScenario, this.startLabel);
-            // ScenarioManager.next()を呼び出す前に、isSceneFullyReadyをtrueにする処理はperformLoad内で行われる
-            // 通常起動時はロードがないため、ここで直接isSceneFullyReadyをtrueにする
-            this.isSceneFullyReady = true; // 初回起動時はロード処理がないため、ここで即座に準備完了
+            // ★★★ 追加: 初回起動時はロード処理がないため、ここで即座に準備完了フラグを立てる ★★★
+            this.isSceneFullyReady = true; 
             this.time.delayedCall(10, () => this.scenarioManager.next());
         }
         
@@ -205,7 +206,10 @@ export default class GameScene extends Phaser.Scene {
         // input.on('pointerdown') のリスナーを解除
         if (this.inputPointerDownListener) {
             // SystemManagerのonClickに登録されたリスナーを解除
-            this.input.off('pointerdown', this.scenarioManager.onClick, this.scenarioManager); 
+            // scenarioManagerがnullになる前に解除する必要がある
+            if (this.scenarioManager) { // scenarioManagerのnullチェックを追加
+                this.input.off('pointerdown', this.scenarioManager.onClick, this.scenarioManager); 
+            }
             this.inputPointerDownListener = null;
         }
         // 他のシーンイベントリスナーもあればここで解除
@@ -232,6 +236,7 @@ export default class GameScene extends Phaser.Scene {
     // ★★★ プレイヤーHPバーを更新するメソッドを追加/修正 ★★★
     updatePlayerHpBar() {
         if (!this.isSceneFullyReady) return; // ★★★ シーンが準備完了するまで更新しない ★★★
+        if (!this.stateManager || !this.playerHpBar) return; // nullチェックを追加
 
         // StateManagerから現在のHPと最大HPを取得
         const currentPlayerHp = this.stateManager.f.player_hp || 0;
@@ -246,6 +251,7 @@ export default class GameScene extends Phaser.Scene {
     // ★★★ コインHUDを更新するメソッドを追加/修正 ★★★
     updateCoinHud() {
         if (!this.isSceneFullyReady) return; // ★★★ シーンが準備完了するまで更新しない ★★★
+        if (!this.stateManager || !this.coinHud) return; // nullチェックを追加
 
         const currentCoin = this.stateManager.f.coin || 0; // f.coin の現在の値を取得
         // 表示が変わった場合のみ更新
@@ -273,6 +279,9 @@ export default class GameScene extends Phaser.Scene {
      * 溜まっている選択肢情報を元に、ボタンを一括で画面に表示する
      */
     displayChoiceButtons() {
+        // nullチェックを追加
+        if (!this.choiceInputBlocker) return;
+
         this.choiceInputBlocker.setVisible(true);
         this.children.bringToTop(this.choiceInputBlocker);
         
@@ -280,7 +289,7 @@ export default class GameScene extends Phaser.Scene {
         const startY = (this.scale.height / 2) - ((totalButtons - 1) * 60); 
 
         // ボタンの見た目は GameScene の create() などで定義されているはず
-        // const buttonStyle = { ... }; 
+        // const buttonStyle = { ... }; // unused variable
 
         this.pendingChoices.forEach((choice, index) => {
             const y = startY + (index * 120); 
@@ -304,7 +313,9 @@ export default class GameScene extends Phaser.Scene {
      * ボタンを消すためのヘルパーメソッド
      */
     clearChoiceButtons() {
-        this.choiceInputBlocker.setVisible(false);
+        if (this.choiceInputBlocker) { // nullチェックを追加
+            this.choiceInputBlocker.setVisible(false);
+        }
         this.choiceButtons.forEach(button => button.destroy());
         this.choiceButtons = [];
         this.pendingChoices = []; 
@@ -321,6 +332,7 @@ export default class GameScene extends Phaser.Scene {
             if (!jsonString) {
                 console.error(`スロット[${slot}]のセーブデータが見つかりません。復帰できません。`);
                 // ロード失敗時もイベントを発行して SystemScene のフラグを解除する
+                // ★SystemSceneが既に修正済みである前提★
                 this.scene.get('SystemScene').events.emit('gameScene-load-complete');
                 return;
             }
@@ -372,11 +384,13 @@ export default class GameScene extends Phaser.Scene {
             // ★★★ 全ての復帰処理が完了した後にフラグを立てる ★★★
             this.isSceneFullyReady = true; 
             // SystemSceneにロード完了を通知するカスタムイベントを発行
+            // ★SystemSceneが既に修正済みである前提★
             this.scene.get('SystemScene').events.emit('gameScene-load-complete');
         
         } catch (e) {
             console.error(`ロード処理でエラーが発生しました。`, e);
             // ロード失敗時もイベントを発行して SystemScene のフラグを解除する
+            // ★SystemSceneが既に修正済みである前提★
             this.scene.get('SystemScene').events.emit('gameScene-load-complete');
         }
     }
