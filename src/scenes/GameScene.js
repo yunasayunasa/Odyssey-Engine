@@ -1,4 +1,4 @@
-import ScenarioManager from '../core/ScenarioManager.js';
+himport ScenarioManager from '../core/ScenarioManager.js';
 import SoundManager from '../core/SoundManager.js';
 import CoinHud from '../ui/CoinHud.js';
 import StateManager from '../core/StateManager.js';
@@ -107,7 +107,7 @@ export default class GameScene extends Phaser.Scene {
     this.events.on('update', this.updateCoinHud, this);
     // または、StateManagerにf.coinの変更を通知する仕組みを作る（より高度）
         
-        // --- タグハンドラの登録 ---
+      // --- タグハンドラの登録 ---
         this.scenarioManager.registerTag('chara_show', handleCharaShow);
         this.scenarioManager.registerTag('chara_hide', handleCharaHide);
         this.scenarioManager.registerTag('chara_mod', handleCharaMod);
@@ -146,6 +146,7 @@ this.scenarioManager.registerTag('fadein', handleFadein);
 this.scenarioManager.registerTag('video', handleVideo);
 this.scenarioManager.registerTag('stopvideo', handleStopVideo);
       this.scenarioManager.registerTag('voice', handleVoice);
+     
      
 
         // --- ゲーム開始ロジック ---
