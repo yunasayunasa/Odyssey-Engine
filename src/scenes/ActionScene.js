@@ -1,36 +1,33 @@
-// src/scenes/ActionScene.js (最終版 - 全ての改善を統合)
+// src/scenes/ActionScene.js
 
-import CoinHud from '../ui/CoinHud.js'; // CoinHudは直接使用されていませんが、もし使うなら残します
+import CoinHud from '../ui/CoinHud.js'; // CoinHudは使用されていませんが、もし使うなら残します
 export default class ActionScene extends Phaser.Scene {
     constructor() {
         super('ActionScene');
         this.receivedParams = null; 
         this.eventEmitted = false; // ★★★ 追加: イベント発行済みフラグ ★★★
-        
-        // ★★★ 追加: ボタンへの参照をプロパティとして初期化 (stop()で破棄するため) ★★★
-        this.winButton = null;
-        this.loseButton = null;
-        this.playerObject = null; // 例: createで作成するplayerテキストオブジェクト
+        this.winButton = null; // ボタンへの参照をプロパティとして初期化
+        this.loseButton = null; // ボタンへの参照をプロパティとして初期化
     }
 
     init(data) {
         this.receivedParams = data.transitionParams || {}; 
         console.log("ActionScene: init 完了。受け取ったパラメータ:", this.receivedParams);
         
-        this.eventEmitted = false; // ★★★ init時にフラグをリセット ★★★
+        this.eventEmitted = false; // シーンが再initされる際にリセット
     }
 
     create() {
         console.log("ActionScene: create 開始");
         this.cameras.main.setBackgroundColor('#4a86e8');
-        // playerオブジェクトもプロパティに保持
-        this.playerObject = this.add.text(100, 360, 'PLAYER', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
-        this.tweens.add({ targets: this.playerObject, x: 1180, duration: 4000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 });
+        const player = this.add.text(100, 360, 'PLAYER', { fontSize: '48px', fill: '#fff' }).setOrigin(0.5);
+        this.tweens.add({ targets: player, x: 1180, duration: 4000, ease: 'Sine.easeInOut', yoyo: true, repeat: -1 });
         
         // --- オーバーレイ表示リクエスト ---
         this.time.delayedCall(3000, () => {
             console.log("ActionScene: request-overlay を発行");
-            // オーバーレイは既存シーンを停止しないため、eventEmittedフラグは通常使わない
+            // オーバーレイは遷移ではないので、isProcessingTransitionフラグは使わない
+            // ただし、二重発行を防ぎたいなら、オーバーレイ用のフラグを別途持つことも検討
             this.scene.get('SystemScene').events.emit('request-overlay', { 
                 from: this.scene.key,
                 scenario: 'overlay_test.ks'
@@ -48,7 +45,7 @@ export default class ActionScene extends Phaser.Scene {
 
             // ★★★ 修正箇所: イベントがまだ発行されていない場合のみ発行 ★★★
             if (!this.eventEmitted) {
-                this.eventEmitted = true; 
+                this.eventEmitted = true; // フラグを立てる
                 console.log("ActionScene: 勝利ボタンクリック -> return-to-novel を発行");
                 this.scene.get('SystemScene').events.emit('return-to-novel', {
                     from: this.scene.key,
@@ -70,7 +67,7 @@ export default class ActionScene extends Phaser.Scene {
 
             // ★★★ 修正箇所: イベントがまだ発行されていない場合のみ発行 ★★★
             if (!this.eventEmitted) {
-                this.eventEmitted = true; 
+                this.eventEmitted = true; // フラグを立てる
                 console.log("ActionScene: 敗北ボタンクリック -> return-to-novel を発行");
                 this.scene.get('SystemScene').events.emit('return-to-novel', {
                     from: this.scene.key,
@@ -83,33 +80,26 @@ export default class ActionScene extends Phaser.Scene {
         console.log("ActionScene: create 完了");
     }
 
-    // ★★★ stop() メソッドを追加し、リソースを破棄 ★★★
+    // SystemSceneがstart/stop/resumeを制御するので、このシーンでは特に処理は不要ですが、
+    // ログのために残しておくのは良いでしょう。
+    start() {
+        super.start();
+        console.log("ActionScene: start されました。");
+    }
+
     stop() {
         super.stop();
-        console.log("ActionScene: stop されました。UI要素を破棄します。");
-
-        // シーン停止時にボタンがあればリスナー解除と破棄
-        if (this.winButton) { 
-            this.winButton.off('pointerdown'); 
-            this.winButton.destroy(); 
-            this.winButton = null; 
-        }
-        if (this.loseButton) { 
-            this.loseButton.off('pointerdown'); 
-            this.loseButton.destroy(); 
-            this.loseButton = null; 
-        }
-
-        // playerオブジェクトとそれに付随するTweenも破棄
-        if (this.playerObject) {
-            this.tweens.killTweensOf(this.playerObject); // Tweenがあれば停止・破棄
-            this.playerObject.destroy(); 
-            this.playerObject = null;
-        }
+        console.log("ActionScene: stop されました。");
+        // シーン停止時にボタンがあれば破棄 (念のため)
+        if (this.winButton) { this.winButton.destroy(); this.winButton = null; }
+        if (this.loseButton) { this.loseButton.destroy(); this.loseButton = null; }
     }
 
     resume() {
-        super.resume();
-        console.log("ActionScene: resume されました。");
+        console.log("ActionScene: resume されました。入力を再有効化します。");
+        // SystemSceneが制御するため、ここでの input.enabled = true; は不要。
+        // ただし、ActionSceneが自分で入力有効化を管理したい場合はここに書く。
+        // 現状、SystemSceneが責任を持つ設計なので、ここはコメントアウトするか削除しても良い。
+        // this.input.enabled = true;
     }
 }
