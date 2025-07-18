@@ -1,4 +1,4 @@
-himport ScenarioManager from '../core/ScenarioManager.js';
+import ScenarioManager from '../core/ScenarioManager.js';
 import SoundManager from '../core/SoundManager.js';
 import CoinHud from '../ui/CoinHud.js';
 import StateManager from '../core/StateManager.js';
