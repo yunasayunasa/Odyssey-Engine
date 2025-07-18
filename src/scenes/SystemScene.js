@@ -2,7 +2,7 @@
 
 export default class SystemScene extends Phaser.Scene {
     constructor() {
-        super({ key: 'SystemScene' });
+        super({ key: 'SystemScene', active: true });
         this.globalCharaDefs = null;
         this.isProcessingTransition = false; // 遷移処理中フラグ
         this.targetSceneKey = null; // 現在遷移を試みているターゲットシーンのキーを保持
