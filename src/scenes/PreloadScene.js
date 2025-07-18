@@ -1,3 +1,4 @@
+
 import ConfigManager from '../core/ConfigManager.js'; // ConfigManagerをここでimport
 
 export default class PreloadScene extends Phaser.Scene {

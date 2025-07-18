@@ -1,3 +1,4 @@
+
 export default class SaveLoadScene extends Phaser.Scene {
     constructor() {
         // このシーンは launch で呼ばれるので、active:true は不要
