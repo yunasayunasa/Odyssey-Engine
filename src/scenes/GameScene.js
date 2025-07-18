@@ -39,7 +39,7 @@ import { handleImage } from '../handlers/image.js';
 import { handleFreeImage } from '../handlers/freeimage.js';
 import { handleButton } from '../handlers/button.js';
 import { handleCall } from '../handlers/call.js';
-import { handleReturn } = '../handlers/return.js';
+import { handleReturn } from '../handlers/return.js';
 import { handleStopAnim } from '../handlers/stop_anim.js';
 import { handleFadeout } from '../handlers/fadeout.js';
 import { handleFadein } from '../handlers/fadein.js';
